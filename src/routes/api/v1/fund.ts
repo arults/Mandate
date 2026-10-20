@@ -1,11 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { fundWallet } from "@/lib/gate.server";
+import { refuseHumanRoute } from "@/lib/human-route.server";
 
 export const Route = createFileRoute("/api/v1/fund")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const denied = refuseHumanRoute(request);
+        if (denied) return denied;
         try {
           const body = (await request.json()) as { amountUsd?: number; mode?: string };
           const amount = body.amountUsd;
@@ -16,7 +19,7 @@ export const Route = createFileRoute("/api/v1/fund")({
             );
           }
           const mode = body.mode === "set" ? "set" : "add";
-          return Response.json(fundWallet(Math.round(amount * 100) / 100, mode), {
+          return Response.json(await fundWallet(Math.round(amount * 100) / 100, mode), {
             headers: { "Cache-Control": "no-store" },
           });
         } catch (error) {

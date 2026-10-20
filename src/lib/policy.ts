@@ -46,6 +46,8 @@ export const DEMO_POLICY: HumanPolicy = {
   frozen: false,
 };
 
+export const MAX_USD = 1_000_000;
+
 export function cents(usd: number): number {
   return Math.round(usd * 100);
 }
@@ -64,7 +66,34 @@ export function formatUsd(usd: number): string {
 
 export function normalizeRecipient(value: string): string {
   const trimmed = value.trim();
-  if (trimmed.startsWith("0x") || trimmed.startsWith("0X")) return trimmed.toLowerCase();
+  if (/^0x/i.test(trimmed)) return trimmed.toLowerCase();
+  if (trimmed.toLowerCase().endsWith(".near")) return trimmed.toLowerCase();
+  return trimmed;
+}
+
+export function canonicalRecipient(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) throw new Error("Recipient is empty");
+  if (trimmed.length > 128 || /[^\x21-\x7E]/.test(trimmed)) {
+    throw new Error("Recipient must be plain ASCII, with no spaces");
+  }
+  if (/^0x/i.test(trimmed)) {
+    const address = trimmed.toLowerCase();
+    if (!/^0x[0-9a-f]{40}$/.test(address)) {
+      throw new Error("EVM recipient must be a 20-byte hex address");
+    }
+    return address;
+  }
+  if (trimmed.toLowerCase().endsWith(".near")) {
+    const account = trimmed.toLowerCase();
+    const labels = account.slice(0, -".near".length).split(".");
+    const ok = labels.every((label) => /^[a-z0-9]([a-z0-9_-]*[a-z0-9])?$/.test(label));
+    if (!ok || account.length > 64) throw new Error("NEAR recipient is not an account id");
+    return account;
+  }
+  if (!/^[1-9A-HJ-NP-Za-km-z]{32,64}$/.test(trimmed)) {
+    throw new Error("Recipient must be a NEAR account, a 20-byte hex address, or a base58 address");
+  }
   return trimmed;
 }
 
@@ -86,6 +115,9 @@ export function policyFingerprint(policy: HumanPolicy): string {
 }
 
 function num(value: unknown, label: string): number {
+  if (typeof value === "string" && /^-?\d+(\.\d+)?$/.test(value.trim())) {
+    value = Number(value.trim());
+  }
   if (typeof value !== "number" || !Number.isFinite(value)) {
     throw new Error(`${label} must be a number`);
   }
@@ -102,11 +134,18 @@ export function parsePolicy(input: unknown): HumanPolicy {
     throw new Error("Limits must be greater than zero");
   }
   if (approvalThresholdUsd < 0) throw new Error("Approval threshold cannot be negative");
+  if (
+    maxPerTransactionUsd > MAX_USD ||
+    dailyLimitUsd > MAX_USD ||
+    approvalThresholdUsd > MAX_USD
+  ) {
+    throw new Error("Limits cannot exceed 1000000");
+  }
   if (!Array.isArray(raw.allowedRecipients)) throw new Error("Recipients must be a list");
-  const allowedRecipients = raw.allowedRecipients
-    .filter((item): item is string => typeof item === "string")
-    .map((item) => item.trim())
-    .filter(Boolean);
+  if (raw.allowedRecipients.some((item) => typeof item !== "string")) {
+    throw new Error("Recipients must be strings");
+  }
+  const allowedRecipients = raw.allowedRecipients.map((item) => canonicalRecipient(item as string));
   if (allowedRecipients.length === 0) throw new Error("Add at least one recipient");
   if (allowedRecipients.length > 12) throw new Error("Keep the allow-list to 12 recipients");
   return {
@@ -132,13 +171,19 @@ export function parsePayment(input: unknown): {
   const ignoredFields = Object.keys(raw).filter((key) => !known.has(key));
   const amountUsd = num(raw.amountUsd, "Amount");
   if (amountUsd <= 0) throw new Error("Amount must be greater than zero");
+  if (amountUsd > MAX_USD) throw new Error("Amount is above the 1000000 ceiling");
+  if (cents(amountUsd) < 1) throw new Error("Amount must be at least 0.01");
   if (Math.abs(amountUsd * 100 - Math.round(amountUsd * 100)) > 1e-6) {
     throw new Error("Use at most 2 decimal places");
   }
   if (typeof raw.asset !== "string" || !raw.asset.trim()) throw new Error("Asset is required");
   if (typeof raw.to !== "string" || !raw.to.trim()) throw new Error("Recipient is required");
+  const recipient = canonicalRecipient(raw.to);
   if (typeof raw.chain !== "string" || !raw.chain.trim()) throw new Error("Chain is required");
   const purpose = typeof raw.purpose === "string" ? raw.purpose.trim().slice(0, 140) : "";
+  if (raw.idempotencyKey != null && typeof raw.idempotencyKey !== "string") {
+    throw new Error("idempotencyKey must be a string");
+  }
   const idempotencyKey =
     typeof raw.idempotencyKey === "string" && raw.idempotencyKey.trim()
       ? raw.idempotencyKey.trim().slice(0, 80)
@@ -147,7 +192,7 @@ export function parsePayment(input: unknown): {
     request: {
       amountUsd: fromCents(cents(amountUsd)),
       asset: raw.asset.trim(),
-      to: raw.to.trim(),
+      to: recipient,
       chain: raw.chain.trim().toLowerCase(),
       purpose,
     },
@@ -194,7 +239,7 @@ export function evaluatePolicy(
     return {
       status: "reject",
       rule: "balance",
-      detail: `Demo balance is ${formatUsd(usage.balanceUsd)}. Fund the wallet before this payment.`,
+      detail: `Available after holds is ${formatUsd(usage.balanceUsd)}. The wallet balance was not debited.`,
     };
   }
   if (cents(request.amountUsd) > cents(policy.maxPerTransactionUsd)) {

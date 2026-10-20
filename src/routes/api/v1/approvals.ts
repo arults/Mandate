@@ -1,11 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { resolveApproval } from "@/lib/gate.server";
+import { refuseHumanRoute } from "@/lib/human-route.server";
 
 export const Route = createFileRoute("/api/v1/approvals")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const denied = refuseHumanRoute(request);
+        if (denied) return denied;
         try {
           const body = (await request.json()) as { id?: string; action?: string };
           if (!body.id || (body.action !== "approve" && body.action !== "reject")) {

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { publishPolicy, snapshot } from "@/lib/gate.server";
+import { refuseHumanRoute } from "@/lib/human-route.server";
 
 function json(body: unknown, status = 200) {
   return Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
@@ -9,11 +10,17 @@ function json(body: unknown, status = 200) {
 export const Route = createFileRoute("/api/v1/policy")({
   server: {
     handlers: {
-      GET: async () => json(snapshot()),
+      GET: async ({ request }) => {
+        const denied = refuseHumanRoute(request);
+        if (denied) return denied;
+        return json(snapshot());
+      },
       POST: async ({ request }) => {
+        const denied = refuseHumanRoute(request);
+        if (denied) return denied;
         try {
           const body = await request.json();
-          return json(publishPolicy(body));
+          return json(await publishPolicy(body));
         } catch (error) {
           const detail = error instanceof Error ? error.message : "Could not save policy";
           return json({ error: "bad_policy", detail }, 400);

@@ -24,21 +24,16 @@ Do not send `approved`, `policy`, `signature`, or a private key. Those fields ar
 |---|---|
 | `allow` | Inside the policy. `settlement.submitted` is `false` unless a later live integration broadcasts. |
 | `needs_approval` | Over the human threshold, still inside the caps. Wait. Do not retry with a higher amount. |
-| `reject` | Blocked. `receipt.rule` is the reason (`allowed_recipients`, `max_per_transaction`, `daily_limit`, `balance`, `frozen`, `allowed_assets`, `chain`). |
-| `cancelled` | A human rejected an approval. |
+| `reject` | Blocked. `receipt.rule` is the reason (`allowed_recipients`, `max_per_transaction`, `daily_limit`, `balance`, `frozen`, `allowed_assets`, `chain`, `pending_full`, `settlement_refused`, `settlement_unconfirmed`, `day_rolled`). |
+| `cancelled` | A human rejected an approval, or the UTC day changed while it was waiting. |
 
-`409` with `error: "no_policy"` means the human has not saved a policy. Do not invent one. `400` means the body itself is invalid.
+`409` with `error: "no_policy"` means the human has not saved a policy. Do not invent one. `409` with `error: "conflict"` means this `idempotencyKey` was already used for a different payment. `400` means the body itself is invalid.
 
-The human console owns:
+The human console owns policy, funding, and approvals. The HTTP routes for those (`/api/v1/policy`, `/api/v1/fund`, `/api/v1/approvals`) return **403** unless the operator set `MANDATE_HUMAN_TOKEN` on the server, and **401** if the `x-mandate-human` header does not match. Calling them from the agent is not a payment. In production, replace this process with OutLayer Agent Custody: the human publishes the policy into the TEE, and the agent keeps only a `wk_` API key. Same rule: the key can request a signature, it cannot rewrite the policy.
 
-- `POST /api/v1/policy` — caps, allow-list, approval threshold, freeze
-- `POST /api/v1/fund` — demo balance
-- `POST /api/v1/approvals` — `{ "id", "action": "approve" | "reject" }`
-- `GET /api/v1/policy` — remaining daily limit, balance, pending approvals, ledger
+Idempotency: send `idempotencyKey` (string, max 80 characters). A repeat of the same payment returns the original receipt and does not spend again, even after that row scrolls off the visible ledger. A repeat with a different amount, recipient, chain, or purpose is a conflict. Prepare demo clears stored keys. If the settlement check cannot be reached, or OutLayer answers 429 or 5xx, the result is `settlement_unconfirmed` and the same key can be retried. A dry-run body with `would_succeed: false`, or any other 4xx, is `settlement_refused` and is stored. On a payment that did not need approval, `settlement_unconfirmed` is not stored. If that happens while a human is approving, the hold stays and the key still returns `needs_approval`. `.near` recipients are matched case-insensitively. Recipients must be plain ASCII with no spaces: a NEAR account, a 20-byte hex address, or a base58 address. Amounts may be a JSON number or a decimal string, at least 0.01, at most 2 places, and at most 1000000.
 
-An agent that calls those is acting as the owner, not as the payer. In production, replace this process with OutLayer Agent Custody: the human publishes the policy into the TEE, and the agent keeps only a `wk_` API key. Same rule: the key can request a signature, it cannot rewrite the policy.
-
-Idempotency: send `idempotencyKey`. A repeat returns the original receipt.
+While a payment waits for approval it holds today's remaining limit. Do not stack more requests than the day can cover. A hold is not a payment: `settlement.submitted` is still false, and the balance does not move until a human approves.
 
 Typed judgment, if you want one, is advisory:
 

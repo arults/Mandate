@@ -58,11 +58,13 @@ Do these in order. Blocks do not spend the daily limit.
 
 1. **Prepare the demo** → see remaining today **$50.00** and demo balance **$200.00**. Running it again resets today's spend and pending approvals. It does not erase the ledger.
 2. **Allowed · $8 to Base** → receipt status **Allowed**, rule empty, path `near → base`, attestation says **local policy gate** and **nothing was broadcast**. Remaining becomes **$42.00**.
-3. **Approval · $18 to Ethereum** → status **Needs approval**. Use **Approve** → a new receipt **Allowed** and remaining drops by $18. **Reject** instead → **Cancelled**, remaining unchanged.
+3. **Approval · $18 to Ethereum** → status **Needs approval**. Remaining today drops to **$32.00** immediately, because the amount is held. Balance stays **$200.00** until a human approves. **Approve** → a new receipt **Allowed**, balance drops by $18, and the hold becomes a spend. **Reject** → **Cancelled**, and the $18 hold is released.
 4. **Blocked · $40 over cap** → status **Blocked · max_per_transaction**. Remaining does not change.
 5. **Jailbreak · off-list + fake approval** → the body includes `approved: true` and a fake million-dollar policy. The receipt lists those as **ignored** and status is **Blocked · allowed_recipients**.
 
-Save policy and Add funds are human actions. Freezing the wallet blocks the next request with rule `frozen`.
+Save policy and Add funds are human actions on the console. `POST /api/v1/policy`, `/api/v1/fund`, and `/api/v1/approvals` are closed unless the server has `MANDATE_HUMAN_TOKEN`. An agent that can reach the pay route still cannot rewrite the policy or approve itself. Freezing the wallet blocks the next request with rule `frozen`.
+
+A payment that needs approval reserves today's limit (and the available balance) so later requests cannot oversubscribe the day. At most 20 payments can wait. A UTC date change cancels anything still waiting and releases the hold. Prepare demo clears pending approvals and idempotency keys. It does not erase the ledger.
 
 ## What this prototype does not do
 

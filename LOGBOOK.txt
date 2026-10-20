@@ -86,3 +86,72 @@ Not evaluated in this entry
   - Multi-instance persistence. The gate is one process.
   - A browser click-through of Prepare, Allow, Approval, Block, and Jailbreak
     after the rename.
+
+2026-10-20 23:28 HKT — situation review, critic, Jev, then a plateau
+------------------------------------------------------------------------
+
+What was asked
+  Find situations where Mandate breaks for a customer or for the policy,
+  judge them, fix, and stop when another pass does not move the score.
+
+Jev
+  POST https://api.typesafe.ai/v1/systemone with model jev-latest.
+  The host answered 401 authentication_error both times it was called.
+  TYPESAFE_API_KEY is not set here. The xAI key is not accepted by that host.
+  No Jev probability, label, or score was invented.
+  The pass/fail oracle is the executable suite in src/lib/gate.security.test.ts
+  and src/lib/policy.test.ts. Two critic reviews read the gate separately.
+
+Situations that were wrong before this pass
+  1. The same idempotency key paid again after the receipt scrolled off the 40-row ledger.
+  2. The same key with a different body returned the first receipt and hid the mismatch.
+  3. needs_approval did not hold the daily limit or the available balance, so several approvals could oversubscribe the day.
+  4. After a human approved, a retry of the key still said needs_approval.
+  5. Pending could grow without a cap.
+  6. Vendor.near and vendor.near did not match. A non-ASCII lookalike could be saved.
+  7. A short 0x string could be saved as a recipient. Amounts above 1_000_000 and a rounded $0.00 dust amount could be allowed.
+  8. A failed or unfinished OutLayer dry-run still debited the demo balance.
+  9. HTTP 200 with would_succeed false (OutLayer's bridge refusal) was treated as success and spent.
+  10. HTTP 429 and 5xx were stored as permanent refusals, so a blip could not be retried.
+  11. A UTC day change left yesterday's approval able to spend today's budget.
+  12. POST /api/v1/policy, /fund, and /approvals were open to anyone who could reach the server, including an agent that was only supposed to call /pay.
+  13. Those human routes returned 200 {} because the handlers did not await the gate.
+  14. After Approve, the ledger still showed the old Needs approval row, including a withdraw path.
+  15. The balance-reject sentence quoted the held amount as if it were the wallet balance.
+  16. One double-click could send two payments. The buttons did not send an idempotency key.
+  17. An unfinished dry-run during Approve pinned the idempotency key to the failure and dropped the hold.
+  18. Freezing the wallet left holds in place.
+  19. A few hundred policy rejects could fill the idempotency log and block a later real payment.
+
+What changed
+  Holds reserve today's limit and the available balance. Pending is capped at 20.
+  Idempotency stores the receipt itself, and only for an allow, a hold, or a settlement refusal.
+  A different body on the same key is 409 conflict. Prepare demo clears keys and drops open holds.
+  A UTC day change or a freeze cancels waiting payments and releases the hold.
+  Human HTTP routes are 403 unless MANDATE_HUMAN_TOKEN is set, and 401 if the header does not match.
+  The handlers await the gate and return the snapshot.
+  The open Needs approval row is removed from the ledger when it is approved, rejected, or cleared.
+  Dust under one cent is rejected. EVM recipients must be 20 bytes. .near is case-insensitive.
+  OutLayer is accepted only when would_succeed is true. 429 and 5xx stay retryable.
+  An unfinished check during Approve puts the hold back.
+  The pay buttons ignore a second click until the first request finishes.
+
+Score
+  Round 1 critic, after the first fix set: 6 open failures (ledger ghost, human HTTP 200 {}, dust allow, misleading balance sentence, double-click, approval dry-run pinning the key).
+  Those 6 were fixed and covered by tests.
+  Round 2 critic: no remaining high-severity bypass of the local policy when OUTLAYER_API_KEY is unset. One high hole remained: a 200 body with would_succeed false still spent. One medium: 429/5xx were sticky. One low: 200 stored keys brick new keys.
+  Those three were fixed. Policy rejects are no longer stored, so a reject flood does not fill the log. The cap of 200 still applies to stored allows, holds, and settlement refusals, and it fails closed. That is the plateau. A third critic pass was not started.
+
+Executable result at the plateau
+  node --import ./scripts/test-alias-register.mjs --experimental-strip-types --test src/lib/gate.security.test.ts src/lib/policy.test.ts
+  31 passed, 0 failed.
+  npm test: 197 script tests passed, 90 app tests passed, 0 failed.
+  npx tsc --noEmit: no errors.
+
+Still true, and not treated as a new defect
+  The console server functions are how the human UI saves policy, adds funds, and approves. An agent that only calls POST /api/v1/pay cannot use them. Someone who loads the human page can, because they are the operator.
+  The gate is one process, in memory.
+  The demo still pays vendor.near on Base. That is the scripted path, not a chain-address check.
+  No broadcast. settlement.submitted stays false.
+  Jev was not scored.
+

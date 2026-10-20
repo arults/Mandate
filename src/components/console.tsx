@@ -115,6 +115,7 @@ export function Console() {
   const [fundAmount, setFundAmount] = useState("50");
   const [focusId, setFocusId] = useState<string | null>(null);
   const revision = useRef(0);
+  const inFlight = useRef(false);
 
   useEffect(() => {
     const ticket = ++revision.current;
@@ -137,6 +138,8 @@ export function Console() {
   }, []);
 
   async function run(task: () => Promise<void>) {
+    if (inFlight.current) return;
+    inFlight.current = true;
     const ticket = ++revision.current;
     setBusy(true);
     setFormError(null);
@@ -146,6 +149,7 @@ export function Console() {
     } catch (error) {
       if (ticket === revision.current) setFormError(messageOf(error));
     } finally {
+      inFlight.current = false;
       if (ticket === revision.current) setBusy(false);
     }
   }
@@ -217,6 +221,11 @@ export function Console() {
               Balance {formatUsd(snap?.balanceUsd ?? 0)}
               {snap?.liveKey ? " · OutLayer key present" : " · local gate"}
             </p>
+            {snap && snap.pending.length > 0 && (
+              <p className="mt-1 text-sm text-hold">
+                {snap.pending.length} waiting. Remaining includes that hold. Balance has not moved.
+              </p>
+            )}
           </div>
         </div>
         <p className="max-w-2xl text-sm leading-6 text-muted">
