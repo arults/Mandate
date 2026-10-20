@@ -74,3 +74,7 @@ Save policy and Add funds are human actions. Freezing the wallet blocks the next
 The in-memory gate matches one running server. A deployed multi-instance host should store the policy in OutLayer, encrypted on NEAR, and let the enclave evaluate it. The HTTP shapes in AGENT.md stay the same.
 
 Part of FORGE (arults).
+
+## Log book
+
+Audits and evals are appended to [LOGBOOK.txt](LOGBOOK.txt). Earlier entries stay. Do not rewrite them.

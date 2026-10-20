@@ -1,0 +1,88 @@
+Mandate — audit and evaluation log
+==================================
+
+Append a new dated entry after every audit or eval. Do not delete or rewrite earlier entries.
+Times are Hong Kong (UTC+8).
+
+How to re-run
+-------------
+
+Policy decisions only:
+
+  node --experimental-strip-types --test src/lib/policy.test.ts
+
+Full suite (scripts plus app tests, including the policy file):
+
+  npm test
+
+Types:
+
+  npm run typecheck
+
+Framework floor (must print 1.168.60 or newer):
+
+  node -p "require('@tanstack/react-start/package.json').version"
+
+
+2026-10-20 22:58 HKT — first push to github.com/arults/Mandate
+--------------------------------------------------------------
+
+What this entry covers
+  The working title "Ledger Gate" had already been renamed to Mandate in the
+  wordmark, document title, README, and AGENT.md. This entry is the check
+  run immediately before that tree was pushed to the empty Mandate repository.
+
+Policy decision eval — PASS, 6 of 6
+  Command: node --experimental-strip-types --test src/lib/policy.test.ts
+  Duration: 128 ms. Failures: 0.
+
+  1. A small allowlisted USDC payment is allowed.
+  2. An amount over the approval line waits for a human (rule: approval_threshold).
+  3. An amount over the per-transaction cap is rejected (rule: max_per_transaction).
+  4. An off-allowlist recipient is rejected (rule: allowed_recipients).
+  5. Jailbreak fields "approved" and "policy" are ignored. An $80 request is still rejected.
+  6. A human-approval flag does not bypass the per-transaction cap.
+
+  These tests call evaluatePolicy and parsePayment only. They do not cover the
+  in-memory balance, the daily ledger, receipt signing, or the HTTP routes.
+
+Full npm test — PASS
+  Command: npm test
+  Script tests: 197 passed, 0 failed.
+  App tests: 65 passed, 0 failed (18 suites). The six policy cases above are
+  inside that 65.
+  Before this commit, src/lib/policy.test.ts was not on the npm test script.
+  It is included now, so the next full run covers the gate decisions.
+
+Typecheck — PASS
+  Command: npx tsc --noEmit
+  No errors.
+
+Framework — PASS
+  @tanstack/react-start is 1.168.60. That is the minimum allowed version.
+  It is not below it.
+
+Dev server — answered
+  GET http://127.0.0.1:8080/ returned HTTP 200.
+  This only proves the process answered. It was not a browser walkthrough,
+  and it was not re-checked for the new document title.
+
+Earlier visual smoke — recorded, not re-run for this push
+  Local file screenshots/app-builder-preview.json. That directory is gitignored,
+  so the screenshots are not in the GitHub repo.
+
+  - Desktop 1280x800 and mobile 390x844 both returned HTTP 200.
+  - Title at capture: "Ledger Gate" (before the rename to Mandate).
+  - No console errors, no page errors, no horizontal overflow.
+  - Brand note only: no custom og.jpg. Left as the utility placeholder.
+  - A later production-preview capture (screenshots/app-builder-built.json)
+    showed an empty gate ("Remaining today —"). That is expected. The gate
+    is in memory and a fresh server has no demo balance until Prepare is used.
+
+Not evaluated in this entry
+  - Live OutLayer withdraw. No OUTLAYER_API_KEY was set.
+  - A live NEAR Intents quote.
+  - Any broadcast. This prototype does not broadcast.
+  - Multi-instance persistence. The gate is one process.
+  - A browser click-through of Prepare, Allow, Approval, Block, and Jailbreak
+    after the rename.
