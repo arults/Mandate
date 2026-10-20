@@ -77,6 +77,10 @@ The in-memory gate matches one running server. A deployed multi-instance host sh
 
 Part of FORGE (arults).
 
+## Site
+
+`/` is the short explanation. `/docs` is the same rules for a person. `/llms.txt` is the agent contract. `/console` is the human gate.
+
 ## Log book
 
 Audits and evals are appended to [LOGBOOK.txt](LOGBOOK.txt). Earlier entries stay. Do not rewrite them.

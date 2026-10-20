@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Shield } from "lucide-react";
 
 import { addFunds, decideApproval, getGate, prepareDemoGate, requestPayment, savePolicy } from "@/lib/gate.functions";
 import type { GateReceipt, Snapshot } from "@/lib/gate-types";
@@ -200,38 +199,30 @@ export function Console() {
   const saved = snap?.policy;
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-      <header className="flex flex-col gap-4 border-b border-border pb-5 sm:pb-6">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="max-w-xl">
-            <div className="flex items-center gap-2 text-muted">
-              <Shield className="size-4" aria-hidden="true" />
-              <p className="text-sm font-medium">Mandate</p>
-            </div>
-            <h1 className="mt-2 text-2xl font-medium tracking-tight sm:text-3xl">
-              The agent can ask. It cannot sign.
-            </h1>
-          </div>
-          <div className="rounded-card border border-border bg-surface px-4 py-3 sm:min-w-56 sm:px-5">
-            <p className="text-sm text-muted">Remaining today</p>
-            <p className="font-mono text-2xl font-medium tabular-nums sm:text-3xl">
-              {snap?.remainingDailyUsd == null ? "—" : formatUsd(snap.remainingDailyUsd)}
-            </p>
-            <p className="text-sm text-subtle">
-              Balance {formatUsd(snap?.balanceUsd ?? 0)}
-              {snap?.liveKey ? " · OutLayer key present" : " · local gate"}
-            </p>
-            {snap && snap.pending.length > 0 && (
-              <p className="mt-1 text-sm text-hold">
-                {snap.pending.length} waiting. Remaining includes that hold. Balance has not moved.
-              </p>
-            )}
-          </div>
+    <main className="mx-auto w-full max-w-6xl px-5 py-8 sm:py-12">
+      <header className="grid gap-8 border-b border-border pb-8 lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-end">
+        <div className="max-w-xl">
+          <h1 className="text-3xl font-medium tracking-tight sm:text-5xl">Set the mandate.</h1>
+          <p className="mt-4 text-base leading-relaxed text-muted">
+            You set the caps. The agent can only ask to pay. Allow, block, and approval are decided outside the
+            model. This preview does not broadcast.
+          </p>
         </div>
-        <p className="max-w-2xl text-sm leading-6 text-muted">
-          You set the caps. The agent can only ask to pay. Allow, block, and approval are decided outside the
-          model. USDC moves on the NEAR Intents 1-Click path, and this preview does not broadcast.
-        </p>
+        <div className="border border-border bg-surface px-5 py-4">
+          <p className="text-sm text-muted">Remaining today</p>
+          <p className="mt-1 font-mono text-3xl font-medium tabular-nums">
+            {snap?.remainingDailyUsd == null ? "—" : formatUsd(snap.remainingDailyUsd)}
+          </p>
+          <p className="mt-1 text-sm text-subtle">
+            Balance {formatUsd(snap?.balanceUsd ?? 0)}
+            {snap?.liveKey ? " · OutLayer key present" : " · local gate"}
+          </p>
+          {snap && snap.pending.length > 0 && (
+            <p className="mt-2 text-sm text-fg">
+              {snap.pending.length} waiting. Remaining includes that hold. Balance has not moved.
+            </p>
+          )}
+        </div>
       </header>
 
       {loadError && (
@@ -308,7 +299,7 @@ export function Console() {
             <button
               type="button"
               disabled={busy}
-              className="h-11 rounded-control bg-accent px-4 text-sm font-medium text-accent-fg disabled:opacity-50"
+              className="h-11 rounded-control bg-accent px-4 text-sm font-medium text-accent-fg transition-colors duration-150 hover:bg-accent-hover disabled:opacity-50"
               onClick={() => run(() => save())}
             >
               Save policy
@@ -316,7 +307,7 @@ export function Console() {
             <button
               type="button"
               disabled={busy}
-              className="h-11 rounded-control border border-border px-4 text-sm font-medium disabled:opacity-50"
+              className="h-11 rounded-control border border-border px-4 text-sm font-medium transition-colors duration-150 hover:border-fg disabled:opacity-50"
               onClick={() => run(prepare)}
             >
               Prepare demo · $50/day · $200 USDC
@@ -336,7 +327,7 @@ export function Console() {
               <button
                 type="button"
                 disabled={busy}
-                className="h-11 shrink-0 rounded-control border border-border px-4 text-sm font-medium disabled:opacity-50"
+                className="h-11 shrink-0 rounded-control border border-border px-4 text-sm font-medium transition-colors duration-150 hover:border-fg disabled:opacity-50"
                 onClick={() =>
                   run(async () => {
                     const gate = await addFunds({ data: { amountUsd: Number(fundAmount), mode: "add" } });
@@ -359,7 +350,6 @@ export function Console() {
                   Pay X of Y to Z. Extra fields such as approved or a replacement policy are discarded.
                 </p>
               </div>
-              <ArrowUpRight className="mt-1 size-4 text-subtle" aria-hidden="true" />
             </div>
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -394,7 +384,7 @@ export function Console() {
             <button
               type="button"
               disabled={busy}
-              className="mt-4 h-11 w-full rounded-control bg-accent px-4 text-sm font-medium text-accent-fg disabled:opacity-50"
+              className="mt-4 h-11 w-full rounded-control bg-accent px-4 text-sm font-medium text-accent-fg transition-colors duration-150 hover:bg-accent-hover disabled:opacity-50"
               onClick={() => run(() => submitCurrent())}
             >
               Request payment
@@ -404,7 +394,7 @@ export function Console() {
               <button
                 type="button"
                 disabled={busy}
-                className="h-11 rounded-control border border-border px-3 text-left text-sm disabled:opacity-50"
+                className="min-h-11 rounded-control border border-border bg-surface px-3 py-3 text-left text-sm transition-colors duration-150 hover:border-fg disabled:opacity-50"
                 onClick={() =>
                   run(async () => {
                     setAmount("8");
@@ -426,7 +416,7 @@ export function Console() {
               <button
                 type="button"
                 disabled={busy}
-                className="h-11 rounded-control border border-border px-3 text-left text-sm disabled:opacity-50"
+                className="min-h-11 rounded-control border border-border bg-surface px-3 py-3 text-left text-sm transition-colors duration-150 hover:border-fg disabled:opacity-50"
                 onClick={() =>
                   run(async () => {
                     setAmount("18");
@@ -448,7 +438,7 @@ export function Console() {
               <button
                 type="button"
                 disabled={busy}
-                className="h-11 rounded-control border border-border px-3 text-left text-sm disabled:opacity-50"
+                className="min-h-11 rounded-control border border-border bg-surface px-3 py-3 text-left text-sm transition-colors duration-150 hover:border-fg disabled:opacity-50"
                 onClick={() =>
                   run(async () => {
                     setAmount("40");
@@ -470,7 +460,7 @@ export function Console() {
               <button
                 type="button"
                 disabled={busy}
-                className="h-11 rounded-control border border-border px-3 text-left text-sm disabled:opacity-50"
+                className="min-h-11 rounded-control border border-border bg-surface px-3 py-3 text-left text-sm transition-colors duration-150 hover:border-fg disabled:opacity-50"
                 onClick={() =>
                   run(async () => {
                     setAmount("8");
@@ -528,7 +518,7 @@ export function Console() {
                     <button
                       type="button"
                       disabled={busy}
-                      className="h-11 rounded-control bg-accent px-4 text-sm font-medium text-accent-fg disabled:opacity-50"
+                      className="h-11 rounded-control bg-accent px-4 text-sm font-medium text-accent-fg transition-colors duration-150 hover:bg-accent-hover disabled:opacity-50"
                       onClick={() =>
                         run(async () => {
                           const result = await decideApproval({ data: { id: item.id, action: "approve" } });
@@ -542,7 +532,7 @@ export function Console() {
                     <button
                       type="button"
                       disabled={busy}
-                      className="h-11 rounded-control border border-border px-4 text-sm font-medium disabled:opacity-50"
+                      className="h-11 rounded-control border border-border px-4 text-sm font-medium transition-colors duration-150 hover:border-fg disabled:opacity-50"
                       onClick={() =>
                         run(async () => {
                           const result = await decideApproval({ data: { id: item.id, action: "reject" } });

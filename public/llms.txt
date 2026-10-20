@@ -1,0 +1,63 @@
+# Mandate
+
+> The agent can ask. It cannot sign. A human sets the spending mandate once. The policy is enforced outside the model.
+
+This file is the agent contract. Humans can read the same rules at /docs.
+
+## Pages
+
+- [Home](/): the problem, how a payment is decided, why the refusal is structural, and what fail-closed means.
+- [Docs](/docs): the same rules, written for a person.
+- [Console](/console): the human sets the mandate and approves holds. Not an agent endpoint.
+
+## Call only this
+
+POST /api/v1/pay
+
+```json
+{
+  "amountUsd": 8,
+  "asset": "USDC",
+  "to": "vendor.near",
+  "chain": "base",
+  "purpose": "API invoice 14",
+  "idempotencyKey": "invoice-14"
+}
+```
+
+chain is one of base, ethereum, arbitrum, solana, polygon, near.
+asset is USDC.
+amountUsd is a number or a decimal string, at least 0.01, at most 2 decimal places, at most 1000000.
+to is plain ASCII: a .near account, a 20-byte hex address, or a base58 address. .near is matched without case.
+
+Do not send approved, policy, signature, or a private key. Those fields are ignored. A 200 response is a decision, not a payment. Read receipt.status.
+
+- allow: inside the policy. settlement.submitted is false unless a later integration broadcasts.
+- needs_approval: over the human line, still inside the caps. Wait. Do not retry with a higher amount. The amount is held. The balance has not moved.
+- reject: blocked. receipt.rule names the rule.
+- cancelled: a human rejected the hold, the UTC day changed, or the wallet was frozen.
+
+409 error no_policy: the human has not saved a mandate. Do not invent one.
+409 error conflict: this idempotencyKey was already used for a different payment.
+400: the body itself is invalid.
+
+## Do not call
+
+POST /api/v1/policy, POST /api/v1/fund, POST /api/v1/approvals, and GET /api/v1/policy are human routes. Without a server-side human token they return 403. Calling them is not a payment.
+
+## Idempotency
+
+Send idempotencyKey, a string of at most 80 characters.
+A repeat of the same payment returns the original receipt and does not spend again.
+A repeat with a different amount, recipient, chain, or purpose is a conflict.
+Policy rejects are not stored, so a blocked ask does not use up the key log.
+If the settlement check cannot be reached, or answers 429 or 5xx, the result is settlement_unconfirmed and the same key can be retried.
+A dry-run with would_succeed false, or any other 4xx, is settlement_refused and is stored. Nothing was spent.
+If the check fails while a human is approving, the hold stays and the key still returns needs_approval.
+
+## What this preview will not do
+
+It will not give you a private key.
+It will not treat the model as authorization.
+It will not broadcast.
+The gate is one process, in memory.

@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ConsoleRouteImport } from './routes/console'
+import { Route as DocsRouteImport } from './routes/docs'
 import { Route as ApiV1ApprovalsRouteImport } from './routes/api/v1/approvals'
 import { Route as ApiV1FundRouteImport } from './routes/api/v1/fund'
 import { Route as ApiV1PayRouteImport } from './routes/api/v1/pay'
@@ -18,6 +20,16 @@ import { Route as ApiV1PolicyRouteImport } from './routes/api/v1/policy'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConsoleRoute = ConsoleRouteImport.update({
+  id: '/console',
+  path: '/console',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsRoute = DocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1ApprovalsRoute = ApiV1ApprovalsRouteImport.update({
@@ -43,6 +55,8 @@ const ApiV1PolicyRoute = ApiV1PolicyRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/console': typeof ConsoleRoute
+  '/docs': typeof DocsRoute
   '/api/v1/approvals': typeof ApiV1ApprovalsRoute
   '/api/v1/fund': typeof ApiV1FundRoute
   '/api/v1/pay': typeof ApiV1PayRoute
@@ -50,6 +64,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/console': typeof ConsoleRoute
+  '/docs': typeof DocsRoute
   '/api/v1/approvals': typeof ApiV1ApprovalsRoute
   '/api/v1/fund': typeof ApiV1FundRoute
   '/api/v1/pay': typeof ApiV1PayRoute
@@ -58,6 +74,8 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/console': typeof ConsoleRoute
+  '/docs': typeof DocsRoute
   '/api/v1/approvals': typeof ApiV1ApprovalsRoute
   '/api/v1/fund': typeof ApiV1FundRoute
   '/api/v1/pay': typeof ApiV1PayRoute
@@ -67,6 +85,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/console'
+    | '/docs'
     | '/api/v1/approvals'
     | '/api/v1/fund'
     | '/api/v1/pay'
@@ -74,6 +94,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/console'
+    | '/docs'
     | '/api/v1/approvals'
     | '/api/v1/fund'
     | '/api/v1/pay'
@@ -81,6 +103,8 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/console'
+    | '/docs'
     | '/api/v1/approvals'
     | '/api/v1/fund'
     | '/api/v1/pay'
@@ -89,6 +113,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ConsoleRoute: typeof ConsoleRoute
+  DocsRoute: typeof DocsRoute
   ApiV1ApprovalsRoute: typeof ApiV1ApprovalsRoute
   ApiV1FundRoute: typeof ApiV1FundRoute
   ApiV1PayRoute: typeof ApiV1PayRoute
@@ -102,6 +128,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/console': {
+      id: '/console'
+      path: '/console'
+      fullPath: '/console'
+      preLoaderRoute: typeof ConsoleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs': {
+      id: '/docs'
+      path: '/docs'
+      fullPath: '/docs'
+      preLoaderRoute: typeof DocsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/approvals': {
@@ -137,6 +177,8 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ConsoleRoute: ConsoleRoute,
+  DocsRoute: DocsRoute,
   ApiV1ApprovalsRoute: ApiV1ApprovalsRoute,
   ApiV1FundRoute: ApiV1FundRoute,
   ApiV1PayRoute: ApiV1PayRoute,

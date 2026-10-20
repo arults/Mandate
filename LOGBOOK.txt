@@ -155,3 +155,41 @@ Still true, and not treated as a new defect
   No broadcast. settlement.submitted stays false.
   Jev was not scored.
 
+
+
+2026-10-21 06:38 HKT — public site
+---------------------------------
+
+What changed
+  The public page is four punch lines: the problem, how a payment is decided,
+  why the refusal is structural, and what fail-closed means.
+  /docs is the same rules for a person, including the agent contract.
+  /llms.txt is the agent index. /console is the human gate, restyled.
+  The gate behavior was not changed.
+
+Type and color
+  Display and body: Schibsted Grotesk 400/500/600. FK Grotesk is the NEAR
+  protocol face and is licensed, so it is not embedded. NEAR AI publishes
+  Schibsted Grotesk as the open stand-in.
+  Mono, for amounts and the pay body only: IBM Plex Mono.
+  Paper #f2f1e9, ink #141414, NEAR green #00ec97 on the primary action and
+  one rule. Left aligned. No gradient, no icon row.
+
+Jev
+  POST https://api.typesafe.ai/v1/systemone, model jev-latest.
+  Questions on the homepage copy: overclaims (noul), clarity (score).
+  HTTP 401 authentication_error. TYPESAFE_API_KEY is not set. The xAI key
+  is not accepted by that host.
+  No score was invented.
+
+Checks
+  npx tsc --noEmit: no errors.
+  npm run build: passed.
+  Browser render of / at 1280 and 390: visible copy, no horizontal overflow,
+  no console errors. /docs and /console rendered the same way.
+  Production preview matched the dev page text.
+  Design detector on the new UI files: no findings.
+
+Still true
+  This preview is not a live TEE. settlement.submitted stays false.
+  The console is the human. POST /api/v1/pay is the agent.
