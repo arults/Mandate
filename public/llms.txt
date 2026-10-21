@@ -60,4 +60,4 @@ If the check fails while a human is approving, the hold stays and the key still 
 It will not give you a private key.
 It will not treat the model as authorization.
 It will not broadcast.
-The gate is one process, in memory.
+The gate is one process, in memory. A restart forgets the mandate. Do not treat a local allow as a TEE attestation. A dry-run runs only when the server has an OutLayer key, and only an allow with would_succeed true is spent. settlement.submitted stays false.

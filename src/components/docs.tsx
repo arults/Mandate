@@ -79,23 +79,23 @@ export function Docs() {
 
           <section id="humans" className="scroll-mt-8">
             <h2 className="text-2xl font-medium text-fg">For humans</h2>
-            <p className="mt-4">Open the console and run the four checks in order.</p>
+            <p className="mt-4">Open the console and press Run the agent. It posts four bodies to the pay route. You do not type them.</p>
             <ol className="mt-4 list-decimal space-y-3 pl-5">
-              <li>Prepare the demo. Remaining today is $50. Balance is $200.</li>
-              <li>Allowed · $8 to Base. Remaining becomes $42. Nothing was broadcast.</li>
+              <li>The run publishes the demo mandate. Remaining today is $50. Balance is $200.</li>
+              <li>$8 to vendor.near on Base is allowed. Remaining becomes $42. submitted stays false.</li>
               <li>
-                Approval · $18 to Ethereum. Remaining drops to $32 because the amount is held. Balance stays
-                $200 until you approve. Reject gives the hold back.
+                $18 to studio.near waits. Remaining drops because the amount is held. Balance stays $200 until
+                you approve. Reject gives the hold back.
               </li>
-              <li>Blocked · $40 over the cap. Remaining does not change.</li>
+              <li>$40 dies on the per-payment cap. Remaining does not change.</li>
               <li>
-                Jailbreak. The body includes approved: true and a fake policy. Those fields are ignored. The
-                recipient is not on the list, so the payment is blocked.
+                The jailbreak sends approved: true and a fake policy. Those fields are ignored. The recipient
+                is not on the list, so the payment is blocked.
               </li>
             </ol>
             <p className="mt-4">
-              Save policy and Add funds live on the console. The HTTP routes for policy, funding, and
-              approvals stay closed unless the server has a human token.
+              The mandate in this preview is one process, in memory. A restart forgets it. Without an OutLayer
+              key, an allow is the local gate, not a TEE attestation, and the dry-run is not called.
             </p>
           </section>
 

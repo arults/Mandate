@@ -54,15 +54,37 @@ Production keys live in OutLayer (`https://api.outlayer.ai`, skill at `https://s
 
 ## Demo steps
 
-Do these in order. Blocks do not spend the daily limit.
+Do these in the console. The agent posts to `POST /api/v1/pay`. You do not type the four bodies.
 
-1. **Prepare the demo** → see remaining today **$50.00** and demo balance **$200.00**. Running it again resets today's spend and pending approvals. It does not erase the ledger.
-2. **Allowed · $8 to Base** → receipt status **Allowed**, rule empty, path `near → base`, attestation says **local policy gate** and **nothing was broadcast**. Remaining becomes **$42.00**.
-3. **Approval · $18 to Ethereum** → status **Needs approval**. Remaining today drops to **$32.00** immediately, because the amount is held. Balance stays **$200.00** until a human approves. **Approve** → a new receipt **Allowed**, balance drops by $18, and the hold becomes a spend. **Reject** → **Cancelled**, and the $18 hold is released.
-4. **Blocked · $40 over cap** → status **Blocked · max_per_transaction**. Remaining does not change.
-5. **Jailbreak · off-list + fake approval** → the body includes `approved: true` and a fake million-dollar policy. The receipt lists those as **ignored** and status is **Blocked · allowed_recipients**.
+1. **Run the agent.** It publishes the demo mandate first. Remaining today is **$50.00**. Balance is **$200.00**. Running it again resets today's spend and pending approvals. It does not erase the ledger.
+2. **$8 to vendor.near on Base** → **Allowed**. Attestation says **local policy gate**, not a TEE, unless an OutLayer dry-run returned `would_succeed: true`. `settlement.submitted` is **false**. Remaining becomes **$42.00**. No transaction hash.
+3. **$18 to studio.near** → **Needs approval**. Remaining drops because the amount is held. Balance stays **$200.00** until you approve. **Approve** spends it. **Reject** releases the hold.
+4. **$40** → **Blocked · max_per_transaction**. Remaining does not change.
+5. **Jailbreak** → body includes `approved: true` and a fake policy. The receipt lists those as **ignored**. Status is **Blocked · allowed_recipients**.
 
-Save policy and Add funds are human actions on the console. `POST /api/v1/policy`, `/api/v1/fund`, and `/api/v1/approvals` are closed unless the server has `MANDATE_HUMAN_TOKEN`. An agent that can reach the pay route still cannot rewrite the policy or approve itself. Freezing the wallet blocks the next request with rule `frozen`.
+The mandate in this preview is **process memory**. A restart forgets the policy, the balance, and the ledger. Do not describe it as durable. Production stores the policy in OutLayer, encrypted on NEAR. The pay route stays the same.
+
+Save policy and Add funds are human actions. `POST /api/v1/policy`, `/api/v1/fund`, and `/api/v1/approvals` are closed unless the server has `MANDATE_HUMAN_TOKEN`.
+
+## Demo post
+
+The submission needs a public post on X that says it was built at NEAR HACKATHON, plus the public repo. Paste this only after you have a screen recording of Run the agent. Do not claim a customer, a broadcast, or a TEE attestation you do not have.
+
+```text
+Built at NEAR HACKATHON.
+
+Mandate: the agent can ask. It cannot sign.
+
+A human sets a $25 cap, a $50 day, and an allow-list. The agent calls POST /api/v1/pay.
+$8 to vendor.near is allowed and not broadcast.
+$18 waits. The balance does not move until a human approves.
+$40 dies on the cap.
+A jailbreak that sends approved: true still dies.
+
+This preview keeps the mandate in process memory. It is not a TEE attestation unless an OutLayer dry-run returns would_succeed. No invented transaction hash.
+
+https://github.com/arults/Mandate
+```
 
 A payment that needs approval reserves today's limit (and the available balance) so later requests cannot oversubscribe the day. At most 20 payments can wait. A UTC date change cancels anything still waiting and releases the hold. Prepare demo clears pending approvals and idempotency keys. It does not erase the ledger.
 

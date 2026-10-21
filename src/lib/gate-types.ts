@@ -44,5 +44,7 @@ export type Snapshot = {
   pending: GateReceipt[];
   ledger: GateReceipt[];
   enforcement: "local-policy-gate";
+  /** This preview keeps the mandate in one process. A restart forgets it. */
+  durability: "process-memory";
   liveKey: boolean;
 };

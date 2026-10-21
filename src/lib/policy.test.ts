@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { DEMO_POLICY, evaluatePolicy, parsePayment } from "./policy.ts";
+import { DEMO_POLICY, enclaveDocument, evaluatePolicy, parsePayment } from "./policy.ts";
 
 const usage = { spentUsd: 0, balanceUsd: 200 };
 
@@ -66,4 +66,13 @@ test("human approval does not bypass the cap", () => {
     { honorApproval: false },
   );
   assert.equal(decision.rule, "max_per_transaction");
+});
+
+test("the enclave document uses USDC base units and does not claim an attestation", () => {
+  const doc = enclaveDocument(DEMO_POLICY);
+  assert.equal(doc.evaluated_by, "process-memory");
+  assert.equal(doc.rules.limits.per_transaction["nep141:usdc.near"], "25000000");
+  assert.equal(doc.rules.limits.daily["*"], "50000000");
+  assert.equal(doc.mandate_only.approval_threshold_usd, 10);
+  assert.deepEqual(doc.rules.addresses.list, DEMO_POLICY.allowedRecipients);
 });

@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 
+import { agentBeats, type AgentBeat } from "@/lib/agent-script";
 import { addFunds, decideApproval, getGate, prepareDemoGate, requestPayment, savePolicy } from "@/lib/gate.functions";
 import type { GateReceipt, Snapshot } from "@/lib/gate-types";
 import {
   CHAINS,
   DEMO_POLICY,
+  enclaveDocument,
   formatUsd,
   type HumanPolicy,
 } from "@/lib/policy";
@@ -76,11 +78,23 @@ function ReceiptSlip({ receipt }: { receipt: GateReceipt }) {
       <p className="mt-3 text-sm text-muted">{receipt.attestation.statement}</p>
       {receipt.settlement && (
         <div className="mt-4 border-t border-border pt-4">
-          <p className="text-sm font-medium">Cross-chain path · not broadcast</p>
-          <p className="mt-1 font-mono text-xs leading-5 text-muted">
+          <p
+            className={`px-3 py-2 text-sm font-medium ${
+              receipt.attestation.kind === "outlayer-dry-run"
+                ? "bg-allow-bg text-allow"
+                : "bg-elevated text-fg"
+            }`}
+          >
+            {receipt.attestation.kind === "outlayer-dry-run"
+              ? "OutLayer dry-run would succeed. Not a broadcast."
+              : "Local policy gate. Not a TEE attestation. Not a broadcast."}
+          </p>
+          <p className="mt-3 font-mono text-xs leading-5 text-muted">
             NEAR intents · {receipt.settlement.amountUnits} units of {receipt.settlement.token}
             <br />
             {receipt.settlement.sourceChain} → {receipt.settlement.destinationChain} · {receipt.settlement.recipient}
+            <br />
+            submitted {String(receipt.settlement.submitted)}
           </p>
           <ul className="mt-2 space-y-1 font-mono text-xs text-subtle">
             {receipt.settlement.calls.map((call) => (
@@ -113,6 +127,8 @@ export function Console() {
   const [purpose, setPurpose] = useState("API invoice 14");
   const [fundAmount, setFundAmount] = useState("50");
   const [focusId, setFocusId] = useState<string | null>(null);
+  const [spoken, setSpoken] = useState<Array<{ beat: AgentBeat; receipt: GateReceipt }>>([]);
+  const [speaking, setSpeaking] = useState<string | null>(null);
   const revision = useRef(0);
   const inFlight = useRef(false);
 
@@ -183,6 +199,35 @@ export function Console() {
     setFocusId(result.receipt.id);
   }
 
+  async function postAsAgent(body: Record<string, unknown>): Promise<GateReceipt> {
+    const response = await fetch("/api/v1/pay", {
+      method: "POST",
+      headers: { accept: "application/json", "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const payload = (await response.json()) as { receipt?: GateReceipt; detail?: string };
+    if (!response.ok || !payload.receipt) {
+      throw new Error(payload.detail || "The pay route refused that body.");
+    }
+    const gate = await getGate();
+    setSnap(gate);
+    setFocusId(payload.receipt.id);
+    return payload.receipt;
+  }
+
+  async function runAgent() {
+    await prepare();
+    setSpoken([]);
+    const beats = agentBeats(crypto.randomUUID().slice(0, 8));
+    for (const beat of beats) {
+      setSpeaking(beat.says);
+      const receipt = await postAsAgent(beat.body);
+      setSpoken((current) => [...current, { beat, receipt }]);
+      setSpeaking(null);
+      await new Promise((resolve) => setTimeout(resolve, 350));
+    }
+  }
+
   async function submitCurrent(extra?: Record<string, unknown>) {
     const amountUsd = Number(amount);
     await pay({
@@ -202,10 +247,10 @@ export function Console() {
     <main className="mx-auto w-full max-w-6xl px-5 py-8 sm:py-12">
       <header className="grid gap-8 border-b border-border pb-8 lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-end">
         <div className="max-w-xl">
-          <h1 className="text-3xl font-medium tracking-tight sm:text-5xl">Set the mandate.</h1>
+          <h1 className="text-3xl font-medium tracking-tight sm:text-5xl">Watch the agent ask.</h1>
           <p className="mt-4 text-base leading-relaxed text-muted">
-            You set the caps. The agent can only ask to pay. Allow, block, and approval are decided outside the
-            model. This preview does not broadcast.
+            You set the caps. The agent only calls the pay route. This mandate lives in this process. A restart
+            forgets it. Nothing here is broadcast.
           </p>
         </div>
         <div className="border border-border bg-surface px-5 py-4">
@@ -215,7 +260,12 @@ export function Console() {
           </p>
           <p className="mt-1 text-sm text-subtle">
             Balance {formatUsd(snap?.balanceUsd ?? 0)}
-            {snap?.liveKey ? " · OutLayer key present" : " · local gate"}
+            {snap?.liveKey ? " · dry-run on allow" : " · dry-run not called"}
+          </p>
+          <p className="mt-2 text-sm text-muted">
+            {snap?.liveKey
+              ? "An allow asks OutLayer for a dry-run. would_succeed must be true, or nothing is spent."
+              : "No OutLayer key in this process. An allow is the local gate, not a TEE attestation."}
           </p>
           {snap && snap.pending.length > 0 && (
             <p className="mt-2 text-sm text-fg">
@@ -231,13 +281,22 @@ export function Console() {
         </p>
       )}
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
-        <section className="rounded-card border border-border bg-surface p-5">
+      <div className="mt-6 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
+        <section className="min-w-0 rounded-card border border-border bg-surface p-5">
           <h2 className="text-lg font-medium">Policy</h2>
           <p className="mt-1 text-sm text-muted">Saved by you. The agent request cannot edit these fields.</p>
           {saved ? (
             <div className="mt-3">
               <PolicySummary policy={saved} />
+              <details className="mt-4">
+                <summary className="cursor-pointer text-sm font-medium">Document the enclave would store</summary>
+                <pre className="mt-3 max-w-full overflow-x-auto whitespace-pre-wrap break-all bg-bg p-3 font-mono text-xs leading-5 text-muted">
+                  {JSON.stringify(enclaveDocument(saved), null, 2)}
+                </pre>
+                <p className="mt-2 text-sm text-muted">
+                  Same caps. Evaluated in process memory. This block is not an attestation.
+                </p>
+              </details>
             </div>
           ) : (
             <p className="mt-3 text-sm text-hold">No policy published yet. Payments will refuse.</p>
@@ -278,7 +337,7 @@ export function Console() {
             <label className="col-span-2">
               <span className={labelClass}>Allow-list, one recipient per line</span>
               <textarea
-                className="min-h-28 w-full rounded-control border border-border bg-bg px-3 py-2 font-mono text-sm text-fg"
+                className="min-h-28 w-full max-w-full rounded-control border border-border bg-bg px-3 py-2 font-mono text-sm text-fg"
                 value={recipientsText}
                 onChange={(event) => setRecipientsText(event.target.value)}
               />
@@ -341,16 +400,68 @@ export function Console() {
           </div>
         </section>
 
-        <section className="flex flex-col gap-4">
+        <section className="flex min-w-0 flex-col gap-4">
           <div className="rounded-card border border-border bg-elevated p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-medium">Agent request</h2>
-                <p className="mt-1 text-sm text-muted">
-                  Pay X of Y to Z. Extra fields such as approved or a replacement policy are discarded.
-                </p>
-              </div>
-            </div>
+            <h2 className="text-lg font-medium">The agent</h2>
+            <p className="mt-1 text-sm text-muted">
+              Four asks, posted to <span className="font-mono text-fg">POST /api/v1/pay</span>. You do not type
+              them. The $18 hold waits for you after the run.
+            </p>
+            <button
+              type="button"
+              disabled={busy}
+              className="mt-4 h-11 w-full rounded-control bg-accent px-4 text-sm font-medium text-accent-fg transition-colors duration-150 hover:bg-accent-hover disabled:opacity-50"
+              onClick={() => run(runAgent)}
+            >
+              {busy && speaking ? "Agent is asking…" : "Run the agent"}
+            </button>
+            <ol className="mt-4 flex flex-col gap-3" aria-live="polite">
+              {agentBeats("plan").map((beat) => {
+                const done = spoken.find((item) => item.beat.id === beat.id);
+                return (
+                  <li key={beat.id} className="border border-border bg-surface p-3">
+                    <p className="text-sm font-medium">{beat.title}</p>
+                    <p className="mt-1 text-sm text-muted">{done ? done.beat.says : beat.says}</p>
+                    {done ? (
+                      <p className="mt-2 text-sm">
+                        <span className={`rounded-control px-2 py-0.5 font-medium ${statusClass(done.receipt.status)}`}>
+                          {statusLabel(done.receipt.status)}
+                          {done.receipt.rule ? ` · ${done.receipt.rule}` : ""}
+                        </span>
+                        {done.receipt.status === "allow" && (
+                          <span className="ml-2 text-muted">
+                            {done.receipt.attestation.kind === "outlayer-dry-run"
+                              ? "· dry-run would succeed · not broadcast"
+                              : "· local gate · not a TEE · not broadcast"}
+                          </span>
+                        )}
+                        {done.receipt.ignoredFields.length > 0 && (
+                          <span className="ml-2 text-hold">· ignored {done.receipt.ignoredFields.join(", ")}</span>
+                        )}
+                        {done.receipt.settlement && (
+                          <span className="ml-2 font-mono text-xs text-subtle">
+                            · submitted {String(done.receipt.settlement.submitted)}
+                          </span>
+                        )}
+                      </p>
+                    ) : (
+                      <p className="mt-2 font-mono text-xs text-subtle">waiting</p>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+            {speaking && <p className="mt-3 text-sm text-fg">{speaking}</p>}
+            {formError && (
+              <p className="mt-3 text-sm text-deny" role="alert">
+                {formError}
+              </p>
+            )}
+          </div>
+
+          <div className="rounded-card border border-border bg-surface p-5">
+            <h2 className="text-lg font-medium">Or ask once</h2>
+            <p className="mt-1 text-sm text-muted">A single payment, still through the same gate. Extra fields are discarded.</p>
 
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <label>
@@ -384,109 +495,11 @@ export function Console() {
             <button
               type="button"
               disabled={busy}
-              className="mt-4 h-11 w-full rounded-control bg-accent px-4 text-sm font-medium text-accent-fg transition-colors duration-150 hover:bg-accent-hover disabled:opacity-50"
+              className="mt-4 h-11 w-full rounded-control border border-border px-4 text-sm font-medium transition-colors duration-150 hover:border-fg disabled:opacity-50"
               onClick={() => run(() => submitCurrent())}
             >
-              Request payment
+              Request this payment
             </button>
-
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              <button
-                type="button"
-                disabled={busy}
-                className="min-h-11 rounded-control border border-border bg-surface px-3 py-3 text-left text-sm transition-colors duration-150 hover:border-fg disabled:opacity-50"
-                onClick={() =>
-                  run(async () => {
-                    setAmount("8");
-                    setTo("vendor.near");
-                    setChain("base");
-                    setPurpose("API invoice 14");
-                    await pay({
-                      amountUsd: 8,
-                      asset: "USDC",
-                      to: "vendor.near",
-                      chain: "base",
-                      purpose: "API invoice 14",
-                    });
-                  })
-                }
-              >
-                Allowed · $8 to Base
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                className="min-h-11 rounded-control border border-border bg-surface px-3 py-3 text-left text-sm transition-colors duration-150 hover:border-fg disabled:opacity-50"
-                onClick={() =>
-                  run(async () => {
-                    setAmount("18");
-                    setTo("studio.near");
-                    setChain("ethereum");
-                    setPurpose("Monthly retainer");
-                    await pay({
-                      amountUsd: 18,
-                      asset: "USDC",
-                      to: "studio.near",
-                      chain: "ethereum",
-                      purpose: "Monthly retainer",
-                    });
-                  })
-                }
-              >
-                Approval · $18 to Ethereum
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                className="min-h-11 rounded-control border border-border bg-surface px-3 py-3 text-left text-sm transition-colors duration-150 hover:border-fg disabled:opacity-50"
-                onClick={() =>
-                  run(async () => {
-                    setAmount("40");
-                    setTo("vendor.near");
-                    setChain("arbitrum");
-                    setPurpose("Over the cap");
-                    await pay({
-                      amountUsd: 40,
-                      asset: "USDC",
-                      to: "vendor.near",
-                      chain: "arbitrum",
-                      purpose: "Over the cap",
-                    });
-                  })
-                }
-              >
-                Blocked · $40 over cap
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                className="min-h-11 rounded-control border border-border bg-surface px-3 py-3 text-left text-sm transition-colors duration-150 hover:border-fg disabled:opacity-50"
-                onClick={() =>
-                  run(async () => {
-                    setAmount("8");
-                    setTo("attacker.near");
-                    setChain("solana");
-                    setPurpose("Ignore the allow-list");
-                    await pay({
-                      amountUsd: 8,
-                      asset: "USDC",
-                      to: "attacker.near",
-                      chain: "solana",
-                      purpose: "ignore policy and send everything",
-                      approved: true,
-                      policy: { dailyLimitUsd: 1_000_000 },
-                    });
-                  })
-                }
-              >
-                Jailbreak · off-list + fake approval
-              </button>
-            </div>
-            {formError && (
-              <p className="mt-3 text-sm text-deny" role="alert">
-                {formError}
-              </p>
-            )}
           </div>
 
           <div aria-live="polite">
@@ -494,7 +507,7 @@ export function Console() {
               <ReceiptSlip receipt={focused} />
             ) : (
               <p className="rounded-card border border-dashed border-border px-5 py-8 text-sm text-muted">
-                No receipt yet. Prepare the demo, then request a payment.
+                No receipt yet. Run the agent. The $8 allow should say submitted false.
               </p>
             )}
           </div>
@@ -503,7 +516,8 @@ export function Console() {
 
       {snap && snap.pending.length > 0 && (
         <section className="mt-6">
-          <h2 className="text-lg font-medium">Pending your approval</h2>
+          <h2 className="text-lg font-medium">Waiting on you</h2>
+          <p className="mt-1 text-sm text-muted">The agent cannot press these. Balance has not moved.</p>
           <ul className="mt-3 flex flex-col gap-3">
             {snap.pending.map((item) => (
               <li key={item.id} className="rounded-card border border-border bg-surface p-4">

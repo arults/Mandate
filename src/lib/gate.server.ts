@@ -164,6 +164,7 @@ export function snapshot(): Snapshot {
     pending: current.pending.map((item) => item.receipt),
     ledger: current.ledger,
     enforcement: "local-policy-gate",
+    durability: "process-memory",
     liveKey: Boolean(process.env.OUTLAYER_API_KEY),
   };
 }

@@ -60,6 +60,28 @@ export function usdToUsdcUnits(usd: number): string {
   return String(cents(usd) * 10_000);
 }
 
+/** The OutLayer document, plus the approval line this product owns. Not an attestation. */
+export function enclaveDocument(policy: HumanPolicy) {
+  return {
+    version: 1,
+    frozen: policy.frozen,
+    rules: {
+      transaction_types: ["withdraw"],
+      allowed_tokens: [USDC_TOKEN],
+      addresses: { mode: "whitelist" as const, list: policy.allowedRecipients },
+      limits: {
+        per_transaction: { [USDC_TOKEN]: usdToUsdcUnits(policy.maxPerTransactionUsd) },
+        daily: { "*": usdToUsdcUnits(policy.dailyLimitUsd) },
+      },
+    },
+    mandate_only: {
+      approval_threshold_usd: policy.approvalThresholdUsd,
+      note: "Above this line the status is needs_approval. The agent cannot sign it.",
+    },
+    evaluated_by: "process-memory" as const,
+  };
+}
+
 export function formatUsd(usd: number): string {
   return usd.toLocaleString("en-US", { style: "currency", currency: "USD" });
 }

@@ -193,3 +193,56 @@ Checks
 Still true
   This preview is not a live TEE. settlement.submitted stays false.
   The console is the human. POST /api/v1/pay is the agent.
+
+2026-10-21 22:50 HKT — agent run replaces the four buttons
+------------------------------------------------
+
+What changed
+  The console no longer asks a person to press Allowed, Approval, Blocked,
+  and Jailbreak. Run the agent publishes the demo mandate, then posts the
+  four bodies to POST /api/v1/pay. The $18 hold stays for the human.
+  An allow says local gate, not a TEE, and submitted false, unless an
+  OutLayer dry-run returned would_succeed. No key is configured, so the
+  dry-run is not called and nothing is broadcast.
+  The policy panel shows the enclave document (USDC base units) and labels
+  it process memory, not an attestation.
+  The homepage is four outcomes plus three short lines, not a long essay.
+  README has the 90-second steps and a draft X post. It was not posted.
+
+Observed in the browser
+  After Run the agent: $8 Allowed, remaining $24.00, balance $192.00.
+  $18 Needs approval. $40 Blocked, max_per_transaction.
+  Jailbreak Blocked, allowed_recipients, ignored approved and policy.
+  Approve moved the balance to $174.00 and cleared the hold.
+  No page errors. Mobile console overflow from the long allow-list was
+  fixed with min-w-0. Rechecked: no horizontal overflow at 390.
+
+Checks
+  Policy and gate tests: 32 of 32 passed.
+  npx tsc --noEmit: no errors.
+  @tanstack/react-start: 1.168.60.
+
+Still true
+  Process memory. A restart forgets the mandate.
+  No customer has run this. The X post is a draft, not a submission.
+
+2026-10-21 23:10 HKT — OutLayer dry-run, key not attached
+-----------------------------------------------------
+
+Called POST https://api.outlayer.ai/register. It returned a trial wallet
+(50 calls, 7 days). The key is not in the repo, not in the client, and not
+in this file.
+
+Then POST /wallet/v1/intents/withdraw/dry-run for 8 USDC to vendor.near on
+Base, token nep141:usdc.near.
+
+  HTTP 200
+  would_succeed: false
+  reason: insufficient_balance
+  message: Intents balance for nep141:usdc.near: have 0, need 8000000
+  policy_check.within_limits: true
+  policy_check.address_allowed: true
+
+The demo server does not have OUTLAYER_API_KEY. A would_succeed of false
+would turn the $8 allow into a refusal and spend nothing. The key stays
+off until that balance is real.
