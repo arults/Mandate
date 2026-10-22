@@ -6,10 +6,11 @@ export const Route = createFileRoute("/docs")({
   component: Docs,
   head: () => ({
     meta: [
-      { title: "Docs · Mandate" },
+      { title: "Litepaper · Mandate" },
       {
         name: "description",
-        content: "How Mandate decides a payment, for the human who sets the policy and the agent who asks.",
+        content:
+          "Mandate litepaper: policy-protected agent wallet for NEAR — architecture, threat model, agent contract, and preview limits.",
       },
     ],
   }),

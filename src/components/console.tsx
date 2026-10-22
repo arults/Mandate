@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 
+import { SiteFooter } from "@/components/site-footer";
+import { SiteNav } from "@/components/site-nav";
+
 import { agentBeats, type AgentBeat } from "@/lib/agent-script";
 import { addFunds, decideApproval, getGate, prepareDemoGate, requestPayment, savePolicy } from "@/lib/gate.functions";
 import type { GateReceipt, Snapshot } from "@/lib/gate-types";
@@ -244,6 +247,8 @@ export function Console() {
   const saved = snap?.policy;
 
   return (
+    <>
+      <SiteNav current="console" />
     <main className="mx-auto w-full max-w-6xl px-5 py-8 sm:py-12">
       <header className="grid gap-8 border-b border-border pb-8 lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-end">
         <div className="max-w-xl">
@@ -593,5 +598,7 @@ export function Console() {
         )}
       </section>
     </main>
+      <SiteFooter />
+    </>
   );
 }

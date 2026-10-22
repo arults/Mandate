@@ -2,9 +2,10 @@
 
 @theme {
   --font-sans: "Schibsted Grotesk", "Avenir Next", "Segoe UI", sans-serif;
+  --font-display: "Instrument Serif", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
-  /* NEAR protocol: black, warm off-white #f2f1e9, green #00ec97 used once. */
+  /* Paper + NEAR green — Stripe/Polygon density, not AI-slop gradients. */
   --color-bg: #f2f1e9;
   --color-surface: #fafaf6;
   --color-elevated: #e7e4d8;
@@ -51,6 +52,12 @@
     letter-spacing: -0.02em;
   }
 
+  .font-display {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.025em;
+  }
+
   a {
     text-underline-offset: 0.18em;
   }
@@ -81,6 +88,15 @@
   }
 }
 
+/* Subtle hero grid — CSS only, no paid assets */
+.hero-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--color-border) 70%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--color-border) 70%, transparent) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 70% 60% at 30% 20%, #000 20%, transparent 75%);
+}
+
 @keyframes mandate-rule {
   from {
     transform: scaleX(0);
@@ -106,5 +122,26 @@
 
   .mandate-rule {
     animation: none;
+  }
+}
+
+/* Litepaper print */
+@media print {
+  .sticky,
+  header.sticky {
+    position: static !important;
+  }
+
+  .litepaper {
+    display: block !important;
+  }
+
+  body {
+    background: white;
+    color: black;
+  }
+
+  a {
+    text-decoration: none;
   }
 }
