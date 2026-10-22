@@ -20,7 +20,7 @@ const fieldClass =
 const labelClass = "mb-1.5 block text-sm font-medium text-muted";
 const helpClass = "mt-1.5 text-xs leading-5 text-subtle";
 /** Flip when public/demo/console-walkthrough.mp4 is committed. */
-const HAS_CONSOLE_DEMO_VIDEO = false;
+const HAS_CONSOLE_DEMO_VIDEO = true;
 
 function messageOf(error: unknown): string {
   if (error instanceof Error && error.message) return error.message;
