@@ -1,8 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 
-import { awaitGateReady, fundWallet, prepareDemo, publishPolicy, resolveApproval, snapshot, submitPayment } from "@/lib/gate.server";
+import { awaitGateReady, fundWallet, prepareDemo, publishPolicy, resolveApproval, runDemoAgentFlow, snapshot, submitPayment } from "@/lib/gate.server";
 import { assertHumanServerFn } from "@/lib/human-route.server";
-import { parsePolicy } from "@/lib/policy";
+import { DEMO_POLICY, parsePolicy } from "@/lib/policy";
 
 export const getGate = createServerFn({ method: "GET" }).handler(async () => {
   assertHumanServerFn();
@@ -64,3 +64,19 @@ export const decideApproval = createServerFn({ method: "POST" })
     const receipt = await resolveApproval(data.id, data.action);
     return { receipt, gate: snapshot() };
   });
+
+export const runDemoAgent = createServerFn({ method: "POST" })
+  .validator((data: { policy?: unknown; runId?: string } | unknown) => {
+    const raw = data && typeof data === "object" ? (data as { policy?: unknown; runId?: string }) : {};
+    const policy = raw.policy === undefined ? DEMO_POLICY : parsePolicy(raw.policy);
+    const runId =
+      typeof raw.runId === "string" && raw.runId.trim()
+        ? raw.runId.trim().slice(0, 32)
+        : crypto.randomUUID().slice(0, 8);
+    return { policy, runId };
+  })
+  .handler(async ({ data }) => {
+    assertHumanServerFn();
+    return runDemoAgentFlow(data.policy, data.runId);
+  });
+

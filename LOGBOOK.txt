@@ -281,3 +281,14 @@ Honest
   local-db ≠ TEE. settlement.submitted stays false. No hackathon POST.
 
 2026-10-23 privacy-minimize receipts: HumanPolicy.privacyMode default minimize; agent POST /api/v1/pay projects purposeHash+truncated to; human console full; not TEE.
+
+----------------------------------------------------------------------
+2026-10-23 — Run-the-agent isolate fix + Console USD labels
+  Tip: pending (this commit)
+  Change: runDemoAgent createServerFn prepares + four submitPayment in ONE
+    isolate so Vercel cold PGLite no longer 409 no_policy after prepare.
+    Console Run the agent uses runDemoAgent (keeps /api/v1/pay contract).
+    Labels: Max USD / tx, Daily USD limit, Approval above USD + $ prefix.
+  Tests: gate.run-demo.test.ts (+2); full app suite 117/117 pass (node 22).
+  Note: curl /api/v1/pay still works warm/local; multi-isolate needs shared DB.
+----------------------------------------------------------------------

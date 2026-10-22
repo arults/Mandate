@@ -13,6 +13,7 @@ import {
   type PersistedState,
 } from "@/lib/gate-persist.server";
 import { fetchOneClickQuote, ONECLICK_QUOTE_URL } from "@/lib/oneclick-quote.server";
+import { agentBeats, type AgentBeat } from "@/lib/agent-script";
 import {
   cents,
   evaluatePolicy,
@@ -25,6 +26,7 @@ import {
   type HumanPolicy,
   type PaymentRequest,
 } from "@/lib/policy";
+import { projectReceipt, type PublicGateReceipt } from "@/lib/privacy";
 
 export type { GateReceipt, Snapshot };
 
@@ -608,3 +610,34 @@ export function resolveApproval(id: string, action: "approve" | "reject"): Promi
     return outcome.receipt;
   });
 }
+
+export type DemoAgentResult = {
+  beat: AgentBeat;
+  receipt: PublicGateReceipt;
+};
+
+/**
+ * Prepare + four agent asks in ONE process.
+ * Console uses this so Vercel serverless does not lose in-memory PGLite policy
+ * between prepareDemoGate and a separate /api/v1/pay isolate.
+ * /api/v1/pay remains the agent contract for curl / external agents.
+ */
+export async function runDemoAgentFlow(
+  policyInput: unknown,
+  runId: string,
+): Promise<{ gate: Snapshot; receipts: PublicGateReceipt[]; results: DemoAgentResult[] }> {
+  await prepareDemo(policyInput);
+  const beats = agentBeats(runId);
+  const results: DemoAgentResult[] = [];
+  for (const beat of beats) {
+    const full = await submitPayment(beat.body);
+    const receipt = projectReceipt(full, snapshot().policy, "agent");
+    results.push({ beat, receipt });
+  }
+  return {
+    gate: snapshot(),
+    receipts: results.map((item) => item.receipt),
+    results,
+  };
+}
+

@@ -4,7 +4,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteNav } from "@/components/site-nav";
 
 import { agentBeats, type AgentBeat } from "@/lib/agent-script";
-import { addFunds, decideApproval, getGate, prepareDemoGate, requestPayment, savePolicy } from "@/lib/gate.functions";
+import { addFunds, decideApproval, getGate, prepareDemoGate, requestPayment, runDemoAgent, savePolicy } from "@/lib/gate.functions";
 import type { GateReceipt, Snapshot } from "@/lib/gate-types";
 import {
   CHAINS,
@@ -246,15 +246,23 @@ export function Console() {
   }
 
   async function runAgent() {
-    await prepare();
     setSpoken([]);
-    const beats = agentBeats(crypto.randomUUID().slice(0, 8));
-    for (const beat of beats) {
-      setSpeaking(beat.says);
-      const receipt = await postAsAgent(beat.body);
-      setSpoken((current) => [...current, { beat, receipt }]);
+    setSpeaking("Preparing demo in one pass…");
+    const runId = crypto.randomUUID().slice(0, 8);
+    // One server fn: prepareDemo + four submitPayment calls share the same
+    // isolate / in-memory PGLite. Separate prepare then POST /api/v1/pay
+    // races cold isolates on Vercel and returns 409 no_policy.
+    const result = await runDemoAgent({ data: { policy: DEMO_POLICY, runId } });
+    setSnap(result.gate);
+    setDraft(DEMO_POLICY);
+    setRecipientsText(DEMO_POLICY.allowedRecipients.join("\n"));
+    for (const item of result.results) {
+      setSpeaking(item.beat.says);
+      await new Promise((resolve) => setTimeout(resolve, 280));
+      setSpoken((current) => [...current, { beat: item.beat, receipt: item.receipt }]);
+      setFocusId(item.receipt.id);
       setSpeaking(null);
-      await new Promise((resolve) => setTimeout(resolve, 350));
+      await new Promise((resolve) => setTimeout(resolve, 220));
     }
   }
 
@@ -310,7 +318,7 @@ export function Console() {
       <section className="mt-6 max-w-2xl rounded-card border border-border bg-surface p-5">
         <h2 className="text-sm font-medium">Watch how it works</h2>
         <p className="mt-1 text-sm text-muted">
-          Ninety seconds on Max / tx, Daily limit, Approval above, Allow-list, Save, and Run the agent.
+          Ninety seconds on Max USD / tx, Daily USD limit, Approval above USD, Allow-list, Save, and Run the agent.
         </p>
         <div className="mt-4 overflow-hidden rounded-control border border-border bg-bg">
           <video
@@ -369,39 +377,54 @@ export function Console() {
 
           <div className="mt-5 grid grid-cols-2 gap-3">
             <label className="col-span-1">
-              <span className={labelClass}>Max / tx (USD)</span>
-              <input
-                className={fieldClass}
-                inputMode="decimal"
-                value={draft.maxPerTransactionUsd}
-                onChange={(event) =>
-                  setDraft({ ...draft, maxPerTransactionUsd: Number(event.target.value) })
-                }
-              />
-              <span className={helpClass}>Hard ceiling for one payment. Over this → reject.</span>
+              <span className={labelClass}>Max USD / tx</span>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-subtle">
+                  $
+                </span>
+                <input
+                  className={`${fieldClass} pl-7`}
+                  inputMode="decimal"
+                  value={draft.maxPerTransactionUsd}
+                  onChange={(event) =>
+                    setDraft({ ...draft, maxPerTransactionUsd: Number(event.target.value) })
+                  }
+                />
+              </div>
+              <span className={helpClass}>Hard ceiling for one payment in USD. Over this → reject.</span>
             </label>
             <label>
-              <span className={labelClass}>Daily limit</span>
-              <input
-                className={fieldClass}
-                inputMode="decimal"
-                value={draft.dailyLimitUsd}
-                onChange={(event) => setDraft({ ...draft, dailyLimitUsd: Number(event.target.value) })}
-              />
-              <span className={helpClass}>Cap for all allows today. Remaining today tracks this.</span>
+              <span className={labelClass}>Daily USD limit</span>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-subtle">
+                  $
+                </span>
+                <input
+                  className={`${fieldClass} pl-7`}
+                  inputMode="decimal"
+                  value={draft.dailyLimitUsd}
+                  onChange={(event) => setDraft({ ...draft, dailyLimitUsd: Number(event.target.value) })}
+                />
+              </div>
+              <span className={helpClass}>USD cap for all allows today. Remaining today tracks this.</span>
             </label>
             <label className="col-span-2">
-              <span className={labelClass}>Approval above</span>
-              <input
-                className={fieldClass}
-                inputMode="decimal"
-                value={draft.approvalThresholdUsd}
-                onChange={(event) =>
-                  setDraft({ ...draft, approvalThresholdUsd: Number(event.target.value) })
-                }
-              />
+              <span className={labelClass}>Approval above USD</span>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-subtle">
+                  $
+                </span>
+                <input
+                  className={`${fieldClass} pl-7`}
+                  inputMode="decimal"
+                  value={draft.approvalThresholdUsd}
+                  onChange={(event) =>
+                    setDraft({ ...draft, approvalThresholdUsd: Number(event.target.value) })
+                  }
+                />
+              </div>
               <span className={helpClass}>
-                Soft line. At/above → needs your Approve/Reject; below can auto-allow if other rules pass.
+                Soft USD line. At/above → needs your Approve/Reject; below can auto-allow if other rules pass.
               </span>
             </label>
             <label className="col-span-2">
@@ -498,8 +521,10 @@ export function Console() {
           <div className="rounded-card border border-border bg-elevated p-5">
             <h2 className="text-lg font-medium">The agent</h2>
             <p className="mt-1 text-sm text-muted">
-              Four asks, posted to <span className="font-mono text-fg">POST /api/v1/pay</span>. You do not type
-              them. The $18 hold waits for you after the run.
+              Four asks in one server pass (same isolate as prepare). Agent contract stays{" "}
+              <span className="font-mono text-fg">POST /api/v1/pay</span> for curl — works on a warm
+              same-instance or locally; multi-isolate needs a shared DB later. The $18 hold waits for
+              you after the run.
             </p>
             <button
               type="button"
@@ -510,7 +535,8 @@ export function Console() {
               {busy && speaking ? "Agent is asking…" : "Run the agent"}
             </button>
             <p className={`mt-2 ${helpClass}`}>
-              One-click demo: publishes DEMO_POLICY then four asks (allow / hold / reject / jailbreak).
+              One-click demo: prepares DEMO_POLICY and runs four asks (allow / hold / reject / jailbreak)
+              without leaving this process — avoids Vercel 409 no_policy across cold isolates.
             </p>
             <ol className="mt-4 flex flex-col gap-3" aria-live="polite">
               {agentBeats("plan").map((beat) => {
