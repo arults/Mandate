@@ -41,7 +41,7 @@ Do not send approved, policy, signature, or a private key. Those fields are igno
 409 error conflict: this idempotencyKey was already used for a different payment.
 400: the body itself is invalid.
 
-## ## Read a prior receipt
+## Read a prior receipt
 
 GET /api/v1/receipt?id=<receiptId>
 
