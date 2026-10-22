@@ -107,6 +107,25 @@ function ReceiptSlip({ receipt }: { receipt: GateReceipt }) {
           {receipt.settlement.live && (
             <p className="mt-2 text-sm text-muted">{receipt.settlement.live.note}</p>
           )}
+          {receipt.settlement.quote && (
+            <p className="mt-2 text-sm text-muted">
+              {receipt.settlement.quote.status === "ok" ? (
+                <>
+                  1-Click dry quote{" "}
+                  <span className="font-mono text-xs text-fg">{receipt.settlement.quote.correlationId}</span>
+                  {receipt.settlement.quote.amountOutFormatted
+                    ? ` · out ${receipt.settlement.quote.amountOutFormatted} USDC`
+                    : null}
+                  {receipt.settlement.quote.amountOutUsd
+                    ? ` · ≈ $${receipt.settlement.quote.amountOutUsd}`
+                    : null}
+                  . Not submitted.
+                </>
+              ) : (
+                <>{receipt.settlement.quote.note}</>
+              )}
+            </p>
+          )}
         </div>
       )}
       <p className="mt-4 font-mono text-xs text-subtle">

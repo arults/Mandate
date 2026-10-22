@@ -1,9 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 
-import { fundWallet, prepareDemo, publishPolicy, resolveApproval, snapshot, submitPayment } from "@/lib/gate.server";
+import { awaitGateReady, fundWallet, prepareDemo, publishPolicy, resolveApproval, snapshot, submitPayment } from "@/lib/gate.server";
 import { parsePolicy } from "@/lib/policy";
 
-export const getGate = createServerFn({ method: "GET" }).handler(async () => snapshot());
+export const getGate = createServerFn({ method: "GET" }).handler(async () => awaitGateReady());
 
 export const savePolicy = createServerFn({ method: "POST" })
   .validator((data: unknown) => parsePolicy(data))

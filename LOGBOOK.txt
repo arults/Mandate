@@ -246,3 +246,12 @@ Base, token nep141:usdc.near.
 The demo server does not have OUTLAYER_API_KEY. A would_succeed of false
 would turn the $8 allow into a refusal and spend nothing. The key stays
 off until that balance is real.
+
+----
+2026-10-22 Asia/Calcutta — Features ship: local-db persistence + 1-Click dry quote + FCK docs
+  MUST #5: gate-persist.server.ts (PGLite); Snapshot.durability "local-db" | "process-memory"
+  SHOULD #9: oneclick-quote.server.ts dry quote on allow; graceful unavailable; submitted stays false
+  MUST #6: README + /docs FCK composition (no fake attestation)
+  README judge path: live URL + curl /pay
+  Tests: policy + gate.security + gate.persist-quote — 37 pass; tsc clean
+----

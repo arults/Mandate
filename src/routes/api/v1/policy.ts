@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { publishPolicy, snapshot } from "@/lib/gate.server";
+import { awaitGateReady, publishPolicy } from "@/lib/gate.server";
 import { refuseHumanRoute } from "@/lib/human-route.server";
 
 function json(body: unknown, status = 200) {
@@ -13,7 +13,7 @@ export const Route = createFileRoute("/api/v1/policy")({
       GET: async ({ request }) => {
         const denied = refuseHumanRoute(request);
         if (denied) return denied;
-        return json(snapshot());
+        return json(await awaitGateReady());
       },
       POST: async ({ request }) => {
         const denied = refuseHumanRoute(request);

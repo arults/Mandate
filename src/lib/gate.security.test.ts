@@ -26,7 +26,7 @@ function pay(overrides: Record<string, unknown> = {}) {
 }
 
 test.beforeEach(async () => {
-  resetGateForTests();
+  await resetGateForTests();
   await prepareDemo(demo);
 });
 
@@ -34,8 +34,10 @@ test("an allowlisted payment spends once", async () => {
   const receipt = await submitPayment(pay());
   assert.equal(receipt.status, "allow");
   assert.equal(receipt.settlement?.submitted, false);
+  assert.equal(receipt.settlement?.quote?.status, "skipped");
   assert.equal(snapshot().balanceUsd, 192);
   assert.equal(snapshot().remainingDailyUsd, 42);
+  assert.equal(snapshot().durability, "local-db");
 });
 
 test("jailbreak fields cannot approve or rewrite the cap", async () => {

@@ -2,7 +2,9 @@
 
 A human sets a spending policy once. An AI agent can ask to pay. The policy is enforced **outside the model**, so a prompt injection cannot raise the cap, swap the recipient, or mark a payment approved.
 
-This is a NEAR hackathon prototype (Agent Economy, AI Security & Defense, Autonomous Business). The preview gate is a local stand-in for an OutLayer TEE wallet. It uses the same decision the enclave would make. It does not invent a transaction hash. When `OUTLAYER_API_KEY` is present, an allowed payment also dry-runs `POST /wallet/v1/intents/withdraw` and still does not broadcast.
+This is a NEAR hackathon prototype (tracks: **security**, **agents**, **business**). The preview gate is a local stand-in for an OutLayer TEE wallet. It uses the same decision the enclave would make. It does not invent a transaction hash. When `OUTLAYER_API_KEY` is present, an allowed payment also dry-runs `POST /wallet/v1/intents/withdraw` and still does not broadcast.
+
+**Live (clone-free):** [mandate-ashy.vercel.app](https://mandate-ashy.vercel.app) · console [ /console ](https://mandate-ashy.vercel.app/console) · litepaper [ /docs ](https://mandate-ashy.vercel.app/docs)
 
 ## Problem
 
@@ -19,23 +21,51 @@ save policy / fund    →      { amountUsd, asset, to, chain, purpose }
                           │
           allow | reject | needs_approval
                           │
-              receipt + NEAR Intents 1-Click path
-              (quote + OutLayer withdraw — not broadcast
-               unless you wire a live key and choose to)
+              receipt + NEAR Intents 1-Click dry quote
+              (settlement.submitted stays false;
+               OutLayer withdraw dry-run optional)
 ```
 
 | Piece | Where |
 |---|---|
 | Policy types and `evaluatePolicy` | `src/lib/policy.ts` |
 | Gate (balance, daily spend, approvals, receipts) | `src/lib/gate.server.ts` |
+| Durable store (PGLite / local-db) | `src/lib/gate-persist.server.ts` |
+| 1-Click dry quote (read-only) | `src/lib/oneclick-quote.server.ts` |
 | Console calls | `src/lib/gate.functions.ts` |
 | Agent HTTP API | `POST /api/v1/pay` |
 | Human HTTP API | `POST /api/v1/policy`, `/api/v1/fund`, `/api/v1/approvals` |
-| UI | `src/routes/index.tsx` |
 
 Another agent should call only `POST /api/v1/pay`. See [AGENT.md](AGENT.md).
 
 Demo policy: **$25 max per transaction**, **$50 per day**, **approve above $10**, USDC only, recipients `vendor.near`, `studio.near`, and one EVM address. Destination chains in the demo: Base, Ethereum, Arbitrum, Solana, Polygon, NEAR.
+
+## Judge path (do X → see Y)
+
+No clone required:
+
+1. Open https://mandate-ashy.vercel.app/console
+2. Click **Run the agent**
+3. Read four receipts: allow $8 · needs approval $18 · block $40 · jailbreak ignored
+4. **Approve** the $18 hold
+5. Confirm `settlement.submitted` is `false` and attestation is not a TEE unless an OutLayer dry-run returned `would_succeed: true`
+
+Exact agent curl against the live host (after Run the agent, or after you publish a policy locally):
+
+```bash
+curl -sS -X POST 'https://mandate-ashy.vercel.app/api/v1/pay' \
+  -H 'content-type: application/json' \
+  -d '{
+    "amountUsd": 8,
+    "asset": "USDC",
+    "to": "vendor.near",
+    "chain": "base",
+    "purpose": "judge demo",
+    "idempotencyKey": "judge-8"
+  }"
+```
+
+Expect JSON with `status: "allow"` or `"reject"` / `"needs_approval"`. Jailbreak fields `approved` / `policy` are ignored if present.
 
 ## Setup
 
@@ -44,31 +74,46 @@ npm install
 npm run dev
 ```
 
-The app listens on port 8080. No `.env` file. Optional, server-only:
+The app listens on port 8080. No `.env` file required. Optional, server-only:
 
 | Variable | Effect |
 |---|---|
 | `OUTLAYER_API_KEY` | Allowed payments also dry-run OutLayer withdraw. Still no broadcast. |
+| `MANDATE_HUMAN_TOKEN` | Opens HTTP `/policy` `/fund` `/approvals` when `x-mandate-human` matches. |
+| `MANDATE_DURABILITY` | `local-db` (default) persists policy+ledger via embedded PGLite. `process-memory` disables disk/db persistence. |
+| `MANDATE_PGDATA` | Optional PGLite data directory (default `.data/mandate-gate` locally, `/tmp/mandate-gate` on Vercel). |
+| `MANDATE_1CLICK_QUOTE` | `1` (default) = dry-quote on allow. `0` skips the network call. |
 
-Production keys live in OutLayer (`https://api.outlayer.ai`, skill at `https://skills.outlayer.ai/agent-custody/SKILL.md`). NEAR Intents quotes: `https://1click.chaindefuser.com/v0/quote`. Intents are mainnet-only.
+Production keys live in OutLayer (`https://api.outlayer.ai`, skill at `https://skills.outlayer.ai/agent-custody/SKILL.md`). NEAR Intents quotes: `https://1click.chaindefuser.com/v0/quote` (dry, read-only in this preview). Intents are mainnet-only.
 
-## Demo steps
+## Durability (honest)
 
-Do these in the console. The agent posts to `POST /api/v1/pay`. You do not type the four bodies.
+Default **`durability: "local-db"`**: policy, balance, pending holds, ledger, and idempotency keys are written through an embedded **PGLite** store so a process-memory clear / local restart can reload them. This is **not** a TEE attestation and **not** multi-instance shared storage. On serverless without a shared Postgres (`DATABASE_URL` / Neon), cold starts can still lose `/tmp` data — production stores the mandate in OutLayer, encrypted on NEAR. Set `MANDATE_DURABILITY=process-memory` for the old in-memory-only behavior.
 
-1. **Run the agent.** It publishes the demo mandate first. Remaining today is **$50.00**. Balance is **$200.00**. Running it again resets today's spend and pending approvals. It does not erase the ledger.
-2. **$8 to vendor.near on Base** → **Allowed**. Attestation says **local policy gate**, not a TEE, unless an OutLayer dry-run returned `would_succeed: true`. `settlement.submitted` is **false**. Remaining becomes **$42.00**. No transaction hash.
-3. **$18 to studio.near** → **Needs approval**. Remaining drops because the amount is held. Balance stays **$200.00** until you approve. **Approve** spends it. **Reject** releases the hold.
-4. **$40** → **Blocked · max_per_transaction**. Remaining does not change.
-5. **Jailbreak** → body includes `approved: true` and a fake policy. The receipt lists those as **ignored**. Status is **Blocked · allowed_recipients**.
+## Security track: Function Call Keys (composition)
 
-The mandate in this preview is **process memory**. A restart forgets the policy, the balance, and the ledger. Do not describe it as durable. Production stores the policy in OutLayer, encrypted on NEAR. The pay route stays the same.
+NEAR **Function Call Keys (FCK)** can limit a key to a receiver contract + methods + allowance. They cannot express USD daily caps, human approval thresholds, or allow-lists the way Mandate does.
 
-Save policy and Add funds are human actions. `POST /api/v1/policy`, `/api/v1/fund`, and `/api/v1/approvals` are closed unless the server has `MANDATE_HUMAN_TOKEN`.
+**Composition (docs now; thin wiring later):**
 
-## Demo post
+1. Human account keeps FullAccess offline (or in OutLayer).
+2. Agent never receives FullAccess.
+3. Agent holds only: (a) a Mandate/`wk_` request credential to call `POST /api/v1/pay` / OutLayer ask, and/or (b) an FCK scoped to the Mandate gate contract or OutLayer withdraw methods — not `transfer` of arbitrary tokens.
+4. Sub-account pattern: `agent.<treasury>.near` with an FCK; treasury FullAccess stays with the human / enclave.
 
-The submission needs a public post on X that says it was built at NEAR HACKATHON, plus the public repo. Paste this only after you have a screen recording of Run the agent. Do not claim a customer, a broadcast, or a TEE attestation you do not have.
+**Roadmap (named, not shipped):** on-chain FCK issuance helpers + OutLayer **TEE attestation** verify page. This repo does **not** invent attestation bytes or claim enclave measurement.
+
+## Demo steps (console)
+
+1. **Run the agent.** Publishes the demo mandate. Remaining today **$50.00**. Balance **$200.00**.
+2. **$8 to vendor.near on Base** → **Allowed**. Optional live 1-Click dry quote id/amount on the receipt. `settlement.submitted` is **false**.
+3. **$18 to studio.near** → **Needs approval**. Approve spends; Reject releases.
+4. **$40** → **Blocked · max_per_transaction**.
+5. **Jailbreak** → `approved: true` + fake policy → listed as **ignored** → **Blocked · allowed_recipients**.
+
+## Demo post (X)
+
+Paste only after you have a screen recording. Do not claim a customer, a broadcast, or a TEE attestation you do not have.
 
 ```text
 Built at NEAR HACKATHON.
@@ -81,27 +126,24 @@ $18 waits. The balance does not move until a human approves.
 $40 dies on the cap.
 A jailbreak that sends approved: true still dies.
 
-This preview keeps the mandate in process memory. It is not a TEE attestation unless an OutLayer dry-run returns would_succeed. No invented transaction hash.
+Preview durability is local-db (PGLite), not a TEE. No invented transaction hash.
 
+https://mandate-ashy.vercel.app
 https://github.com/arults/Mandate
 ```
 
-A payment that needs approval reserves today's limit (and the available balance) so later requests cannot oversubscribe the day. At most 20 payments can wait. A UTC date change cancels anything still waiting and releases the hold. Prepare demo clears pending approvals and idempotency keys. It does not erase the ledger.
-
 ## What this prototype does not do
 
-- It does not give the agent a private key.
+- It does not give the agent a private key or FullAccess.
 - It does not treat the model, or a field named `approved`, as authorization.
 - It does not broadcast a mainnet transaction or invent a solver fill.
-- It does not ship a marketplace, a second agent, KYC, or a fiat ramp.
-
-The in-memory gate matches one running server. A deployed multi-instance host should store the policy in OutLayer, encrypted on NEAR, and let the enclave evaluate it. The HTTP shapes in AGENT.md stay the same.
+- It does not ship TEE attestation bytes, a marketplace, a second agent, KYC, or a fiat ramp.
 
 Part of FORGE (arults).
 
 ## Site
 
-`/` is the short explanation. `/docs` is the same rules for a person. `/llms.txt` is the agent contract. `/console` is the human gate.
+`/` short explanation · `/docs` litepaper · `/llms.txt` agent contract · `/console` human gate.
 
 ## Log book
 

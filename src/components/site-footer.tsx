@@ -7,7 +7,7 @@ export function SiteFooter() {
         <div className="max-w-sm">
           <p className="font-display text-xl tracking-tight text-fg">Mandate</p>
           <p className="mt-2 text-sm leading-6 text-muted">
-            The agent can ask. It cannot sign. Preview gate for NEAR Intents settlement — process memory, not
+            The agent can ask. It cannot sign. Preview gate for NEAR Intents settlement — local-db durability, not
             broadcast.
           </p>
         </div>

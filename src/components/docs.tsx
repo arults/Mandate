@@ -13,12 +13,13 @@ const sections = [
   { id: "agents", label: "7. Agent interface" },
   { id: "humans", label: "8. Human interface" },
   { id: "settlement", label: "9. Settlement & NEAR" },
-  { id: "safety", label: "10. Safety properties" },
-  { id: "limits", label: "11. Preview limits" },
-  { id: "line", label: "12. Product line" },
-  { id: "demo", label: "13. Demo protocol" },
-  { id: "roadmap", label: "14. Roadmap" },
-  { id: "refs", label: "15. References" },
+  { id: "fck", label: "10. Function Call Keys" },
+  { id: "safety", label: "11. Safety properties" },
+  { id: "limits", label: "12. Preview limits" },
+  { id: "line", label: "13. Product line" },
+  { id: "demo", label: "14. Demo protocol" },
+  { id: "roadmap", label: "15. Roadmap" },
+  { id: "refs", label: "16. References" },
 ];
 
 export function Docs() {
@@ -286,7 +287,17 @@ Agent → POST /api/v1/pay only
           <section id="settlement" className="scroll-mt-28">
             <h2 className="font-display text-2xl tracking-tight text-fg sm:text-3xl">9. Settlement &amp; NEAR</h2>
             <ul className="mt-4 list-disc space-y-3 pl-5">
-              <li>Protocol: NEAR Intents / 1-Click quote shape.</li>
+              <li>
+                Protocol: NEAR Intents / 1-Click. On <span className="font-mono text-base text-fg">allow</span>, the
+                gate may call{" "}
+                <span className="font-mono text-base text-fg">POST https://1click.chaindefuser.com/v0/quote</span>{" "}
+                with <span className="font-mono text-base text-fg">dry: true</span> and attach{" "}
+                <span className="font-mono text-base text-fg">correlationId</span> / amount on the receipt.
+              </li>
+              <li>
+                Quote failures degrade: status <span className="font-mono text-base text-fg">unavailable</span>, payment
+                still allowed by policy. Quote never broadcasts.
+              </li>
               <li>
                 Optional OutLayer <span className="font-mono text-base text-fg">intents/withdraw</span> dry-run;
                 spend only if <span className="font-mono text-base text-fg">would_succeed: true</span>.
@@ -295,15 +306,39 @@ Agent → POST /api/v1/pay only
                 Preview: <span className="font-mono text-base text-fg">settlement.submitted = false</span> always.
               </li>
               <li>Production path: OutLayer Agent Custody + Intents (partner docs).</li>
-              <li>
-                Composition with Function Call Keys: agent never holds FullAccess (roadmap / security-track
-                section).
-              </li>
             </ul>
           </section>
 
+          <section id="fck" className="scroll-mt-28">
+            <h2 className="font-display text-2xl tracking-tight text-fg sm:text-3xl">
+              10. Function Call Keys (security track)
+            </h2>
+            <p className="mt-4">
+              NEAR Function Call Keys (FCK) limit a key to a receiver, methods, and allowance. They are not a USD
+              policy engine: they cannot encode daily caps, human approval thresholds, or recipient allow-lists the
+              way Mandate does.
+            </p>
+            <p className="mt-4 font-medium text-fg">Composition (now documented; not a fake attestation):</p>
+            <ul className="mt-4 list-disc space-y-3 pl-5">
+              <li>The human (or OutLayer enclave) keeps FullAccess. The agent never receives FullAccess.</li>
+              <li>
+                The agent holds only a Mandate / OutLayer request credential (
+                <span className="font-mono text-base text-fg">wk_</span>) to ask — and optionally an FCK scoped to the
+                Mandate gate or OutLayer withdraw methods.
+              </li>
+              <li>
+                Sub-account pattern: <span className="font-mono text-base text-fg">agent.&lt;treasury&gt;.near</span>{" "}
+                with an FCK; treasury FullAccess stays offline / in the enclave.
+              </li>
+            </ul>
+            <p className="mt-4 text-sm leading-6">
+              <strong className="font-medium text-fg">Roadmap:</strong> FCK issuance helpers + OutLayer TEE attestation
+              verify page. This preview does not emit attestation measurements or claim enclave identity.
+            </p>
+          </section>
+
           <section id="safety" className="scroll-mt-28">
-            <h2 className="font-display text-2xl tracking-tight text-fg sm:text-3xl">10. Safety properties</h2>
+            <h2 className="font-display text-2xl tracking-tight text-fg sm:text-3xl">11. Safety properties</h2>
             <p className="mt-4 text-sm leading-6">
               Claim only what tests cover (LOGBOOK · policy.test.ts · gate.security.test.ts):
             </p>
@@ -319,14 +354,17 @@ Agent → POST /api/v1/pay only
           </section>
 
           <section id="limits" className="scroll-mt-28">
-            <h2 className="font-display text-2xl tracking-tight text-fg sm:text-3xl">11. Limits of this preview</h2>
+            <h2 className="font-display text-2xl tracking-tight text-fg sm:text-3xl">12. Limits of this preview</h2>
             <ul className="mt-4 list-disc space-y-3 pl-5">
               <li>It does not give the agent a private key.</li>
               <li>It does not treat the model, or a field named approved, as authorization.</li>
               <li>It does not broadcast a mainnet transaction or invent a solver fill.</li>
               <li>
-                The gate is one process, in memory (<span className="font-mono text-base text-fg">process-memory</span>
-                ). A restart forgets policy, balance, and ledger.
+                Default durability is <span className="font-mono text-base text-fg">local-db</span> (embedded PGLite).
+                That survives a process-memory clear / local restart. It is still not a TEE and not multi-instance
+                shared storage. Set <span className="font-mono text-base text-fg">MANDATE_DURABILITY=process-memory</span>{" "}
+                for in-memory-only. Serverless cold starts without shared Postgres can still lose{" "}
+                <span className="font-mono text-base text-fg">/tmp</span> data.
               </li>
               <li>
                 No TEE attestation unless an OutLayer dry-run returns{" "}
@@ -338,7 +376,7 @@ Agent → POST /api/v1/pay only
           </section>
 
           <section id="line" className="scroll-mt-28">
-            <h2 className="font-display text-2xl tracking-tight text-fg sm:text-3xl">12. Product line (FORGE)</h2>
+            <h2 className="font-display text-2xl tracking-tight text-fg sm:text-3xl">13. Product line (FORGE)</h2>
             <div className="mt-4 overflow-x-auto border border-border">
               <table className="w-full min-w-[28rem] border-collapse text-left text-sm leading-6">
                 <thead className="bg-elevated text-fg">
@@ -375,7 +413,7 @@ Agent → POST /api/v1/pay only
           </section>
 
           <section id="demo" className="scroll-mt-28">
-            <h2 className="font-display text-2xl tracking-tight text-fg sm:text-3xl">13. Hackathon demo protocol</h2>
+            <h2 className="font-display text-2xl tracking-tight text-fg sm:text-3xl">14. Hackathon demo protocol</h2>
             <p className="mt-4">Do X → see Y. Judges: open live URL or clone → Run the agent → Approve → inspect receipt.</p>
             <ol className="mt-4 list-decimal space-y-3 pl-5">
               <li>
@@ -403,10 +441,10 @@ Agent → POST /api/v1/pay only
           </section>
 
           <section id="roadmap" className="scroll-mt-28">
-            <h2 className="font-display text-2xl tracking-tight text-fg sm:text-3xl">14. Roadmap</h2>
+            <h2 className="font-display text-2xl tracking-tight text-fg sm:text-3xl">15. Roadmap</h2>
             <p className="mt-4">
-              <strong className="font-medium text-fg">Near:</strong> persistence or export · live 1-Click quote ·
-              multi-agent caps · OutLayer publish · Function Call Key composition story.
+              <strong className="font-medium text-fg">Near:</strong> multi-agent caps · OutLayer funded dry-run ·
+              FCK issuance helpers · TEE attestation verify page · ActSeal receipt seal.
             </p>
             <p className="mt-4">
               <strong className="font-medium text-fg">Later:</strong> on-chain encrypted policy verify page · swarm
@@ -415,7 +453,7 @@ Agent → POST /api/v1/pay only
           </section>
 
           <section id="refs" className="scroll-mt-28">
-            <h2 className="font-display text-2xl tracking-tight text-fg sm:text-3xl">15. References</h2>
+            <h2 className="font-display text-2xl tracking-tight text-fg sm:text-3xl">16. References</h2>
             <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-6">
               <li>
                 <a href="https://nearhackathon.com/HACKATHON.md" className="text-fg underline" rel="noreferrer" target="_blank">

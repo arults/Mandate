@@ -93,7 +93,7 @@ export function Home() {
                 </Link>
               </div>
               <p className="mt-5 text-sm text-subtle">
-                Preview · process memory · settlement.submitted stays false · no invented tx hash
+                Preview · local-db (not TEE) · settlement.submitted stays false · no invented tx hash
               </p>
             </div>
 

@@ -3,6 +3,18 @@ import { USDC_TOKEN } from "@/lib/policy";
 
 export type AttestationKind = "local-policy-gate" | "outlayer-dry-run";
 
+export type Durability = "process-memory" | "local-db";
+
+export type SettlementQuote = {
+  status: "ok" | "unavailable" | "skipped";
+  correlationId: string | null;
+  amountOut: string | null;
+  amountOutFormatted: string | null;
+  amountOutUsd: string | null;
+  destinationAsset: string | null;
+  note: string;
+};
+
 export type Settlement = {
   protocol: "near-intents-1click";
   submitted: false;
@@ -14,6 +26,8 @@ export type Settlement = {
   recipient: string;
   calls: string[];
   live: { httpStatus: number; note: string } | null;
+  /** Read-only 1-Click dry quote. Never implies broadcast. */
+  quote: SettlementQuote | null;
 };
 
 export type GateReceipt = {
@@ -44,7 +58,11 @@ export type Snapshot = {
   pending: GateReceipt[];
   ledger: GateReceipt[];
   enforcement: "local-policy-gate";
-  /** This preview keeps the mandate in one process. A restart forgets it. */
-  durability: "process-memory";
+  /**
+   * local-db = policy+ledger written through embedded PGLite (or file data dir).
+   * Still not a TEE and not multi-instance durable without a shared Postgres/OutLayer.
+   * process-memory = in-process only (MANDATE_DURABILITY=process-memory).
+   */
+  durability: Durability;
   liveKey: boolean;
 };

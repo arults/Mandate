@@ -2,6 +2,18 @@ import { createHash, randomUUID } from "node:crypto";
 
 import type { GateReceipt, Settlement, Snapshot } from "@/lib/gate-types";
 import {
+  clearPersistedState,
+  durabilityMode,
+  isGateHydrated,
+  loadPersistedState,
+  markGateHydrated,
+  markGateUnhydrated,
+  resetPersistForTests,
+  savePersistedState,
+  type PersistedState,
+} from "@/lib/gate-persist.server";
+import { fetchOneClickQuote, ONECLICK_QUOTE_URL } from "@/lib/oneclick-quote.server";
+import {
   cents,
   evaluatePolicy,
   formatUsd,
@@ -44,20 +56,6 @@ const g = globalThis as typeof globalThis & { __ledgerGate?: State };
 
 let clock = (): Date => new Date();
 
-export function resetGateForTests() {
-  g.__ledgerGate = undefined;
-  queue = Promise.resolve();
-  clock = () => new Date();
-}
-
-export function setGateClockForTests(next: () => Date) {
-  clock = next;
-}
-
-function today(): string {
-  return clock().toISOString().slice(0, 10);
-}
-
 function blankState(): State {
   return {
     policy: null,
@@ -68,6 +66,85 @@ function blankState(): State {
     ledger: [],
     idempotency: new Map(),
   };
+}
+
+function serializeState(current: State): PersistedState {
+  return {
+    policy: current.policy,
+    day: current.day,
+    spentCents: current.spentCents,
+    balanceCents: current.balanceCents,
+    pending: current.pending,
+    ledger: current.ledger,
+    idempotency: [...current.idempotency.entries()],
+  };
+}
+
+function applyPersisted(raw: PersistedState): State {
+  return {
+    policy: raw.policy,
+    day: raw.day,
+    spentCents: raw.spentCents,
+    balanceCents: raw.balanceCents,
+    pending: raw.pending ?? [],
+    ledger: raw.ledger ?? [],
+    idempotency: new Map(raw.idempotency ?? []),
+  };
+}
+
+async function persist(current: State): Promise<void> {
+  if (durabilityMode() === "process-memory") return;
+  await savePersistedState(serializeState(current));
+}
+
+async function ensureHydrated(): Promise<void> {
+  if (durabilityMode() === "process-memory") {
+    markGateHydrated();
+    return;
+  }
+  if (isGateHydrated() && g.__ledgerGate) return;
+  const loaded = await loadPersistedState();
+  if (loaded) {
+    g.__ledgerGate = applyPersisted(loaded);
+  } else if (!g.__ledgerGate) {
+    g.__ledgerGate = blankState();
+  }
+  markGateHydrated();
+}
+
+export async function resetGateForTests() {
+  g.__ledgerGate = undefined;
+  queue = Promise.resolve();
+  clock = () => new Date();
+  markGateUnhydrated();
+  process.env.MANDATE_PGDATA_MEMORY = "1";
+  process.env.MANDATE_1CLICK_QUOTE = "0";
+  if (!process.env.MANDATE_DURABILITY) process.env.MANDATE_DURABILITY = "local-db";
+  await clearPersistedState().catch(() => undefined);
+  markGateHydrated();
+  g.__ledgerGate = blankState();
+}
+
+/** Clear process memory only; next ensureHydrated reloads from local-db. */
+export async function forgetGateMemoryForTests() {
+  g.__ledgerGate = undefined;
+  markGateUnhydrated();
+  queue = Promise.resolve();
+}
+
+export async function hardResetPersistForTests() {
+  await resetPersistForTests();
+  g.__ledgerGate = undefined;
+  markGateUnhydrated();
+  queue = Promise.resolve();
+}
+
+export function setGateClockForTests(next: () => Date) {
+  clock = next;
+}
+
+function today(): string {
+  return clock().toISOString().slice(0, 10);
 }
 
 function dropLedgerRow(current: State, id: string) {
@@ -123,7 +200,16 @@ function state(): State {
 let queue: Promise<unknown> = Promise.resolve();
 
 function enqueue<T>(fn: () => Promise<T>): Promise<T> {
-  const run = queue.then(fn, fn);
+  const run = queue.then(
+    async () => {
+      await ensureHydrated();
+      return fn();
+    },
+    async () => {
+      await ensureHydrated();
+      return fn();
+    },
+  );
   queue = run.then(
     () => undefined,
     () => undefined,
@@ -152,8 +238,7 @@ function heldCents(current: State): number {
   return current.pending.reduce((sum, item) => sum + item.reservedCents, 0);
 }
 
-export function snapshot(): Snapshot {
-  const current = state();
+function snapshotOf(current: State): Snapshot {
   const policy = current.policy;
   return {
     policy,
@@ -164,9 +249,18 @@ export function snapshot(): Snapshot {
     pending: current.pending.map((item) => item.receipt),
     ledger: current.ledger,
     enforcement: "local-policy-gate",
-    durability: "process-memory",
+    durability: durabilityMode(),
     liveKey: Boolean(process.env.OUTLAYER_API_KEY),
   };
+}
+
+/** Sync view of in-memory gate. Prefer after an awaited gate mutation, or call awaitGateReady(). */
+export function snapshot(): Snapshot {
+  return snapshotOf(state());
+}
+
+export async function awaitGateReady(): Promise<Snapshot> {
+  return enqueue(async () => snapshotOf(state()));
 }
 
 function pushLedger(current: State, receipt: GateReceipt) {
@@ -194,7 +288,11 @@ function requestHash(request: PaymentRequest): string {
     .digest("hex");
 }
 
-function settlementFor(request: PaymentRequest, live: Settlement["live"]): Settlement {
+function settlementFor(
+  request: PaymentRequest,
+  live: Settlement["live"],
+  quote: Settlement["quote"],
+): Settlement {
   return {
     protocol: "near-intents-1click",
     submitted: false,
@@ -204,11 +302,9 @@ function settlementFor(request: PaymentRequest, live: Settlement["live"]): Settl
     token: "nep141:usdc.near",
     amountUnits: usdToUsdcUnits(request.amountUsd),
     recipient: request.to,
-    calls: [
-      "POST https://1click.chaindefuser.com/v0/quote",
-      "POST https://api.outlayer.ai/wallet/v1/intents/withdraw",
-    ],
+    calls: [`POST ${ONECLICK_QUOTE_URL}`, "POST https://api.outlayer.ai/wallet/v1/intents/withdraw"],
     live,
+    quote,
   };
 }
 
@@ -304,7 +400,8 @@ export function publishPolicy(input: unknown): Promise<Snapshot> {
     const next = parsePolicy(input);
     current.policy = next;
     if (next.frozen) cancelPending(current, "frozen", "The wallet was frozen. Waiting payments were dropped and nothing was signed.");
-    return snapshot();
+    await persist(current);
+    return snapshotOf(current);
   });
 }
 
@@ -318,7 +415,8 @@ export function prepareDemo(input: unknown): Promise<Snapshot> {
     current.pending = [];
     current.idempotency = new Map();
     current.day = today();
-    return snapshot();
+    await persist(current);
+    return snapshotOf(current);
   });
 }
 
@@ -327,7 +425,8 @@ export function fundWallet(amountUsd: number, mode: "add" | "set" = "add"): Prom
     const current = state();
     const next = cents(amountUsd);
     current.balanceCents = mode === "set" ? next : current.balanceCents + next;
-    return snapshot();
+    await persist(current);
+    return snapshotOf(current);
   });
 }
 
@@ -381,11 +480,12 @@ async function decide(
     }
     current.spentCents += cents(request.amountUsd);
     current.balanceCents -= cents(request.amountUsd);
+    const quote = await fetchOneClickQuote(request);
     const receipt = receiptBase(current, request, ignoredFields, decision, id);
     receipt.remainingDailyUsd = fromCents(remainingCents(current));
     receipt.spentUsd = fromCents(current.spentCents);
     receipt.balanceUsd = fromCents(current.balanceCents);
-    receipt.settlement = settlementFor(request, live);
+    receipt.settlement = settlementFor(request, live, quote);
     if (live && live.verdict === "ok") {
       receipt.attestation = {
         kind: "outlayer-dry-run",
@@ -452,6 +552,7 @@ export function submitPayment(input: unknown): Promise<GateReceipt> {
     if (idempotencyKey && outcome.remember) {
       state().idempotency.set(idempotencyKey, { hash, receipt: outcome.receipt });
     }
+    await persist(state());
     return outcome.receipt;
   });
 }
@@ -480,6 +581,7 @@ export function resolveApproval(id: string, action: "approve" | "reject"): Promi
       retarget(current, pending.receipt.id, receipt);
       dropLedgerRow(current, pending.receipt.id);
       pushLedger(current, receipt);
+      await persist(current);
       return receipt;
     }
     dropLedgerRow(current, pending.receipt.id);
@@ -489,9 +591,11 @@ export function resolveApproval(id: string, action: "approve" | "reject"): Promi
       current.spentCents += pending.reservedCents;
       current.pending = [pending, ...current.pending.filter((item) => item.receipt.id !== pending.receipt.id)];
       pushLedger(current, pending.receipt);
+      await persist(current);
       return outcome.receipt;
     }
     retarget(current, pending.receipt.id, outcome.receipt);
+    await persist(current);
     return outcome.receipt;
   });
 }
