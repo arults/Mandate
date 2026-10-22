@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { fundWallet } from "@/lib/gate.server";
 import { refuseHumanRoute } from "@/lib/human-route.server";
+import { readJsonBody } from "@/lib/http-body.server";
 
 export const Route = createFileRoute("/api/v1/fund")({
   server: {
@@ -10,7 +11,9 @@ export const Route = createFileRoute("/api/v1/fund")({
         const denied = refuseHumanRoute(request);
         if (denied) return denied;
         try {
-          const body = (await request.json()) as { amountUsd?: number; mode?: string };
+          const parsed = await readJsonBody(request);
+          if (!parsed.ok) return parsed.response;
+          const body = parsed.value as { amountUsd?: number; mode?: string };
           const amount = body.amountUsd;
           if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0 || amount > 1_000_000) {
             return Response.json(

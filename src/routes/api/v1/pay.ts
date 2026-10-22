@@ -1,14 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { submitPayment } from "@/lib/gate.server";
+import { readJsonBody } from "@/lib/http-body.server";
 
 export const Route = createFileRoute("/api/v1/pay")({
   server: {
     handlers: {
       POST: async ({ request }) => {
         try {
-          const body = await request.json();
-          const receipt = await submitPayment(body);
+          const parsed = await readJsonBody(request);
+          if (!parsed.ok) return parsed.response;
+          const receipt = await submitPayment(parsed.value);
           return Response.json({ receipt }, { headers: { "Cache-Control": "no-store" } });
         } catch (error) {
           const detail = error instanceof Error ? error.message : "Could not evaluate payment";

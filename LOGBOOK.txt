@@ -255,3 +255,27 @@ off until that balance is real.
   README judge path: live URL + curl /pay
   Tests: policy + gate.security + gate.persist-quote — 37 pass; tsc clean
 ----
+
+
+2026-10-22 19:40 IST (Asia/Calcutta) — CF security audit + human server-fn lock + evals
+--------------------------------------------------------------
+
+What this entry covers
+  Cloudflare security-audit skill (Full audit, adapted to Vite/TanStack/Vercel).
+  Formal artifacts: /workspace/forge/mandate/2026-10-22/security-audit/
+  ActSeal-style: /workspace/forge/mandate/2026-10-22/CF-AUDIT-2026-10-22.md
+  Evals: /workspace/forge/mandate/2026-10-22/EVALS-2026-10-22.md
+
+Blocker fixed
+  Human createServerFn paths (savePolicy, prepareDemoGate, addFunds,
+  decideApproval, getGate) now call assertHumanServerFn: same-origin console
+  or matching x-mandate-human. Agent curl without token is closed.
+
+Should-fix fixed
+  16 KiB JSON body cap on /api/v1/pay|policy|fund|approvals → 413.
+
+Gate/security evals — PASS, 48 of 48
+  policy + gate.security + gate.persist-quote + human-route + http-body.
+
+Honest
+  local-db ≠ TEE. settlement.submitted stays false. No hackathon POST.

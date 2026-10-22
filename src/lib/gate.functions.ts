@@ -1,17 +1,27 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { awaitGateReady, fundWallet, prepareDemo, publishPolicy, resolveApproval, snapshot, submitPayment } from "@/lib/gate.server";
+import { assertHumanServerFn } from "@/lib/human-route.server";
 import { parsePolicy } from "@/lib/policy";
 
-export const getGate = createServerFn({ method: "GET" }).handler(async () => awaitGateReady());
+export const getGate = createServerFn({ method: "GET" }).handler(async () => {
+  assertHumanServerFn();
+  return awaitGateReady();
+});
 
 export const savePolicy = createServerFn({ method: "POST" })
   .validator((data: unknown) => parsePolicy(data))
-  .handler(async ({ data }) => publishPolicy(data));
+  .handler(async ({ data }) => {
+    assertHumanServerFn();
+    return publishPolicy(data);
+  });
 
 export const prepareDemoGate = createServerFn({ method: "POST" })
   .validator((data: unknown) => parsePolicy(data))
-  .handler(async ({ data }) => prepareDemo(data));
+  .handler(async ({ data }) => {
+    assertHumanServerFn();
+    return prepareDemo(data);
+  });
 
 export const addFunds = createServerFn({ method: "POST" })
   .validator((data: { amountUsd?: number; mode?: "add" | "set" }) => {
@@ -24,7 +34,10 @@ export const addFunds = createServerFn({ method: "POST" })
       mode: data.mode === "set" ? ("set" as const) : ("add" as const),
     };
   })
-  .handler(async ({ data }) => fundWallet(data.amountUsd, data.mode));
+  .handler(async ({ data }) => {
+    assertHumanServerFn();
+    return fundWallet(data.amountUsd, data.mode);
+  });
 
 export const requestPayment = createServerFn({ method: "POST" })
   .validator((data: unknown) => {
@@ -47,7 +60,7 @@ export const decideApproval = createServerFn({ method: "POST" })
     return { id: data.id, action: approvalAction(data.action) };
   })
   .handler(async ({ data }) => {
+    assertHumanServerFn();
     const receipt = await resolveApproval(data.id, data.action);
     return { receipt, gate: snapshot() };
   });
-

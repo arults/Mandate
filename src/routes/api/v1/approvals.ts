@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { resolveApproval } from "@/lib/gate.server";
 import { refuseHumanRoute } from "@/lib/human-route.server";
+import { readJsonBody } from "@/lib/http-body.server";
 
 export const Route = createFileRoute("/api/v1/approvals")({
   server: {
@@ -10,7 +11,9 @@ export const Route = createFileRoute("/api/v1/approvals")({
         const denied = refuseHumanRoute(request);
         if (denied) return denied;
         try {
-          const body = (await request.json()) as { id?: string; action?: string };
+          const parsed = await readJsonBody(request);
+          if (!parsed.ok) return parsed.response;
+          const body = parsed.value as { id?: string; action?: string };
           if (!body.id || (body.action !== "approve" && body.action !== "reject")) {
             return Response.json(
               { error: "bad_request", detail: "Approval needs an id and approve or reject" },

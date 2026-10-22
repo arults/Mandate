@@ -1,5 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 
+import { getRequest } from "@tanstack/react-start/server";
+
 function headerMatches(header: string | null, token: string): boolean {
   if (!header) return false;
   const left = Buffer.from(header);
@@ -8,9 +10,38 @@ function headerMatches(header: string | null, token: string): boolean {
   return timingSafeEqual(left, right);
 }
 
-export function refuseHumanRoute(request: Request): Response | null {
-  const token = process.env.MANDATE_HUMAN_TOKEN;
-  if (!token) {
+export type HumanAccessMode = "http" | "server-fn";
+
+export type HumanAccessDecision = "allow" | "deny_closed" | "deny_auth";
+
+/**
+ * Human-only controls (policy / fund / approvals / prepare-demo).
+ *
+ * HTTP agent paths stay locked unless MANDATE_HUMAN_TOKEN matches.
+ * Console createServerFn paths allow same-origin browsers (Sec-Fetch-Site:
+ * same-origin) so the demo works without a token, but curl/agents without
+ * that header cannot rewrite policy or approve holds.
+ */
+export function decideHumanAccess(opts: {
+  tokenEnv: string | undefined;
+  humanHeader: string | null;
+  secFetchSite: string | null;
+  mode: HumanAccessMode;
+}): HumanAccessDecision {
+  const token = opts.tokenEnv?.trim() || undefined;
+  if (token) {
+    if (headerMatches(opts.humanHeader, token)) return "allow";
+    if (opts.mode === "server-fn" && opts.secFetchSite === "same-origin") return "allow";
+    return "deny_auth";
+  }
+  if (opts.mode === "http") return "deny_closed";
+  if (opts.secFetchSite === "same-origin") return "allow";
+  return "deny_closed";
+}
+
+function responseFor(decision: HumanAccessDecision): Response | null {
+  if (decision === "allow") return null;
+  if (decision === "deny_closed") {
     return Response.json(
       {
         error: "human_route_closed",
@@ -20,14 +51,57 @@ export function refuseHumanRoute(request: Request): Response | null {
       { status: 403, headers: { "Cache-Control": "no-store" } },
     );
   }
-  if (!headerMatches(request.headers.get("x-mandate-human"), token)) {
-    return Response.json(
-      {
-        error: "human_auth",
-        detail: "This route needs the human token. The agent pay route cannot approve or rewrite policy.",
-      },
-      { status: 401, headers: { "Cache-Control": "no-store" } },
+  return Response.json(
+    {
+      error: "human_auth",
+      detail: "This route needs the human token. The agent pay route cannot approve or rewrite policy.",
+    },
+    { status: 401, headers: { "Cache-Control": "no-store" } },
+  );
+}
+
+export function refuseHumanRoute(request: Request): Response | null {
+  return responseFor(
+    decideHumanAccess({
+      tokenEnv: process.env.MANDATE_HUMAN_TOKEN,
+      humanHeader: request.headers.get("x-mandate-human"),
+      secFetchSite: request.headers.get("sec-fetch-site"),
+      mode: "http",
+    }),
+  );
+}
+
+export class HumanRouteError extends Error {
+  readonly status: number;
+  readonly code: string;
+  constructor(status: number, code: string, detail: string) {
+    super(detail);
+    this.name = "HumanRouteError";
+    this.status = status;
+    this.code = code;
+  }
+}
+
+/** Guard for TanStack createServerFn human controls. Throws HumanRouteError. */
+export function assertHumanServerFn(): void {
+  const request = getRequest();
+  const decision = decideHumanAccess({
+    tokenEnv: process.env.MANDATE_HUMAN_TOKEN,
+    humanHeader: request?.headers.get("x-mandate-human") ?? null,
+    secFetchSite: request?.headers.get("sec-fetch-site") ?? null,
+    mode: "server-fn",
+  });
+  if (decision === "allow") return;
+  if (decision === "deny_closed") {
+    throw new HumanRouteError(
+      403,
+      "human_route_closed",
+      "Policy, funding, and approvals are console-only unless MANDATE_HUMAN_TOKEN is set on the server.",
     );
   }
-  return null;
+  throw new HumanRouteError(
+    401,
+    "human_auth",
+    "This route needs the human token. The agent pay route cannot approve or rewrite policy.",
+  );
 }
