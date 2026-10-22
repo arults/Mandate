@@ -18,6 +18,9 @@ const fieldClass =
   "h-11 w-full rounded-control border border-border bg-bg px-3 text-fg outline-none placeholder:text-subtle";
 
 const labelClass = "mb-1.5 block text-sm font-medium text-muted";
+const helpClass = "mt-1.5 text-xs leading-5 text-subtle";
+/** Flip when public/demo/console-walkthrough.mp4 is committed. */
+const HAS_CONSOLE_DEMO_VIDEO = false;
 
 function messageOf(error: unknown): string {
   if (error instanceof Error && error.message) return error.message;
@@ -299,6 +302,27 @@ export function Console() {
         </div>
       </header>
 
+      <section className="mt-6 max-w-2xl rounded-card border border-border bg-surface p-5">
+        <h2 className="text-sm font-medium">Watch how it works</h2>
+        <p className="mt-1 text-sm text-muted">
+          Ninety seconds on Max / tx, Daily limit, Approval above, Allow-list, Save, and Run the agent.
+        </p>
+        <div className="mt-4 overflow-hidden rounded-control border border-border bg-bg">
+          <video
+            controls
+            playsInline
+            preload="metadata"
+            poster="/demo/console-poster.jpg"
+            className="aspect-video w-full bg-bg"
+          >
+            <source src="/demo/console-walkthrough.mp4" type="video/mp4" />
+          </video>
+        </div>
+        {!HAS_CONSOLE_DEMO_VIDEO && (
+          <p className="mt-3 text-sm text-subtle">Demo video uploading… Field tips below work now.</p>
+        )}
+      </section>
+
       {loadError && (
         <p className="mt-4 rounded-control bg-deny-bg px-3 py-2 text-sm text-deny" role="alert">
           {loadError}
@@ -309,6 +333,15 @@ export function Console() {
         <section className="min-w-0 rounded-card border border-border bg-surface p-5">
           <h2 className="text-lg font-medium">Policy</h2>
           <p className="mt-1 text-sm text-muted">Saved by you. The agent request cannot edit these fields.</p>
+          <details className="mt-3 rounded-control border border-border bg-bg px-3 py-2">
+            <summary className="cursor-pointer text-sm font-medium">How to play</summary>
+            <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm leading-5 text-muted">
+              <li>Set caps below, then Save policy.</li>
+              <li>Or hit Prepare demo for a ready $50/day kit.</li>
+              <li>Run the agent — four asks (allow / hold / reject / jailbreak).</li>
+              <li>Approve or Reject anything that lands in Waiting on you.</li>
+            </ul>
+          </details>
           {saved ? (
             <div className="mt-3">
               <PolicySummary policy={saved} />
@@ -337,6 +370,7 @@ export function Console() {
                   setDraft({ ...draft, maxPerTransactionUsd: Number(event.target.value) })
                 }
               />
+              <span className={helpClass}>Hard ceiling for one payment. Over this → reject.</span>
             </label>
             <label>
               <span className={labelClass}>Daily limit</span>
@@ -346,6 +380,7 @@ export function Console() {
                 value={draft.dailyLimitUsd}
                 onChange={(event) => setDraft({ ...draft, dailyLimitUsd: Number(event.target.value) })}
               />
+              <span className={helpClass}>Cap for all allows today. Remaining today tracks this.</span>
             </label>
             <label className="col-span-2">
               <span className={labelClass}>Approval above</span>
@@ -357,14 +392,20 @@ export function Console() {
                   setDraft({ ...draft, approvalThresholdUsd: Number(event.target.value) })
                 }
               />
+              <span className={helpClass}>
+                Soft line. At/above → needs your Approve/Reject; below can auto-allow if other rules pass.
+              </span>
             </label>
             <label className="col-span-2">
-              <span className={labelClass}>Allow-list, one recipient per line</span>
+              <span className={labelClass}>Allow-list</span>
               <textarea
                 className="min-h-28 w-full max-w-full rounded-control border border-border bg-bg px-3 py-2 font-mono text-sm text-fg"
                 value={recipientsText}
                 onChange={(event) => setRecipientsText(event.target.value)}
               />
+              <span className={helpClass}>
+                Only these recipients may get paid (one per line: .near or 0x…).
+              </span>
             </label>
           </div>
 
@@ -387,6 +428,9 @@ export function Console() {
             >
               Save policy
             </button>
+            <p className={helpClass}>
+              Draft is local until Save. Without a published policy, pay refuses.
+            </p>
             <button
               type="button"
               disabled={busy}
@@ -439,6 +483,9 @@ export function Console() {
             >
               {busy && speaking ? "Agent is asking…" : "Run the agent"}
             </button>
+            <p className={`mt-2 ${helpClass}`}>
+              One-click demo: publishes DEMO_POLICY then four asks (allow / hold / reject / jailbreak).
+            </p>
             <ol className="mt-4 flex flex-col gap-3" aria-live="polite">
               {agentBeats("plan").map((beat) => {
                 const done = spoken.find((item) => item.beat.id === beat.id);
