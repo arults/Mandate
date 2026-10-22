@@ -33,7 +33,9 @@ The human console owns policy, funding, and approvals. Console `createServerFn` 
 
 Idempotency: send `idempotencyKey` (string, max 80 characters). A repeat of the same payment returns the original receipt and does not spend again, even after that row scrolls off the visible ledger. A repeat with a different amount, recipient, chain, or purpose is a conflict. Prepare demo clears stored keys. If the settlement check cannot be reached, or OutLayer answers 429 or 5xx, the result is `settlement_unconfirmed` and the same key can be retried. A dry-run body with `would_succeed: false`, or any other 4xx, is `settlement_refused` and is stored. On a payment that did not need approval, `settlement_unconfirmed` is not stored. If that happens while a human is approving, the hold stays and the key still returns `needs_approval`. `.near` recipients are matched case-insensitively. Recipients must be plain ASCII with no spaces: a NEAR account, a 20-byte hex address, or a base58 address. Amounts may be a JSON number or a decimal string, at least 0.01, at most 2 places, and at most 1000000.
 
-While a payment waits for approval it holds today's remaining limit. Do not stack more requests than the day can cover. A hold is not a payment: `settlement.submitted` is still false, and the balance does not move until a human approves.
+While a payment waits for approval it holds today's remaining limit. Privacy: when the human policy uses `privacyMode: "minimize"` (default), your `POST /api/v1/pay` receipt omits raw `purpose` (you get `purposeHash` instead) and truncates `to` / settlement recipient (plus `recipientHash`). Amounts, status, and rules stay visible. You cannot force full disclosure with a body flag. This is not a TEE attestation.
+
+Do not stack more requests than the day can cover. A hold is not a payment: `settlement.submitted` is still false, and the balance does not move until a human approves.
 
 Typed judgment, if you want one, is advisory:
 

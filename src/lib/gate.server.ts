@@ -80,9 +80,17 @@ function serializeState(current: State): PersistedState {
   };
 }
 
+function ensurePrivacyMode(policy: HumanPolicy | null): HumanPolicy | null {
+  if (!policy) return null;
+  return {
+    ...policy,
+    privacyMode: policy.privacyMode === "full" ? "full" : "minimize",
+  };
+}
+
 function applyPersisted(raw: PersistedState): State {
   return {
-    policy: raw.policy,
+    policy: ensurePrivacyMode(raw.policy),
     day: raw.day,
     spentCents: raw.spentCents,
     balanceCents: raw.balanceCents,
@@ -225,6 +233,7 @@ function fingerprint(policy: HumanPolicy): string {
     approval: cents(policy.approvalThresholdUsd),
     assets: policy.allowedAssets,
     frozen: policy.frozen,
+    privacyMode: policy.privacyMode === "full" ? "full" : "minimize",
   });
   return createHash("sha256").update(canonical).digest("hex").slice(0, 16);
 }

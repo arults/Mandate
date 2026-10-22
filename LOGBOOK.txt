@@ -279,3 +279,5 @@ Gate/security evals — PASS, 48 of 48
 
 Honest
   local-db ≠ TEE. settlement.submitted stays false. No hackathon POST.
+
+2026-10-23 privacy-minimize receipts: HumanPolicy.privacyMode default minimize; agent POST /api/v1/pay projects purposeHash+truncated to; human console full; not TEE.

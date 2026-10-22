@@ -458,3 +458,20 @@ test("settlement.submitted stays false on allow", async () => {
   assert.equal(receipt.attestation.kind === "local-policy-gate" || receipt.attestation.kind === "outlayer-dry-run", true);
   assert.match(receipt.attestation.statement, /not a TEE|Nothing was broadcast|outside the model/i);
 });
+
+test("privacyMode body flag cannot force full agent disclosure at the gate", async () => {
+  const { projectReceipt } = await import("./privacy.ts");
+  const receipt = await submitPayment(
+    pay({
+      purpose: "confidential vendor note",
+      privacyMode: "full",
+      disclose: true,
+    }),
+  );
+  assert.ok(receipt.ignoredFields.includes("privacyMode"));
+  assert.ok(receipt.ignoredFields.includes("disclose"));
+  const agent = projectReceipt(receipt, snapshot().policy, "agent");
+  assert.equal(agent.request.purpose, null);
+  assert.equal(agent.request.to.includes("vendor.near"), false);
+  assert.equal(agent.detail.includes("confidential vendor note"), false);
+});

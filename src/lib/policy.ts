@@ -6,6 +6,8 @@ export const CHAINS = ["base", "ethereum", "arbitrum", "solana", "polygon", "nea
 
 export type Chain = (typeof CHAINS)[number];
 
+export type PrivacyMode = "full" | "minimize";
+
 export type HumanPolicy = {
   maxPerTransactionUsd: number;
   dailyLimitUsd: number;
@@ -13,6 +15,8 @@ export type HumanPolicy = {
   approvalThresholdUsd: number;
   allowedAssets: ["USDC"];
   frozen: boolean;
+  /** Agent-facing receipts: minimize hides purpose/full recipient. Default minimize. */
+  privacyMode: PrivacyMode;
 };
 
 export type PaymentRequest = {
@@ -44,6 +48,7 @@ export const DEMO_POLICY: HumanPolicy = {
   approvalThresholdUsd: 10,
   allowedAssets: ["USDC"],
   frozen: false,
+  privacyMode: "minimize",
 };
 
 export const MAX_USD = 1_000_000;
@@ -76,7 +81,8 @@ export function enclaveDocument(policy: HumanPolicy) {
     },
     mandate_only: {
       approval_threshold_usd: policy.approvalThresholdUsd,
-      note: "Above this line the status is needs_approval. The agent cannot sign it.",
+      privacy_mode: policy.privacyMode,
+      note: "Above this line the status is needs_approval. The agent cannot sign it. privacy_mode minimize hides purpose/recipient on agent receipts only.",
     },
     evaluated_by: "process-memory" as const,
   };
@@ -127,6 +133,7 @@ export function policyFingerprint(policy: HumanPolicy): string {
     approvalThresholdUsd: cents(policy.approvalThresholdUsd),
     allowedAssets: policy.allowedAssets,
     frozen: policy.frozen,
+    privacyMode: policy.privacyMode === "full" ? "full" : "minimize",
   });
   let hash = 2166136261;
   for (let i = 0; i < canonical.length; i++) {
@@ -170,6 +177,7 @@ export function parsePolicy(input: unknown): HumanPolicy {
   const allowedRecipients = raw.allowedRecipients.map((item) => canonicalRecipient(item as string));
   if (allowedRecipients.length === 0) throw new Error("Add at least one recipient");
   if (allowedRecipients.length > 12) throw new Error("Keep the allow-list to 12 recipients");
+  const privacyMode = raw.privacyMode === "full" ? ("full" as const) : ("minimize" as const);
   return {
     maxPerTransactionUsd: fromCents(cents(maxPerTransactionUsd)),
     dailyLimitUsd: fromCents(cents(dailyLimitUsd)),
@@ -177,6 +185,7 @@ export function parsePolicy(input: unknown): HumanPolicy {
     allowedRecipients,
     allowedAssets: ["USDC"],
     frozen: raw.frozen === true,
+    privacyMode,
   };
 }
 

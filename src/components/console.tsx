@@ -13,6 +13,7 @@ import {
   formatUsd,
   type HumanPolicy,
 } from "@/lib/policy";
+import type { PublicGateReceipt } from "@/lib/privacy";
 
 const fieldClass =
   "h-11 w-full rounded-control border border-border bg-bg px-3 text-fg outline-none placeholder:text-subtle";
@@ -46,12 +47,12 @@ function PolicySummary({ policy }: { policy: HumanPolicy }) {
     <p className="text-sm text-muted">
       ≤ {formatUsd(policy.maxPerTransactionUsd)} / tx · {formatUsd(policy.dailyLimitUsd)} / day · approve
       above {formatUsd(policy.approvalThresholdUsd)} · {policy.allowedRecipients.length} recipients ·{" "}
-      {policy.frozen ? "frozen" : "active"}
+      {policy.frozen ? "frozen" : "active"} · privacy {policy.privacyMode ?? "minimize"}
     </p>
   );
 }
 
-function ReceiptSlip({ receipt }: { receipt: GateReceipt }) {
+function ReceiptSlip({ receipt }: { receipt: GateReceipt | PublicGateReceipt }) {
   const when = new Date(receipt.at);
   const time = Number.isNaN(when.getTime())
     ? receipt.at
@@ -66,7 +67,11 @@ function ReceiptSlip({ receipt }: { receipt: GateReceipt }) {
           </p>
           <p className="mt-1 text-sm text-muted">
             to {receipt.request.to} · {receipt.request.chain}
-            {receipt.request.purpose ? ` · ${receipt.request.purpose}` : ""}
+            {receipt.request.purpose
+              ? ` · ${receipt.request.purpose}`
+              : receipt.request.purpose === null
+                ? " · purpose hidden"
+                : ""}
           </p>
         </div>
         <span className={`rounded-control px-2.5 py-1 text-sm font-medium ${statusClass(receipt.status)}`}>
@@ -152,7 +157,7 @@ export function Console() {
   const [purpose, setPurpose] = useState("API invoice 14");
   const [fundAmount, setFundAmount] = useState("50");
   const [focusId, setFocusId] = useState<string | null>(null);
-  const [spoken, setSpoken] = useState<Array<{ beat: AgentBeat; receipt: GateReceipt }>>([]);
+  const [spoken, setSpoken] = useState<Array<{ beat: AgentBeat; receipt: PublicGateReceipt | GateReceipt }>>([]);
   const [speaking, setSpeaking] = useState<string | null>(null);
   const revision = useRef(0);
   const inFlight = useRef(false);
@@ -224,13 +229,13 @@ export function Console() {
     setFocusId(result.receipt.id);
   }
 
-  async function postAsAgent(body: Record<string, unknown>): Promise<GateReceipt> {
+  async function postAsAgent(body: Record<string, unknown>): Promise<PublicGateReceipt> {
     const response = await fetch("/api/v1/pay", {
       method: "POST",
       headers: { accept: "application/json", "content-type": "application/json" },
       body: JSON.stringify(body),
     });
-    const payload = (await response.json()) as { receipt?: GateReceipt; detail?: string };
+    const payload = (await response.json()) as { receipt?: PublicGateReceipt; detail?: string };
     if (!response.ok || !payload.receipt) {
       throw new Error(payload.detail || "The pay route refused that body.");
     }
@@ -332,7 +337,10 @@ export function Console() {
       <div className="mt-6 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
         <section className="min-w-0 rounded-card border border-border bg-surface p-5">
           <h2 className="text-lg font-medium">Policy</h2>
-          <p className="mt-1 text-sm text-muted">Saved by you. The agent request cannot edit these fields.</p>
+          <p className="mt-1 text-sm text-muted">
+            Saved by you. The agent request cannot edit these fields. Privacy minimize: agent receipts hide
+            purpose/recipient; you still see full detail.
+          </p>
           <details className="mt-3 rounded-control border border-border bg-bg px-3 py-2">
             <summary className="cursor-pointer text-sm font-medium">How to play</summary>
             <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm leading-5 text-muted">
@@ -418,6 +426,24 @@ export function Console() {
             />
             Freeze wallet
           </label>
+
+          <label className="mt-3 flex min-h-11 items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="size-4"
+              checked={(draft.privacyMode ?? "minimize") === "minimize"}
+              onChange={(event) =>
+                setDraft({
+                  ...draft,
+                  privacyMode: event.target.checked ? "minimize" : "full",
+                })
+              }
+            />
+            Privacy minimize (agent receipts)
+          </label>
+          <p className={helpClass}>
+            Privacy minimize: agent receipts hide purpose/recipient; you still see full detail. Not a TEE.
+          </p>
 
           <div className="mt-4 flex flex-col gap-2">
             <button

@@ -90,6 +90,17 @@ Production keys live in OutLayer (`https://api.outlayer.ai`, skill at `https://s
 
 Default **`durability: "local-db"`**: policy, balance, pending holds, ledger, and idempotency keys are written through an embedded **PGLite** store so a process-memory clear / local restart can reload them. This is **not** a TEE attestation and **not** multi-instance shared storage. On serverless without a shared Postgres (`DATABASE_URL` / Neon), cold starts can still lose `/tmp` data — production stores the mandate in OutLayer, encrypted on NEAR. Set `MANDATE_DURABILITY=process-memory` for the old in-memory-only behavior.
 
+## Privacy (agent receipts)
+
+Default **`privacyMode: "minimize"`** on new policies (toggle on the console).
+
+| Viewer | What they see |
+|---|---|
+| Agent `POST /api/v1/pay` | No free-text `purpose` (null + `purposeHash` sha256). Recipient truncated + `recipientHash`. Amounts, status, rules, idempotency stay visible. |
+| Human console / `MANDATE_HUMAN_TOKEN` routes | Full purpose and full recipient. Hashes optional extras. |
+
+This is **receipt minimization**, not a TEE and not encryption-at-rest for the local-db. `settlement.submitted` stays `false` in this preview. An agent body field `privacyMode` is ignored — only the human policy controls disclosure.
+
 ## Security track: Function Call Keys (composition)
 
 NEAR **Function Call Keys (FCK)** can limit a key to a receiver contract + methods + allowance. They cannot express USD daily caps, human approval thresholds, or allow-lists the way Mandate does.

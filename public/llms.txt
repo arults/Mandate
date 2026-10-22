@@ -55,6 +55,14 @@ If the settlement check cannot be reached, or answers 429 or 5xx, the result is 
 A dry-run with would_succeed false, or any other 4xx, is settlement_refused and is stored. Nothing was spent.
 If the check fails while a human is approving, the hold stays and the key still returns needs_approval.
 
+
+## Privacy (minimize receipts)
+
+Default human policy privacyMode is minimize.
+On allow/reject/needs_approval receipts from this route: purpose is null and purposeHash is sha256 of the normalized purpose; to and settlement.recipient are truncated with recipientHash. Amounts, status, rule, and idempotency stay visible.
+You cannot set privacyMode in the body. Humans see full purpose and recipient on the console.
+This is not a TEE. settlement.submitted stays false. local-db is not encryption-at-rest.
+
 ## What this preview will not do
 
 It will not give you a private key.

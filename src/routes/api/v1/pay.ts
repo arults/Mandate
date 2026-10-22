@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { submitPayment } from "@/lib/gate.server";
+import { snapshot, submitPayment } from "@/lib/gate.server";
 import { readJsonBody } from "@/lib/http-body.server";
+import { projectReceipt } from "@/lib/privacy";
 
 export const Route = createFileRoute("/api/v1/pay")({
   server: {
@@ -11,7 +12,13 @@ export const Route = createFileRoute("/api/v1/pay")({
           const parsed = await readJsonBody(request);
           if (!parsed.ok) return parsed.response;
           const receipt = await submitPayment(parsed.value);
-          return Response.json({ receipt }, { headers: { "Cache-Control": "no-store" } });
+          const gate = snapshot();
+          // Agent-facing: honor policy.privacyMode (default minimize). Body flags cannot force full.
+          const publicReceipt = projectReceipt(receipt, gate.policy, "agent");
+          return Response.json(
+            { receipt: publicReceipt },
+            { headers: { "Cache-Control": "no-store" } },
+          );
         } catch (error) {
           const detail = error instanceof Error ? error.message : "Could not evaluate payment";
           const noPolicy = detail.startsWith("No policy");
