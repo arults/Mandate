@@ -41,6 +41,16 @@ Do not send approved, policy, signature, or a private key. Those fields are igno
 409 error conflict: this idempotencyKey was already used for a different payment.
 400: the body itself is invalid.
 
+## ## Read a prior receipt
+
+GET /api/v1/receipt?id=<receiptId>
+
+Same privacy-minimized receipt as POST /pay. 404 if Reset demo or a cold isolate dropped the ledger. Not a TEE. settlement.submitted stays false in preview.
+
+## Human freeze
+
+If the human freezes the wallet, POST /pay returns reject with rule frozen. Agents cannot unfreeze.
+
 ## Do not call
 
 POST /api/v1/policy, POST /api/v1/fund, POST /api/v1/approvals, and GET /api/v1/policy are human routes. Without a server-side human token they return 403. Calling them is not a payment.

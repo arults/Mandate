@@ -81,10 +81,14 @@ function ReceiptSlip({ receipt }: { receipt: GateReceipt | PublicGateReceipt }) 
       </div>
       <p className="mt-4 text-sm leading-6">{receipt.detail}</p>
       {receipt.ignoredFields.length > 0 && (
-        <p className="mt-2 text-sm text-hold">
-          Ignored fields the agent tried to send: {receipt.ignoredFields.join(", ")}. They did not change
-          the decision.
-        </p>
+        <div className="mt-3 rounded-control border border-hold bg-hold-bg px-3 py-3" role="status">
+          <p className="text-sm font-medium text-hold">Jailbreak fields ignored</p>
+          <p className="mt-1 font-mono text-xs text-fg">{receipt.ignoredFields.join(", ")}</p>
+          <p className="mt-1 text-sm text-muted">
+            The gate recomputed the decision from the human policy. Agent-supplied approved / policy / system
+            fields cannot raise caps, swap recipients, or mark a payment approved.
+          </p>
+        </div>
       )}
       <p className="mt-3 text-sm text-muted">{receipt.attestation.statement}</p>
       {receipt.settlement && (
@@ -116,29 +120,35 @@ function ReceiptSlip({ receipt }: { receipt: GateReceipt | PublicGateReceipt }) 
             <p className="mt-2 text-sm text-muted">{receipt.settlement.live.note}</p>
           )}
           {receipt.settlement.quote && (
-            <p className="mt-2 text-sm text-muted">
+            <div className="mt-3 rounded-control border border-border bg-bg px-3 py-3">
+              <p className="text-sm font-medium text-fg">NEAR Intents · 1-Click dry quote</p>
               {receipt.settlement.quote.status === "ok" ? (
-                <>
-                  1-Click dry quote{" "}
-                  <span className="font-mono text-xs text-fg">{receipt.settlement.quote.correlationId}</span>
+                <p className="mt-1 font-mono text-xs leading-5 text-muted">
+                  quote {receipt.settlement.quote.correlationId}
                   {receipt.settlement.quote.amountOutFormatted
                     ? ` · out ${receipt.settlement.quote.amountOutFormatted} USDC`
-                    : null}
+                    : ""}
                   {receipt.settlement.quote.amountOutUsd
                     ? ` · ≈ $${receipt.settlement.quote.amountOutUsd}`
-                    : null}
-                  . Not submitted.
-                </>
+                    : ""}
+                  <br />
+                  path {receipt.settlement.sourceChain} → {receipt.settlement.destinationChain} · dry only
+                  <br />
+                  submitted {String(receipt.settlement.submitted)} · not a broadcast · not a fill
+                </p>
               ) : (
-                <>{receipt.settlement.quote.note}</>
+                <p className="mt-1 text-sm text-muted">{receipt.settlement.quote.note}</p>
               )}
-            </p>
+            </div>
           )}
         </div>
       )}
       <p className="mt-4 font-mono text-xs text-subtle">
         {time} · remaining {formatUsd(receipt.remainingDailyUsd)} · fingerprint{" "}
         {receipt.attestation.policyFingerprint}
+      </p>
+      <p className="mt-2 font-mono text-xs text-subtle break-all">
+        Share (agent-minimized): /api/v1/receipt?id={receipt.id}
       </p>
     </article>
   );
@@ -223,6 +233,21 @@ export function Console() {
     setRecipientsText(DEMO_POLICY.allowedRecipients.join("\n"));
   }
 
+  async function resetDemo() {
+    setSpoken([]);
+    setSpeaking(null);
+    setFocusId(null);
+    await prepare();
+  }
+
+  async function setFrozen(frozen: boolean) {
+    const next = { ...draftFromText(), frozen };
+    const gate = await savePolicy({ data: next });
+    setDraft(gate.policy ?? next);
+    setRecipientsText((gate.policy ?? next).allowedRecipients.join("\n"));
+    setSnap(gate);
+  }
+
   async function pay(body: Record<string, unknown>) {
     const result = await requestPayment({ data: body });
     setSnap(result.gate);
@@ -252,7 +277,10 @@ export function Console() {
     // One server fn: prepareDemo + four submitPayment calls share the same
     // isolate / in-memory PGLite. Separate prepare then POST /api/v1/pay
     // races cold isolates on Vercel and returns 409 no_policy.
-    const result = await runDemoAgent({ data: { policy: DEMO_POLICY, runId } });
+    const result = (await runDemoAgent({ data: { policy: DEMO_POLICY, runId } })) as {
+      gate: Snapshot;
+      results: Array<{ beat: AgentBeat; receipt: PublicGateReceipt }>;
+    };
     setSnap(result.gate);
     setDraft(DEMO_POLICY);
     setRecipientsText(DEMO_POLICY.allowedRecipients.join("\n"));
@@ -297,6 +325,21 @@ export function Console() {
           <p className="text-sm text-muted">Remaining today</p>
           <p className="mt-1 font-mono text-3xl font-medium tabular-nums">
             {snap?.remainingDailyUsd == null ? "—" : formatUsd(snap.remainingDailyUsd)}
+          </p>
+          <p className="mt-2 flex flex-wrap gap-1.5 text-xs">
+            <span className="rounded-control bg-elevated px-2 py-0.5 font-mono text-fg">
+              {snap?.durability ?? "…"}
+            </span>
+            <span
+              className={`rounded-control px-2 py-0.5 font-mono ${
+                saved?.frozen ? "bg-deny-bg text-deny" : "bg-allow-bg text-allow"
+              }`}
+            >
+              {saved ? (saved.frozen ? "frozen" : "active") : "no policy"}
+            </span>
+            <span className="rounded-control bg-elevated px-2 py-0.5 font-mono text-subtle">
+              fp {(snap?.fingerprint ?? "—").slice(0, 8)}
+            </span>
           </p>
           <p className="mt-1 text-sm text-subtle">
             Balance {formatUsd(snap?.balanceUsd ?? 0)}
@@ -440,15 +483,25 @@ export function Console() {
             </label>
           </div>
 
-          <label className="mt-3 flex min-h-11 items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              className="size-4"
-              checked={draft.frozen}
-              onChange={(event) => setDraft({ ...draft, frozen: event.target.checked })}
-            />
-            Freeze wallet
-          </label>
+          <div className="mt-4 rounded-control border border-border bg-bg p-3">
+            <p className="text-sm font-medium">Panic freeze</p>
+            <p className="mt-1 text-xs leading-5 text-subtle">
+              Publishes immediately. Pending holds cancel. Next POST /api/v1/pay rejects with rule frozen.
+              The agent cannot unfreeze.
+            </p>
+            <button
+              type="button"
+              disabled={busy || !saved}
+              className={`mt-3 h-11 w-full rounded-control px-4 text-sm font-medium transition-colors duration-150 disabled:opacity-50 ${
+                saved?.frozen
+                  ? "border border-border hover:border-fg"
+                  : "bg-deny-bg text-deny hover:opacity-90"
+              }`}
+              onClick={() => run(() => setFrozen(!(saved?.frozen ?? draft.frozen)))}
+            >
+              {saved?.frozen ? "Unfreeze wallet" : "Freeze wallet now"}
+            </button>
+          </div>
 
           <label className="mt-3 flex min-h-11 items-center gap-2 text-sm">
             <input
@@ -488,6 +541,18 @@ export function Console() {
             >
               Prepare demo · $50/day · $200 USDC
             </button>
+            <button
+              type="button"
+              disabled={busy}
+              className="h-11 rounded-control border border-border px-4 text-sm font-medium transition-colors duration-150 hover:border-fg disabled:opacity-50"
+              onClick={() => run(resetDemo)}
+            >
+              Reset demo · wipe ledger + republish
+            </button>
+            <p className={helpClass}>
+              Reset clears ledger, pending, spend, and idempotency keys, then republishes DEMO_POLICY so a curl
+              agent can re-run cleanly on this instance.
+            </p>
           </div>
 
           <div className="mt-5 border-t border-border pt-4">
@@ -559,11 +624,16 @@ export function Console() {
                           </span>
                         )}
                         {done.receipt.ignoredFields.length > 0 && (
-                          <span className="ml-2 text-hold">· ignored {done.receipt.ignoredFields.join(", ")}</span>
+                          <span className="ml-2 rounded-control bg-hold-bg px-1.5 py-0.5 text-hold">
+                            jailbreak ignored · {done.receipt.ignoredFields.join(", ")}
+                          </span>
                         )}
                         {done.receipt.settlement && (
                           <span className="ml-2 font-mono text-xs text-subtle">
                             · submitted {String(done.receipt.settlement.submitted)}
+                            {done.receipt.settlement.quote?.status === "ok"
+                              ? ` · 1-Click quote ${done.receipt.settlement.quote.correlationId?.slice(0, 8) ?? ""}…`
+                              : ""}
                           </span>
                         )}
                       </p>

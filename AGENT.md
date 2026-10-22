@@ -48,3 +48,14 @@ type Judgment = {
 ```
 
 Discard `policyCompliance`. The gate recomputes it.
+
+## Read a receipt later
+
+`GET /api/v1/receipt?id=<receiptId>`
+
+Use the `receipt.id` from a prior `POST /api/v1/pay`. Returns the same agent-minimized receipt shape. `404` if this gate instance no longer has it (Reset demo, cold isolate without shared DB). This is **not** a TEE attestation and **not** proof of broadcast — read `settlement.submitted` (stays `false` in preview).
+
+## Human controls you cannot call
+
+Freeze / Unfreeze and Reset demo live on the human console. When frozen, your next `POST /api/v1/pay` returns `reject` with `rule: "frozen"`. You cannot unfreeze via `/pay`. After Reset demo the ledger is empty and `DEMO_POLICY` is republished — get a fresh allow before relying on an old receipt id.
+

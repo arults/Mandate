@@ -284,7 +284,7 @@ Honest
 
 ----------------------------------------------------------------------
 2026-10-23 — Run-the-agent isolate fix + Console USD labels
-  Tip: pending (this commit)
+  Tip: c68a514 · deploy dpl_BL3dPYUqUomsy2opsMjuFsYsUC6W READY
   Change: runDemoAgent createServerFn prepares + four submitPayment in ONE
     isolate so Vercel cold PGLite no longer 409 no_policy after prepare.
     Console Run the agent uses runDemoAgent (keeps /api/v1/pay contract).
@@ -292,3 +292,14 @@ Honest
   Tests: gate.run-demo.test.ts (+2); full app suite 117/117 pass (node 22).
   Note: curl /api/v1/pay still works warm/local; multi-isolate needs shared DB.
 ----------------------------------------------------------------------
+  Playwright prod smoke: Run the agent → Allowed / Needs approval / Blocked max_per_tx / Blocked allow-list.
+  Labels live: Max USD / tx, Daily USD limit, Approval above USD. Video embed intact.
+  curl POST /api/v1/pay without shared policy still 409 no_policy (expected multi-isolate).
+
+## 2026-10-23 — week improve: freeze + reset + shareable receipt + Intents surface (Jev freeze_receipt_intents)
+- Jev build_go 0.59 · stack freeze_receipt_intents 0.91 · actseal_now 0.41 HOLD. Videos paused.
+- prepareDemo now wipes ledger (Reset demo). Panic Freeze/Unfreeze publishes immediately.
+- GET /api/v1/receipt?id= — agent-minimized shareable receipt (not TEE, not broadcast).
+- Console: louder jailbreak callout; NEAR Intents 1-Click dry-quote box on allow receipts.
+- Tests: src/lib/gate.receipt-reset.test.ts
+- Honesty unchanged: settlement.submitted false; local-db != TEE.

@@ -16,6 +16,7 @@ import { Route as ApiV1ApprovalsRouteImport } from './routes/api/v1/approvals'
 import { Route as ApiV1FundRouteImport } from './routes/api/v1/fund'
 import { Route as ApiV1PayRouteImport } from './routes/api/v1/pay'
 import { Route as ApiV1PolicyRouteImport } from './routes/api/v1/policy'
+import { Route as ApiV1ReceiptRouteImport } from './routes/api/v1/receipt'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -52,6 +53,11 @@ const ApiV1PolicyRoute = ApiV1PolicyRouteImport.update({
   path: '/api/v1/policy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1ReceiptRoute = ApiV1ReceiptRouteImport.update({
+  id: '/api/v1/receipt',
+  path: '/api/v1/receipt',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -61,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/api/v1/fund': typeof ApiV1FundRoute
   '/api/v1/pay': typeof ApiV1PayRoute
   '/api/v1/policy': typeof ApiV1PolicyRoute
+  '/api/v1/receipt': typeof ApiV1ReceiptRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +77,7 @@ export interface FileRoutesByTo {
   '/api/v1/fund': typeof ApiV1FundRoute
   '/api/v1/pay': typeof ApiV1PayRoute
   '/api/v1/policy': typeof ApiV1PolicyRoute
+  '/api/v1/receipt': typeof ApiV1ReceiptRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   '/api/v1/fund': typeof ApiV1FundRoute
   '/api/v1/pay': typeof ApiV1PayRoute
   '/api/v1/policy': typeof ApiV1PolicyRoute
+  '/api/v1/receipt': typeof ApiV1ReceiptRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
     | '/api/v1/fund'
     | '/api/v1/pay'
     | '/api/v1/policy'
+    | '/api/v1/receipt'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/api/v1/fund'
     | '/api/v1/pay'
     | '/api/v1/policy'
+    | '/api/v1/receipt'
   id:
     | '__root__'
     | '/'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/api/v1/fund'
     | '/api/v1/pay'
     | '/api/v1/policy'
+    | '/api/v1/receipt'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,6 +131,7 @@ export interface RootRouteChildren {
   ApiV1FundRoute: typeof ApiV1FundRoute
   ApiV1PayRoute: typeof ApiV1PayRoute
   ApiV1PolicyRoute: typeof ApiV1PolicyRoute
+  ApiV1ReceiptRoute: typeof ApiV1ReceiptRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -172,6 +185,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1PolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/receipt': {
+      id: '/api/v1/receipt'
+      path: '/api/v1/receipt'
+      fullPath: '/api/v1/receipt'
+      preLoaderRoute: typeof ApiV1ReceiptRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -183,6 +203,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiV1FundRoute: ApiV1FundRoute,
   ApiV1PayRoute: ApiV1PayRoute,
   ApiV1PolicyRoute: ApiV1PolicyRoute,
+  ApiV1ReceiptRoute: ApiV1ReceiptRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

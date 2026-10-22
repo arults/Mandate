@@ -49,6 +49,8 @@ No clone required:
 3. Read four receipts: allow $8 · needs approval $18 · block $40 · jailbreak ignored
 4. **Approve** the $18 hold
 5. Confirm `settlement.submitted` is `false` and attestation is not a TEE unless an OutLayer dry-run returned `would_succeed: true`
+6. Optional: **Freeze wallet now** → next ask dies with `rule: frozen`. **Reset demo** wipes ledger so curl can re-run.
+7. Copy `receipt.id` → `GET /api/v1/receipt?id=…` for a shareable agent-minimized decision (still not a TEE / not broadcast).
 
 Exact agent curl against the live host (after Run the agent, or after you publish a policy locally):
 

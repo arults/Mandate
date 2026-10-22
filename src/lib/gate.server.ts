@@ -422,12 +422,24 @@ export function prepareDemo(input: unknown): Promise<Snapshot> {
     current.policy = parsePolicy(input);
     current.balanceCents = cents(200);
     current.spentCents = 0;
-    for (const item of current.pending) dropLedgerRow(current, item.receipt.id);
     current.pending = [];
+    current.ledger = [];
     current.idempotency = new Map();
     current.day = today();
     await persist(current);
     return snapshotOf(current);
+  });
+}
+
+/** Look up a stored receipt by id (ledger or pending). Null if unknown. */
+export async function getReceiptById(id: string): Promise<GateReceipt | null> {
+  if (!id || typeof id !== "string" || id.length > 80) return null;
+  return enqueue(async () => {
+    const current = state();
+    const fromLedger = current.ledger.find((item) => item.id === id);
+    if (fromLedger) return fromLedger;
+    const fromPending = current.pending.find((item) => item.receipt.id === id);
+    return fromPending ? fromPending.receipt : null;
   });
 }
 
