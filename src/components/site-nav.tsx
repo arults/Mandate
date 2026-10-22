@@ -28,7 +28,7 @@ export function SiteNav({ current }: { current: "home" | "docs" | "console" }) {
             Home
           </Link>
           <Link to="/docs" className={item(current === "docs")}>
-            Litepaper
+            Docs
           </Link>
           <Link
             to="/console"
