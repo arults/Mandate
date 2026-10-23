@@ -4,11 +4,14 @@
 
 This file is the agent contract. Humans can read the same rules at /docs.
 
+Stacked defense: NeMo Guardrails-class input rails live in /guardrails (Colang + config). Trip free with `node scripts/trip-input-rail.mjs` → RAIL_TRIP on jailbreak utterances, RAIL_CLEAR on a clean invoice. The Mandate gate on POST /api/v1/pay is still the hard lock (caps, allow-list, holds). Rails do not replace it. Vercel preview does not run a Python NeMo server. Not a TEE.
+
 ## Pages
 
 - [Home](/): the problem, how a payment is decided, why the refusal is structural, and what fail-closed means.
 - [Docs](/docs): the same rules, written for a person.
 - [Console](/console): the human sets the mandate and approves holds. Not an agent endpoint.
+- [Guardrails](https://github.com/arults/Mandate/tree/main/guardrails): NeMo-class rails config (judge-visible).
 
 ## Call only this
 
@@ -37,9 +40,15 @@ Do not send approved, policy, signature, or a private key. Those fields are igno
 - reject: blocked. receipt.rule names the rule.
 - cancelled: a human rejected the hold, the UTC day changed, or the wallet was frozen.
 
-409 error no_policy: the human has not saved a mandate. Do not invent one.
+409 error no_policy: the human has not saved a mandate. Do not invent one. On Vercel (local-db-ephemeral) a cold isolate and cross-isolate curl often return this even after a browser Run — expected. Prefer /console for the four-beat demo; curl against local npm run dev after Reset.
 409 error conflict: this idempotencyKey was already used for a different payment.
 400: the body itself is invalid.
+
+## Judge path (do X → see Y)
+
+1. Open /console → Reset demo → Run the agent → four receipts → Approve $18 → scroll $8 (submitted false).
+2. Jailbreak receipt lists ignoredFields approved, policy → Blocked allowed_recipients.
+3. Clone repo → `node scripts/trip-input-rail.mjs` → RAIL_TRIP on jailbeat purpose, RAIL_CLEAR on API invoice 14.
 
 ## Read a prior receipt
 
@@ -65,7 +74,6 @@ If the settlement check cannot be reached, or answers 429 or 5xx, the result is 
 A dry-run with would_succeed false, or any other 4xx, is settlement_refused and is stored. Nothing was spent.
 If the check fails while a human is approving, the hold stays and the key still returns needs_approval.
 
-
 ## Privacy (minimize receipts)
 
 Default human policy privacyMode is minimize.
@@ -79,3 +87,4 @@ It will not give you a private key.
 It will not treat the model as authorization.
 It will not broadcast.
 Durability (honest): local-db = file-backed PGLite that can survive a local process restart; local-db-ephemeral = in-memory PGLite on Vercel/serverless (warm isolate only — a cold isolate returns 409 no_policy / receipt 404); process-memory = persist skipped. None of these is a TEE or multi-instance shared store. Cross-isolate shared mandates need OutLayer / shared Postgres (roadmap). Do not treat a local allow as a TEE attestation. A dry-run runs only when the server has an OutLayer key, and only an allow with would_succeed true is spent. settlement.submitted stays false.
+NeMo Guardrails Python runtime is not hosted on this preview. Config + free trip script are in the public repo.

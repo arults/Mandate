@@ -303,3 +303,11 @@ Honest
 - Console: louder jailbreak callout; NEAR Intents 1-Click dry-quote box on allow receipts.
 - Tests: src/lib/gate.receipt-reset.test.ts
 - Honesty unchanged: settlement.submitted false; local-db != TEE.
+
+---
+2026-10-23 Asia/Calcutta · Phase 0 judge_path_harden + NeMo docs_plus_config_in_repo
+- README/AGENT/llms: Reset→Run→4 receipts→Approve→$8 submitted:false; curl honesty (Vercel cross-isolate 409); NeMo rail trip step
+- guardrails/config.yml + rails/jailbreak.co + scripts/trip-input-rail.mjs (free RAIL_TRIP)
+- console callout; litepaper §11 NeMo; MANDATE_HUMAN_TOKEN how-to
+- Jev nemo_visible_go 0.83 / docs_plus_config_in_repo p=0.71
+- No submit POST / no X / no TEE / no NeMo Python on Vercel

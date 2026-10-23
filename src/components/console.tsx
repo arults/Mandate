@@ -578,6 +578,14 @@ export function Console() {
               same-instance or locally; multi-isolate needs a shared DB later. The $18 hold waits for
               you after the run.
             </p>
+            <p className="mt-3 rounded-control border border-border bg-bg px-3 py-2 text-xs leading-5 text-muted">
+              <span className="font-medium text-fg">Guardrails</span> · NeMo-class input rails (
+              <span className="font-mono text-fg">guardrails/</span>) catch jailbreak language before the
+              ask. Trip free:{" "}
+              <span className="font-mono text-fg">node scripts/trip-input-rail.mjs</span> →{" "}
+              <span className="font-mono text-fg">RAIL_TRIP</span>. This console gate is still the hard
+              lock (not a TEE; NeMo Python is not hosted on Vercel).
+            </p>
             <button
               type="button"
               disabled={busy}
