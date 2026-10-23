@@ -5,7 +5,7 @@ import { projectReceipt } from "@/lib/privacy";
 
 /**
  * Shareable agent receipt lookup.
- * Returns the stored decision with privacy minimize (same as POST /pay).
+ * Returns the stored decision always privacy-minimized (force), even if policy.privacyMode is full.
  * Not a TEE attestation. Not proof of broadcast. settlement.submitted stays false in preview.
  */
 export const Route = createFileRoute("/api/v1/receipt")({
@@ -21,6 +21,13 @@ export const Route = createFileRoute("/api/v1/receipt")({
             { status: 400, headers: { "Cache-Control": "no-store" } },
           );
         }
+        // UUID shape only — reject probes before enqueue.
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+          return Response.json(
+            { error: "bad_request", detail: "Receipt id must be a UUID from a prior pay response." },
+            { status: 400, headers: { "Cache-Control": "no-store" } },
+          );
+        }
         const receipt = await getReceiptById(id);
         if (!receipt) {
           return Response.json(
@@ -33,7 +40,8 @@ export const Route = createFileRoute("/api/v1/receipt")({
           );
         }
         const gate = snapshot();
-        const publicReceipt = projectReceipt(receipt, gate.policy, "agent");
+        // Public GET always minimizes — ignore live policy.privacyMode=full.
+        const publicReceipt = projectReceipt(receipt, gate.policy, "agent", { forceMinimize: true });
         return Response.json(
           {
             receipt: publicReceipt,

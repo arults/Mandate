@@ -431,9 +431,11 @@ export function prepareDemo(input: unknown): Promise<Snapshot> {
   });
 }
 
-/** Look up a stored receipt by id (ledger or pending). Null if unknown. */
+const RECEIPT_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/** Look up a stored receipt by id (ledger or pending). Null if unknown / malformed. */
 export async function getReceiptById(id: string): Promise<GateReceipt | null> {
-  if (!id || typeof id !== "string" || id.length > 80) return null;
+  if (!id || typeof id !== "string" || id.length > 80 || !RECEIPT_ID_RE.test(id)) return null;
   return enqueue(async () => {
     const current = state();
     const fromLedger = current.ledger.find((item) => item.id === id);

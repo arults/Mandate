@@ -18,9 +18,15 @@ export type HumanAccessDecision = "allow" | "deny_closed" | "deny_auth";
  * Human-only controls (policy / fund / approvals / prepare-demo).
  *
  * HTTP agent paths stay locked unless MANDATE_HUMAN_TOKEN matches.
- * Console createServerFn paths allow same-origin browsers (Sec-Fetch-Site:
- * same-origin) so the demo works without a token, but curl/agents without
- * that header cannot rewrite policy or approve holds.
+ *
+ * When MANDATE_HUMAN_TOKEN is set, the matching x-mandate-human header is
+ * required for BOTH http and server-fn — Sec-Fetch-Site is NOT auth (clients
+ * can forge it) and never bypasses a configured token.
+ *
+ * When no token is configured, server-fn still soft-allows Sec-Fetch-Site:
+ * same-origin so the public console demo works. That heuristic is NOT real
+ * auth; agents/curl without it stay deny_closed. Set a token for any shared
+ * or production deploy.
  */
 export function decideHumanAccess(opts: {
   tokenEnv: string | undefined;
@@ -31,10 +37,10 @@ export function decideHumanAccess(opts: {
   const token = opts.tokenEnv?.trim() || undefined;
   if (token) {
     if (headerMatches(opts.humanHeader, token)) return "allow";
-    if (opts.mode === "server-fn" && opts.secFetchSite === "same-origin") return "allow";
     return "deny_auth";
   }
   if (opts.mode === "http") return "deny_closed";
+  // Soft demo gate only — not authentication.
   if (opts.secFetchSite === "same-origin") return "allow";
   return "deny_closed";
 }

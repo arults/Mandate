@@ -36,15 +36,15 @@ test.beforeEach(async () => {
   await prepareDemo(demo);
 });
 
-test("local-db survives clearing process memory (restart)", async () => {
+test("local-db-ephemeral (in-memory PGLite) survives clearing process memory in-isolate", async () => {
   const receipt = await submitPayment(pay({ idempotencyKey: "persist-1" }));
   assert.equal(receipt.status, "allow");
   assert.equal(snapshot().balanceUsd, 192);
-  assert.equal(snapshot().durability, "local-db");
+  assert.equal(snapshot().durability, "local-db-ephemeral");
 
   await forgetGateMemoryForTests();
   const restored = await awaitGateReady();
-  assert.equal(restored.durability, "local-db");
+  assert.equal(restored.durability, "local-db-ephemeral");
   assert.equal(restored.balanceUsd, 192);
   assert.equal(restored.remainingDailyUsd, 42);
   assert.equal(restored.policy?.dailyLimitUsd, 50);

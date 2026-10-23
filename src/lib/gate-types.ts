@@ -3,7 +3,7 @@ import { USDC_TOKEN } from "@/lib/policy";
 
 export type AttestationKind = "local-policy-gate" | "outlayer-dry-run";
 
-export type Durability = "process-memory" | "local-db";
+export type Durability = "process-memory" | "local-db" | "local-db-ephemeral";
 
 export type SettlementQuote = {
   status: "ok" | "unavailable" | "skipped";
@@ -59,9 +59,10 @@ export type Snapshot = {
   ledger: GateReceipt[];
   enforcement: "local-policy-gate";
   /**
-   * local-db = policy+ledger written through embedded PGLite (or file data dir).
-   * Still not a TEE and not multi-instance durable without a shared Postgres/OutLayer.
-   * process-memory = in-process only (MANDATE_DURABILITY=process-memory).
+   * local-db = file-backed PGLite (survives local restart).
+   * local-db-ephemeral = in-memory PGLite (warm isolate only; Vercel cold start forgets).
+   * process-memory = persist skipped (MANDATE_DURABILITY=process-memory).
+   * Still not a TEE and not multi-instance durable without shared Postgres/OutLayer.
    */
   durability: Durability;
   liveKey: boolean;

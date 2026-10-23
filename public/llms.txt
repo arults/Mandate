@@ -78,4 +78,4 @@ This is not a TEE. settlement.submitted stays false. local-db is not encryption-
 It will not give you a private key.
 It will not treat the model as authorization.
 It will not broadcast.
-The gate is one process, in memory. A restart forgets the mandate. Do not treat a local allow as a TEE attestation. A dry-run runs only when the server has an OutLayer key, and only an allow with would_succeed true is spent. settlement.submitted stays false.
+Durability (honest): local-db = file-backed PGLite that can survive a local process restart; local-db-ephemeral = in-memory PGLite on Vercel/serverless (warm isolate only — a cold isolate returns 409 no_policy / receipt 404); process-memory = persist skipped. None of these is a TEE or multi-instance shared store. Cross-isolate shared mandates need OutLayer / shared Postgres (roadmap). Do not treat a local allow as a TEE attestation. A dry-run runs only when the server has an OutLayer key, and only an allow with would_succeed true is spent. settlement.submitted stays false.

@@ -45,6 +45,9 @@ export const requestPayment = createServerFn({ method: "POST" })
     return data;
   })
   .handler(async ({ data }) => {
+    // Human console only. Agents must use POST /api/v1/pay (agent-minimized).
+    // Without this guard, TanStack RPC returned full purpose/to + full ledger.
+    assertHumanServerFn();
     const receipt = await submitPayment(data);
     return { receipt, gate: snapshot() };
   });
@@ -77,6 +80,16 @@ export const runDemoAgent = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     assertHumanServerFn();
-    return runDemoAgentFlow(data.policy, data.runId);
+    // Strip beat.body: Record<string, unknown> is not TanStack-serializable.
+    // Console only needs id/title/says + the privacy-minimized receipt.
+    const out = await runDemoAgentFlow(data.policy, data.runId);
+    return {
+      gate: out.gate,
+      receipts: out.receipts,
+      results: out.results.map(({ beat, receipt }) => ({
+        beat: { id: beat.id, title: beat.title, says: beat.says },
+        receipt,
+      })),
+    };
   });
 

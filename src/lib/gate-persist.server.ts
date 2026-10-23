@@ -1,6 +1,7 @@
 /**
  * Durable store for the Mandate gate (policy + ledger + holds).
- * Uses embedded PGLite (file-backed when possible). Label: durability "local-db".
+ * Uses embedded PGLite (file-backed when possible).
+ * Labels: local-db (file), local-db-ephemeral (in-memory / Vercel), process-memory (off).
  * Not a TEE. Not multi-instance consensus. Set MANDATE_DURABILITY=process-memory to skip.
  */
 import { mkdirSync } from "node:fs";
@@ -11,7 +12,7 @@ import type { PGlite } from "@electric-sql/pglite";
 import type { GateReceipt } from "@/lib/gate-types";
 import type { HumanPolicy, PaymentRequest } from "@/lib/policy";
 
-export type DurabilityMode = "process-memory" | "local-db";
+export type DurabilityMode = "process-memory" | "local-db" | "local-db-ephemeral";
 
 export type PersistedPending = {
   receipt: GateReceipt;
@@ -39,9 +40,26 @@ const globalRef = globalThis as typeof globalThis & {
   __mandateGateHydrated__?: boolean;
 };
 
+/** True when PGLite cannot use a durable file dir (tests / Vercel / Lambda / explicit memory). */
+export function isEphemeralPgData(): boolean {
+  if (process.env.MANDATE_PGDATA?.trim()) return false;
+  if (process.env.MANDATE_PGDATA_MEMORY === "1") return true;
+  if (process.env.NODE_TEST === "1") return true;
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) return true;
+  return false;
+}
+
+/**
+ * Honesty label for snapshot/UI:
+ * - process-memory: persist skipped entirely
+ * - local-db: file-backed PGLite (survives local process restart)
+ * - local-db-ephemeral: in-memory PGLite (same-isolate only; cold Vercel isolates forget)
+ */
 export function durabilityMode(): DurabilityMode {
   const raw = (process.env.MANDATE_DURABILITY ?? "local-db").trim().toLowerCase();
   if (raw === "process-memory" || raw === "memory" || raw === "off") return "process-memory";
+  if (raw === "local-db-ephemeral" || raw === "ephemeral") return "local-db-ephemeral";
+  if (isEphemeralPgData()) return "local-db-ephemeral";
   return "local-db";
 }
 
@@ -50,9 +68,7 @@ function dataDir(): string | undefined {
   if (custom) return resolve(custom);
   // node:test / CI / serverless: in-memory PGLite. File-backed mode on Vercel
   // tried to open /var/task/_libs/pglite.data and broke /api/v1/pay.
-  if (process.env.MANDATE_PGDATA_MEMORY === "1") return undefined;
-  if (process.env.NODE_TEST === "1") return undefined;
-  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) return undefined;
+  if (isEphemeralPgData()) return undefined;
   const root = resolve(".data/mandate-gate");
   try {
     mkdirSync(root, { recursive: true });

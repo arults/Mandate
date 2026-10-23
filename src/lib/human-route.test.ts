@@ -37,3 +37,24 @@ test("timing-safe mismatch rejects wrong length tokens", () => {
     "deny_auth",
   );
 });
+
+test("Sec-Fetch-Site cannot bypass a configured human token on server-fn", () => {
+  assert.equal(
+    decideHumanAccess({
+      tokenEnv: "tok",
+      humanHeader: null,
+      secFetchSite: "same-origin",
+      mode: "server-fn",
+    }),
+    "deny_auth",
+  );
+  assert.equal(
+    decideHumanAccess({
+      tokenEnv: "tok",
+      humanHeader: "tok",
+      secFetchSite: null,
+      mode: "server-fn",
+    }),
+    "allow",
+  );
+});

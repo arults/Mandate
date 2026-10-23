@@ -91,3 +91,10 @@ test("runDemoAgentFlow jailbeat lists ignoredFields for agent trust", async () =
   assert.ok(jail!.receipt.ignoredFields.includes("approved"));
   assert.ok(jail!.receipt.ignoredFields.includes("policy"));
 });
+
+test("getReceiptById returns null for malformed ids", async () => {
+  await prepareDemo(demo);
+  assert.equal(await getReceiptById("../etc/passwd"), null);
+  assert.equal(await getReceiptById("not-a-uuid"), null);
+  assert.equal(await getReceiptById("x".repeat(100)), null);
+});

@@ -134,3 +134,13 @@ test("parsePolicy defaults privacyMode to minimize", () => {
   });
   assert.equal(full.privacyMode, "full");
 });
+
+test("forceMinimize redacts even when policy.privacyMode is full", async () => {
+  await publishPolicy({ ...demo, privacyMode: "full" });
+  const full = await submitPayment(pay({ purpose: "secret invoice note" }));
+  const forced = projectReceipt(full, snapshot().policy, "agent", { forceMinimize: true });
+  assert.equal(forced.privacyMode, "minimize");
+  assert.equal(forced.request.purpose, null);
+  assert.equal(forced.request.to.includes("vendor.near") && "vendor.near".length > 10, false);
+  assert.ok(forced.request.purposeHash);
+});

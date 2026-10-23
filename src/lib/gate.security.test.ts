@@ -37,7 +37,7 @@ test("an allowlisted payment spends once", async () => {
   assert.equal(receipt.settlement?.quote?.status, "skipped");
   assert.equal(snapshot().balanceUsd, 192);
   assert.equal(snapshot().remainingDailyUsd, 42);
-  assert.equal(snapshot().durability, "local-db");
+  assert.equal(snapshot().durability, "local-db-ephemeral");
 });
 
 test("jailbreak fields cannot approve or rewrite the cap", async () => {
@@ -367,7 +367,7 @@ test("human HTTP routes stay closed to the agent unless a server token matches",
   }
 });
 
-test("server-fn human access allows same-origin console and blocks agent curl", async () => {
+test("server-fn human access: soft same-origin without token; token required when configured", async () => {
   const { decideHumanAccess } = await import("./human-route.server.ts");
   assert.equal(
     decideHumanAccess({ tokenEnv: undefined, humanHeader: null, secFetchSite: null, mode: "server-fn" }),
@@ -409,6 +409,7 @@ test("server-fn human access allows same-origin console and blocks agent curl", 
     }),
     "deny_auth",
   );
+  // Configured token is required — Sec-Fetch-Site alone is not auth.
   assert.equal(
     decideHumanAccess({
       tokenEnv: "secret",
@@ -416,7 +417,7 @@ test("server-fn human access allows same-origin console and blocks agent curl", 
       secFetchSite: "same-origin",
       mode: "server-fn",
     }),
-    "allow",
+    "deny_auth",
   );
 });
 

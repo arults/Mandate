@@ -72,14 +72,17 @@ function projectSettlement(
  * Project a stored (full) receipt for a viewer.
  * Agents never receive raw purpose or full recipient when policy.privacyMode is minimize.
  * Humans always get the full receipt. privacyMode on the agent body is ignored elsewhere.
+ * forceMinimize: public share links ignore live policy.privacyMode=full.
  */
 export function projectReceipt(
   receipt: GateReceipt,
   policy: HumanPolicy | null | undefined,
   view: ReceiptView,
+  opts?: { forceMinimize?: boolean },
 ): PublicGateReceipt {
-  const mode: PrivacyMode = policy?.privacyMode === "full" ? "full" : "minimize";
-  if (view === "human" || mode === "full") {
+  const mode: PrivacyMode =
+    opts?.forceMinimize ? "minimize" : policy?.privacyMode === "full" ? "full" : "minimize";
+  if (!opts?.forceMinimize && (view === "human" || mode === "full")) {
     return {
       ...receipt,
       request: {

@@ -82,7 +82,7 @@ The app listens on port 8080. No `.env` file required. Optional, server-only:
 |---|---|
 | `OUTLAYER_API_KEY` | Allowed payments also dry-run OutLayer withdraw. Still no broadcast. |
 | `MANDATE_HUMAN_TOKEN` | Opens HTTP `/policy` `/fund` `/approvals` when `x-mandate-human` matches. |
-| `MANDATE_DURABILITY` | `local-db` (default) persists policy+ledger via embedded PGLite. `process-memory` disables disk/db persistence. |
+| `MANDATE_DURABILITY` | Intent `local-db` (default). Snapshot reports `local-db-ephemeral` on Vercel/tests (in-memory PGLite). `process-memory` skips persist. |
 | `MANDATE_PGDATA` | Optional PGLite data directory (default `.data/mandate-gate` locally, `/tmp/mandate-gate` on Vercel). |
 | `MANDATE_1CLICK_QUOTE` | `1` (default) = dry-quote on allow. `0` skips the network call. |
 
@@ -90,7 +90,7 @@ Production keys live in OutLayer (`https://api.outlayer.ai`, skill at `https://s
 
 ## Durability (honest)
 
-Default **`durability: "local-db"`**: policy, balance, pending holds, ledger, and idempotency keys are written through an embedded **PGLite** store so a process-memory clear / local restart can reload them. This is **not** a TEE attestation and **not** multi-instance shared storage. On serverless without a shared Postgres (`DATABASE_URL` / Neon), cold starts can still lose `/tmp` data — production stores the mandate in OutLayer, encrypted on NEAR. Set `MANDATE_DURABILITY=process-memory` for the old in-memory-only behavior.
+Default durability intent is **`local-db`** (file-backed PGLite). On Vercel/Lambda/tests the snapshot honestly reports **`local-db-ephemeral`** (in-memory PGLite, warm isolate only — cold isolates return `409 no_policy`). File-backed **`local-db`** can survive a local process restart. **`process-memory`** skips persist. None of these is a TEE or multi-instance shared store; OutLayer / shared Postgres is the roadmap. Set `MANDATE_DURABILITY=process-memory` to force in-process-only.
 
 ## Privacy (agent receipts)
 

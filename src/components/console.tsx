@@ -15,6 +15,9 @@ import {
 } from "@/lib/policy";
 import type { PublicGateReceipt } from "@/lib/privacy";
 
+/** Server-fn safe beat view (body omitted — not TanStack-serializable as Record<string, unknown>). */
+type DemoBeatView = Pick<AgentBeat, "id" | "title" | "says">;
+
 const fieldClass =
   "h-11 w-full rounded-control border border-border bg-bg px-3 text-fg outline-none placeholder:text-subtle";
 
@@ -167,7 +170,7 @@ export function Console() {
   const [purpose, setPurpose] = useState("API invoice 14");
   const [fundAmount, setFundAmount] = useState("50");
   const [focusId, setFocusId] = useState<string | null>(null);
-  const [spoken, setSpoken] = useState<Array<{ beat: AgentBeat; receipt: PublicGateReceipt | GateReceipt }>>([]);
+  const [spoken, setSpoken] = useState<Array<{ beat: DemoBeatView; receipt: PublicGateReceipt | GateReceipt }>>([]);
   const [speaking, setSpeaking] = useState<string | null>(null);
   const revision = useRef(0);
   const inFlight = useRef(false);
@@ -254,22 +257,6 @@ export function Console() {
     setFocusId(result.receipt.id);
   }
 
-  async function postAsAgent(body: Record<string, unknown>): Promise<PublicGateReceipt> {
-    const response = await fetch("/api/v1/pay", {
-      method: "POST",
-      headers: { accept: "application/json", "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const payload = (await response.json()) as { receipt?: PublicGateReceipt; detail?: string };
-    if (!response.ok || !payload.receipt) {
-      throw new Error(payload.detail || "The pay route refused that body.");
-    }
-    const gate = await getGate();
-    setSnap(gate);
-    setFocusId(payload.receipt.id);
-    return payload.receipt;
-  }
-
   async function runAgent() {
     setSpoken([]);
     setSpeaking("Preparing demo in one pass…");
@@ -279,7 +266,7 @@ export function Console() {
     // races cold isolates on Vercel and returns 409 no_policy.
     const result = (await runDemoAgent({ data: { policy: DEMO_POLICY, runId } })) as {
       gate: Snapshot;
-      results: Array<{ beat: AgentBeat; receipt: PublicGateReceipt }>;
+      results: Array<{ beat: DemoBeatView; receipt: PublicGateReceipt }>;
     };
     setSnap(result.gate);
     setDraft(DEMO_POLICY);
@@ -317,8 +304,8 @@ export function Console() {
         <div className="max-w-xl">
           <h1 className="text-3xl font-medium tracking-tight sm:text-5xl">Watch the agent ask.</h1>
           <p className="mt-4 text-base leading-relaxed text-muted">
-            You set the caps. The agent only calls the pay route. This mandate lives in this process. A restart
-            forgets it. Nothing here is broadcast.
+            You set the caps. The agent only calls the pay route. Durability badge shows how this isolate stores
+            the mandate (file local-db vs ephemeral in-memory on Vercel). Nothing here is broadcast.
           </p>
         </div>
         <div className="border border-border bg-surface px-5 py-4">
