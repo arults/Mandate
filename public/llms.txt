@@ -4,14 +4,13 @@
 
 This file is the agent contract. Humans can read the same rules at /docs.
 
-Stacked defense: NeMo Guardrails-class input rails live in /guardrails (Colang + config). Trip free with `node scripts/trip-input-rail.mjs` → RAIL_TRIP on jailbreak utterances, RAIL_CLEAR on a clean invoice. The Mandate gate on POST /api/v1/pay is still the hard lock (caps, allow-list, holds). Rails do not replace it. Vercel preview does not run a Python NeMo server. Not a TEE.
+The Mandate gate on POST /api/v1/pay is the hard lock (caps, allow-list, holds). Jailbreak fields approved/policy are ignored. Not a TEE. Not a broadcast.
 
 ## Pages
 
 - [Home](/): the problem, how a payment is decided, why the refusal is structural, and what fail-closed means.
 - [Docs](/docs): the same rules, written for a person.
 - [Console](/console): the human sets the mandate and approves holds. Not an agent endpoint.
-- [Guardrails](https://github.com/arults/Mandate/tree/main/guardrails): NeMo-class rails config (judge-visible).
 
 ## Call only this
 
@@ -48,7 +47,6 @@ Do not send approved, policy, signature, or a private key. Those fields are igno
 
 1. Open /console → Reset demo → Run the agent → four receipts → Approve $18 → scroll $8 (submitted false).
 2. Jailbreak receipt lists ignoredFields approved, policy → Blocked allowed_recipients.
-3. Clone repo → `node scripts/trip-input-rail.mjs` → RAIL_TRIP on jailbeat purpose, RAIL_CLEAR on API invoice 14.
 
 ## Read a prior receipt
 
@@ -87,4 +85,3 @@ It will not give you a private key.
 It will not treat the model as authorization.
 It will not broadcast.
 Durability (honest): local-db = file-backed PGLite that can survive a local process restart; local-db-ephemeral = in-memory PGLite on Vercel/serverless (warm isolate only — a cold isolate returns 409 no_policy / receipt 404); process-memory = persist skipped. None of these is a TEE or multi-instance shared store. Cross-isolate shared mandates need OutLayer / shared Postgres (roadmap). Do not treat a local allow as a TEE attestation. A dry-run runs only when the server has an OutLayer key, and only an allow with would_succeed true is spent. settlement.submitted stays false.
-NeMo Guardrails Python runtime is not hosted on this preview. Config + free trip script are in the public repo.

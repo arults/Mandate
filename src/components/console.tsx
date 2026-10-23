@@ -392,7 +392,7 @@ export function Console() {
             <div className="mt-3">
               <PolicySummary policy={saved} />
               <details className="mt-4">
-                <summary className="cursor-pointer text-sm font-medium">Document the enclave would store</summary>
+                <summary className="cursor-pointer text-sm font-medium">Policy document the gate evaluates</summary>
                 <pre className="mt-3 max-w-full overflow-x-auto whitespace-pre-wrap break-all bg-bg p-3 font-mono text-xs leading-5 text-muted">
                   {JSON.stringify(enclaveDocument(saved), null, 2)}
                 </pre>
@@ -579,12 +579,9 @@ export function Console() {
               you after the run.
             </p>
             <p className="mt-3 rounded-control border border-border bg-bg px-3 py-2 text-xs leading-5 text-muted">
-              <span className="font-medium text-fg">Guardrails</span> · NeMo-class input rails (
-              <span className="font-mono text-fg">guardrails/</span>) catch jailbreak language before the
-              ask. Trip free:{" "}
-              <span className="font-mono text-fg">node scripts/trip-input-rail.mjs</span> →{" "}
-              <span className="font-mono text-fg">RAIL_TRIP</span>. This console gate is still the hard
-              lock (not a TEE; NeMo Python is not hosted on Vercel).
+              Jailbreak bodies that send <span className="font-mono text-fg">approved</span> /{" "}
+              <span className="font-mono text-fg">policy</span> are ignored. This console gate is the hard
+              lock — local policy evaluation, not a TEE attestation, not a broadcast.
             </p>
             <button
               type="button"

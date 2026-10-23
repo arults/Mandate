@@ -311,3 +311,9 @@ Honest
 - console callout; litepaper §11 NeMo; MANDATE_HUMAN_TOKEN how-to
 - Jev nemo_visible_go 0.83 / docs_plus_config_in_repo p=0.71
 - No submit POST / no X / no TEE / no NeMo Python on Vercel
+
+2026-10-23 Asia/Calcutta · Jev preferred prune: delete_nemo_plus_hygiene + TEE wording trim (Arul override go<0.90)
+- Removed guardrails/ + scripts/trip-input-rail.mjs + NeMo callouts (README/AGENT/llms/console/docs)
+- Trimmed TEE stand-in / enclave-would-make wording; keep honest not-a-TEE / submitted:false
+- Policy gate + jailbreak ignore unchanged; package.json test drops trip script
+- Free only; no spend; no X/submit
