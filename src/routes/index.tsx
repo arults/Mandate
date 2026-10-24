@@ -6,10 +6,10 @@ export const Route = createFileRoute("/")({
   component: Home,
   head: () => ({
     meta: [
-      { title: "Mandate" },
+      { title: "Mandate — spending rules for AI that pay" },
       {
         name: "description",
-        content: "The agent can ask. It cannot sign. A human sets the spending mandate once.",
+        content: "You set spending rules. Your AI asks to pay vendors — without your keys. Clever prompts cannot drain the wallet.",
       },
     ],
   }),

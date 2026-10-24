@@ -19,7 +19,7 @@ export function SiteNav({ current }: { current: "home" | "docs" | "console" }) {
             </span>
             <span className="font-display text-xl leading-none tracking-tight text-fg">Mandate</span>
           </Link>
-          <span className="hidden rounded-control border border-border bg-surface px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted sm:inline">
+          <span className="hidden rounded-control border border-border bg-surface px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted sm:inline">
             NEAR HACKATHON 2026
           </span>
         </div>
@@ -38,7 +38,7 @@ export function SiteNav({ current }: { current: "home" | "docs" | "console" }) {
                 : "inline-flex h-9 items-center border border-border bg-surface px-3 text-sm font-medium text-fg transition-colors duration-150 hover:border-fg"
             }
           >
-            Console
+            Control panel
           </Link>
         </nav>
       </div>

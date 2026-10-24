@@ -85,11 +85,11 @@ function ReceiptSlip({ receipt }: { receipt: GateReceipt | PublicGateReceipt }) 
       <p className="mt-4 text-sm leading-6">{receipt.detail}</p>
       {receipt.ignoredFields.length > 0 && (
         <div className="mt-3 rounded-control border border-hold bg-hold-bg px-3 py-3" role="status">
-          <p className="text-sm font-medium text-hold">Jailbreak fields ignored</p>
+          <p className="text-sm font-medium text-hold">Fake approval ignored</p>
           <p className="mt-1 font-mono text-xs text-fg">{receipt.ignoredFields.join(", ")}</p>
           <p className="mt-1 text-sm text-muted">
-            The gate recomputed the decision from the human policy. Agent-supplied approved / policy / system
-            fields cannot raise caps, swap recipients, or mark a payment approved.
+            The checker decided again from your saved rules. The AI cannot raise caps, change who gets paid, or
+            mark a payment approved by itself.
           </p>
         </div>
       )}
@@ -104,8 +104,8 @@ function ReceiptSlip({ receipt }: { receipt: GateReceipt | PublicGateReceipt }) 
             }`}
           >
             {receipt.attestation.kind === "outlayer-dry-run"
-              ? "OutLayer dry-run would succeed. Not a broadcast."
-              : "Local policy gate. Not a TEE attestation. Not a broadcast."}
+              ? "Practice custody check passed. Money was not sent."
+              : "Rules checked in this app. Not a hardware vault. Money was not sent."}
           </p>
           <p className="mt-3 font-mono text-xs leading-5 text-muted">
             NEAR intents · {receipt.settlement.amountUnits} units of {receipt.settlement.token}
@@ -302,10 +302,11 @@ export function Console() {
     <main className="mx-auto w-full max-w-6xl px-5 py-8 sm:py-12">
       <header className="grid gap-8 border-b border-border pb-8 lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-end">
         <div className="max-w-xl">
-          <h1 className="text-3xl font-medium tracking-tight sm:text-5xl">Watch the agent ask.</h1>
+          <h1 className="text-3xl font-medium tracking-tight sm:text-5xl">Watch your AI ask to pay.</h1>
           <p className="mt-4 text-base leading-relaxed text-muted">
-            You set the caps. The agent only calls the pay route. Durability badge shows how this isolate stores
-            the mandate (file local-db vs ephemeral in-memory on Vercel). Nothing here is broadcast.
+            You set the spending rules. Your AI can only ask — it never gets the keys. The badge on the right
+            shows how this demo remembers your rules (on this preview host, demo data can reset when the server
+            sleeps). Nothing here sends money on-chain.
           </p>
         </div>
         <div className="border border-border bg-surface px-5 py-4">
@@ -334,8 +335,8 @@ export function Console() {
           </p>
           <p className="mt-2 text-sm text-muted">
             {snap?.liveKey
-              ? "An allow asks OutLayer for a dry-run. would_succeed must be true, or nothing is spent."
-              : "No OutLayer key in this process. An allow is the local gate, not a TEE attestation."}
+              ? "A yes runs a practice check with the custody partner. Money still is not sent."
+              : "This preview checks rules inside the app. It is not a hardware vault. Money is not sent."}
           </p>
           {snap && snap.pending.length > 0 && (
             <p className="mt-2 text-sm text-fg">
@@ -348,7 +349,7 @@ export function Console() {
       <section className="mt-6 max-w-2xl rounded-card border border-border bg-surface p-5">
         <h2 className="text-sm font-medium">Watch how it works</h2>
         <p className="mt-1 text-sm text-muted">
-          Ninety seconds on Max USD / tx, Daily USD limit, Approval above USD, Allow-list, Save, and Run the agent.
+          About ninety seconds: set your dollar limits, who can be paid, when to ask you, save, then run the demo.
         </p>
         <div className="mt-4 overflow-hidden rounded-control border border-border bg-bg">
           <video
@@ -374,18 +375,18 @@ export function Console() {
 
       <div className="mt-6 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
         <section className="min-w-0 rounded-card border border-border bg-surface p-5">
-          <h2 className="text-lg font-medium">Policy</h2>
+          <h2 className="text-lg font-medium">Your spending rules</h2>
           <p className="mt-1 text-sm text-muted">
-            Saved by you. The agent request cannot edit these fields. Privacy minimize: agent receipts hide
-            purpose/recipient; you still see full detail.
+            Saved by you. The AI cannot edit these. Shared receipts can hide some details from outsiders; you
+            still see the full picture here.
           </p>
           <details className="mt-3 rounded-control border border-border bg-bg px-3 py-2">
             <summary className="cursor-pointer text-sm font-medium">How to play</summary>
             <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm leading-5 text-muted">
-              <li>Set caps below, then Save policy.</li>
-              <li>Or hit Prepare demo for a ready $50/day kit.</li>
-              <li>Run the agent — four asks (allow / hold / reject / jailbreak).</li>
-              <li>Approve or Reject anything that lands in Waiting on you.</li>
+              <li>Set your limits below, then Save rules.</li>
+              <li>Or hit Prepare demo for a ready $50/day starter kit.</li>
+              <li>Run the demo — four asks (yes / ask you / no / ignore a fake approval).</li>
+              <li>Approve or reject anything that lands in Waiting on you.</li>
             </ul>
           </details>
           {saved ? (
@@ -402,7 +403,7 @@ export function Console() {
               </details>
             </div>
           ) : (
-            <p className="mt-3 text-sm text-hold">No policy published yet. Payments will refuse.</p>
+            <p className="mt-3 text-sm text-hold">No rules saved yet. Payment asks will be refused.</p>
           )}
 
           <div className="mt-5 grid grid-cols-2 gap-3">
@@ -473,8 +474,8 @@ export function Console() {
           <div className="mt-4 rounded-control border border-border bg-bg p-3">
             <p className="text-sm font-medium">Panic freeze</p>
             <p className="mt-1 text-xs leading-5 text-subtle">
-              Publishes immediately. Pending holds cancel. Next POST /api/v1/pay rejects with rule frozen.
-              The agent cannot unfreeze.
+              Takes effect immediately. Waiting holds cancel. New payment asks are blocked until you unfreeze.
+              The AI cannot unfreeze this.
             </p>
             <button
               type="button"
@@ -505,7 +506,7 @@ export function Console() {
             Privacy minimize (agent receipts)
           </label>
           <p className={helpClass}>
-            Privacy minimize: agent receipts hide purpose/recipient; you still see full detail. Not a TEE.
+            When on, shared receipts hide purpose and payee from outsiders. You still see full detail here.
           </p>
 
           <div className="mt-4 flex flex-col gap-2">
@@ -515,10 +516,10 @@ export function Console() {
               className="h-11 rounded-control bg-accent px-4 text-sm font-medium text-accent-fg transition-colors duration-150 hover:bg-accent-hover disabled:opacity-50"
               onClick={() => run(() => save())}
             >
-              Save policy
+              Save rules
             </button>
             <p className={helpClass}>
-              Draft is local until Save. Without a published policy, pay refuses.
+              Draft stays on this page until you Save. Without saved rules, payment asks are refused.
             </p>
             <button
               type="button"
@@ -537,8 +538,8 @@ export function Console() {
               Reset demo · wipe ledger + republish
             </button>
             <p className={helpClass}>
-              Reset clears ledger, pending, spend, and idempotency keys, then republishes DEMO_POLICY so a curl
-              agent can re-run cleanly on this instance.
+              Reset clears the demo ledger and waiting holds, then restores the starter rules so you can run
+              the four asks again from a clean slate.
             </p>
           </div>
 
@@ -571,17 +572,15 @@ export function Console() {
 
         <section className="flex min-w-0 flex-col gap-4">
           <div className="rounded-card border border-border bg-elevated p-5">
-            <h2 className="text-lg font-medium">The agent</h2>
+            <h2 className="text-lg font-medium">Your AI asks</h2>
             <p className="mt-1 text-sm text-muted">
-              Four asks in one server pass (same isolate as prepare). Agent contract stays{" "}
-              <span className="font-mono text-fg">POST /api/v1/pay</span> for curl — works on a warm
-              same-instance or locally; multi-isolate needs a shared DB later. The $18 hold waits for
-              you after the run.
+              One click runs four payment asks against your saved rules. The mid-size ask waits for your
+              approval. Builders who want the machine contract can still open Docs or For agents in the footer.
             </p>
             <p className="mt-3 rounded-control border border-border bg-bg px-3 py-2 text-xs leading-5 text-muted">
-              Jailbreak bodies that send <span className="font-mono text-fg">approved</span> /{" "}
-              <span className="font-mono text-fg">policy</span> are ignored. This console gate is the hard
-              lock — local policy evaluation, not a TEE attestation, not a broadcast.
+              If the AI claims “already approved” or tries to rewrite your limits, those claims are ignored.
+              Only your saved rules decide. This preview checks rules in the app — not a hardware vault — and
+              does not send money on-chain.
             </p>
             <button
               type="button"
@@ -589,11 +588,11 @@ export function Console() {
               className="mt-4 h-11 w-full rounded-control bg-accent px-4 text-sm font-medium text-accent-fg transition-colors duration-150 hover:bg-accent-hover disabled:opacity-50"
               onClick={() => run(runAgent)}
             >
-              {busy && speaking ? "Agent is asking…" : "Run the agent"}
+              {busy && speaking ? "AI is asking…" : "Run the demo"}
             </button>
             <p className={`mt-2 ${helpClass}`}>
-              One-click demo: prepares DEMO_POLICY and runs four asks (allow / hold / reject / jailbreak)
-              without leaving this process — avoids Vercel 409 no_policy across cold isolates.
+              One-click demo: loads starter rules if needed and runs four asks (yes / ask you / no / ignore a
+              fake approval) in this same session.
             </p>
             <ol className="mt-4 flex flex-col gap-3" aria-live="polite">
               {agentBeats("plan").map((beat) => {
@@ -611,8 +610,8 @@ export function Console() {
                         {done.receipt.status === "allow" && (
                           <span className="ml-2 text-muted">
                             {done.receipt.attestation.kind === "outlayer-dry-run"
-                              ? "· dry-run would succeed · not broadcast"
-                              : "· local gate · not a TEE · not broadcast"}
+                              ? "· practice check passed · money not sent"
+                              : "· rules checked in-app · money not sent"}
                           </span>
                         )}
                         {done.receipt.ignoredFields.length > 0 && (
@@ -692,7 +691,7 @@ export function Console() {
               <ReceiptSlip receipt={focused} />
             ) : (
               <p className="rounded-card border border-dashed border-border px-5 py-8 text-sm text-muted">
-                No receipt yet. Run the agent. The $8 allow should say submitted false.
+                No receipt yet. Run the demo. The small allowed payment should say money was not sent.
               </p>
             )}
           </div>

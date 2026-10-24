@@ -5,7 +5,7 @@ import appCss from "../styles.css?url";
 
 const APP_NAME = "Mandate";
 const DESCRIPTION =
-  "The agent can ask. It cannot sign. A human sets a spending mandate; a policy gate outside the model decides.";
+  "You set spending rules. Your AI asks to pay — without your keys. A checker outside the AI says yes, ask you, or no.";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -15,7 +15,7 @@ export const Route = createRootRoute({
       { title: APP_NAME },
       { name: "description", content: DESCRIPTION },
       { name: "theme-color", content: "#f2f1e9" },
-      { property: "og:title", content: "Mandate — the agent can ask. It cannot sign." },
+      { property: "og:title", content: "Mandate — you set the rules. Your AI asks without your keys." },
       { property: "og:description", content: DESCRIPTION },
       { property: "og:type", content: "website" },
       { property: "og:image", content: "/og.jpg" },

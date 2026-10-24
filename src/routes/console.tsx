@@ -5,6 +5,6 @@ import { Console } from "@/components/console";
 export const Route = createFileRoute("/console")({
   component: Console,
   head: () => ({
-    meta: [{ title: "Console · Mandate" }],
+    meta: [{ title: "Control panel · Mandate" }],
   }),
 });
