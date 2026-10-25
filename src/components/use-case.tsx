@@ -17,13 +17,13 @@ const cases = [
   },
   {
     n: "2",
-    title: "Outdoor program gear",
-    who: "An outdoor educator or small program operator",
+    title: "Hotel and flight booking",
+    who: "A lean travel partner, or a founder whose AI books trips",
     situation:
-      "An AI helps book gear or a local vendor for a trip and needs to pay a deposit.",
-    help: "Your rules name allowed vendors and max amounts. Asks above your line wait for you. Everything under the line can move without you typing each time.",
+      "The AI finds a hotel or flight for a client (or for you) and needs to pay a deposit or fare under caps you set.",
+    help: "Your rules name max amount per booking, a daily spend limit, and who can be paid. Asks that fit can move; asks above your line wait for your OK.",
     outcome:
-      "Gear booking stays fast when it fits. You only approve what is on hold. Every ask leaves a receipt you can read.",
+      "Bookings stay fast when they fit your rules. You only approve what is on hold. Every ask leaves a receipt. In today’s preview, Mandate checks the rules; money is not sent on-chain yet.",
   },
   {
     n: "3",
