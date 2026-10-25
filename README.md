@@ -6,7 +6,7 @@ The **Mandate policy gate** enforces USD caps / allow-list / holds on `POST /api
 
 This is a NEAR hackathon prototype (tracks: **security**, **agents**, **business**). The preview gate is a **local process policy gate** — not a TEE and not an OutLayer enclave. It does not invent a transaction hash. When `OUTLAYER_API_KEY` is present, an allowed payment also dry-runs `POST /wallet/v1/intents/withdraw` and still does not broadcast. Production path (roadmap): OutLayer Agent Custody.
 
-**Live (clone-free):** [mandate-ashy.vercel.app](https://mandate-ashy.vercel.app) · console [ /console ](https://mandate-ashy.vercel.app/console) · litepaper [ /docs ](https://mandate-ashy.vercel.app/docs)
+**Live (clone-free):** [mandate-ashy.vercel.app](https://mandate-ashy.vercel.app) · console [ /console ](https://mandate-ashy.vercel.app/console) · litepaper [ /docs ](https://mandate-ashy.vercel.app/docs) · **travel demo (~78s)** [ /demo/mandate-travel-console-demo-v3.mp4 ](https://mandate-ashy.vercel.app/demo/mandate-travel-console-demo-v3.mp4) (also embedded on the homepage)
 
 ## Problem
 
@@ -44,7 +44,7 @@ Demo policy: **$25 max per transaction**, **$50 per day**, **approve above $10**
 
 ## Judge path (do X → see Y)
 
-No clone required for the console walkthrough.
+No clone required for the console walkthrough. Prefer the **[travel console demo (~78s)](https://mandate-ashy.vercel.app/demo/mandate-travel-console-demo-v3.mp4)** on the homepage (`#travel-demo`) if you want the story first; then open `/console` for the live four beats below.
 
 ### A · Cold console walkthrough (≤3 min)
 
@@ -183,6 +183,7 @@ A jailbreak that sends approved: true still dies.
 Preview durability is local-db-ephemeral on Vercel, not a TEE. No invented transaction hash.
 
 https://mandate-ashy.vercel.app
+https://mandate-ashy.vercel.app/demo/mandate-travel-console-demo-v3.mp4
 https://github.com/arults/Mandate
 ```
 
