@@ -65,6 +65,12 @@ export function Home() {
                 <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
               </Link>
               <a
+                href="#travel-demo"
+                className="inline-flex h-11 items-center border border-border bg-surface px-5 text-sm font-medium transition-colors duration-150 hover:border-fg"
+              >
+                Watch travel demo
+              </a>
+              <a
                 href="#how"
                 className="inline-flex h-11 items-center border border-border bg-surface px-5 text-sm font-medium transition-colors duration-150 hover:border-fg"
               >
@@ -73,6 +79,47 @@ export function Home() {
             </div>
             <p className="mt-5 max-w-md text-sm text-subtle">
               Preview demo — payments are checked, not sent on-chain yet. No fake transaction hashes.
+            </p>
+          </div>
+        </section>
+
+        <section
+          id="travel-demo"
+          className="border-b border-border scroll-mt-24"
+          aria-labelledby="travel-demo-heading"
+        >
+          <div className="mx-auto w-full max-w-3xl px-5 py-14 sm:py-16">
+            <div className="text-center">
+              <h2
+                id="travel-demo-heading"
+                className="font-display text-3xl tracking-tight text-fg sm:text-4xl"
+              >
+                Watch the travel console demo
+              </h2>
+              <p className="mx-auto mt-3 max-w-xl text-base leading-7 text-muted">
+                About 78 seconds: set travel spending rules, run the agent, auto-allow under the line, then
+                approve one hold — same control panel judges will open.
+              </p>
+            </div>
+            <div className="mt-8 overflow-hidden rounded-card border border-border bg-bg">
+              <video
+                controls
+                playsInline
+                preload="metadata"
+                poster="/demo/mandate-travel-console-demo-v3-poster.jpg"
+                className="aspect-video w-full bg-bg"
+              >
+                <source src="/demo/mandate-travel-console-demo-v3.mp4" type="video/mp4" />
+              </video>
+            </div>
+            <p className="mt-4 text-center text-sm text-subtle">
+              Prefer a direct link?{" "}
+              <a
+                href="/demo/mandate-travel-console-demo-v3.mp4"
+                className="font-medium text-fg underline decoration-border underline-offset-4 transition-colors hover:decoration-fg"
+              >
+                Open travel demo v3
+              </a>
             </p>
           </div>
         </section>
@@ -189,6 +236,12 @@ export function Home() {
               >
                 Control panel
               </Link>
+              <a
+                href="#travel-demo"
+                className="inline-flex h-11 shrink-0 items-center border border-bg/30 px-5 text-sm font-medium text-bg/80 transition-colors duration-150 hover:border-bg hover:text-bg"
+              >
+                Watch travel demo
+              </a>
               <Link
                 to="/docs"
                 className="inline-flex h-11 shrink-0 items-center border border-bg/30 px-5 text-sm font-medium text-bg/80 transition-colors duration-150 hover:border-bg hover:text-bg"
