@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 
-export function SiteNav({ current }: { current: "home" | "docs" | "console" }) {
+export function SiteNav({ current }: { current: "home" | "use-case" | "docs" | "console" }) {
   const item = (on: boolean) =>
     on
       ? "text-fg underline decoration-accent decoration-2 underline-offset-[10px]"
@@ -26,6 +26,9 @@ export function SiteNav({ current }: { current: "home" | "docs" | "console" }) {
         <nav className="flex items-center gap-5 text-sm sm:gap-6" aria-label="Site">
           <Link to="/" className={item(current === "home")}>
             Home
+          </Link>
+          <Link to="/use-case" className={item(current === "use-case")}>
+            Use Case
           </Link>
           <Link to="/docs" className={item(current === "docs")}>
             Docs
