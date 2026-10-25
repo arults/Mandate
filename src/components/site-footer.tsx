@@ -7,7 +7,7 @@ export function SiteFooter() {
         <div className="max-w-sm">
           <p className="font-display text-xl tracking-tight text-fg">Mandate</p>
           <p className="mt-2 text-sm leading-6 text-muted">
-            You set the rules. Your AI asks — without your keys.
+            You set the rules. Your AI asks to pay — without your keys.
           </p>
         </div>
         <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm" aria-label="Footer">
