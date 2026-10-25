@@ -1,6 +1,8 @@
-# Console walkthrough assets
+# Demo video assets
 
-- `console-walkthrough.mp4` — narrated Console tour (Max USD / tx, Daily USD limit, Approval above USD, Allow-list, Save, Run the agent).
-- `console-poster.jpg` — poster still for the player.
+- `mandate-demo-short.mp4` — ~58s hackathon demo (JennyNeural VO + live human-first walkthrough). Poster: `mandate-demo-short-poster.jpg`.
+- `console-walkthrough.mp4` — longer ~94s console field tour (embedded on `/console`). Poster: `console-poster.jpg`.
 
-Embedded from `/console` as `/demo/console-walkthrough.mp4`.
+Public URLs (after deploy):
+- https://mandate-ashy.vercel.app/demo/mandate-demo-short.mp4
+- https://mandate-ashy.vercel.app/demo/mandate-demo-short-poster.jpg
