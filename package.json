@@ -1,5 +1,5 @@
 {
-  "name": "app-builder-workspace",
+  "name": "mandate",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -93,5 +93,6 @@
     "playwright": "^1.62.0",
     "prettier": "^3.4.0",
     "typescript-eslint": "^8.56.1"
-  }
+  },
+  "description": "Human-set spending policy gate for AI agents \u2014 NEAR hackathon prototype. Agents ask to pay; the gate decides outside the model."
 }

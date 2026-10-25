@@ -193,12 +193,7 @@ https://github.com/arults/Mandate
 - It does not broadcast a mainnet transaction or invent a solver fill.
 - It does not ship TEE attestation bytes, a marketplace, a second agent, KYC, or a fiat ramp.
 
-Part of FORGE (arults).
-
 ## Site
 
-`/` short explanation · `/docs` litepaper · `/llms.txt` agent contract · `/console` human gate.
+`/` short explanation · `/use-case` examples · `/docs` litepaper · `/llms.txt` agent contract · `/console` human gate.
 
-## Log book
-
-Audits and evals are appended to [LOGBOOK.txt](LOGBOOK.txt). Earlier entries stay. Do not rewrite them.

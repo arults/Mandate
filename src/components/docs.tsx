@@ -16,7 +16,7 @@ const sections = [
   { id: "fck", label: "10. Function Call Keys" },
   { id: "safety", label: "11. Safety properties" },
   { id: "limits", label: "12. Preview limits" },
-  { id: "line", label: "13. Product line" },
+  { id: "line", label: "13. Mandate family" },
   { id: "demo", label: "14. Demo protocol" },
   { id: "roadmap", label: "15. Roadmap" },
   { id: "refs", label: "16. References" },
@@ -341,7 +341,7 @@ Agent → POST /api/v1/pay only
           <section id="safety" className="scroll-mt-28">
             <h2 className="font-display text-2xl tracking-tight text-fg sm:text-3xl">11. Safety properties</h2>
             <p className="mt-4 text-sm leading-6">
-              Claim only what tests cover (LOGBOOK · policy.test.ts · gate.security.test.ts):
+              Claim only what tests cover (policy.test.ts · gate.security.test.ts · npm test):
             </p>
             <ul className="mt-4 list-disc space-y-3 pl-5">
               <li>Jailbreak fields ignored.</li>
@@ -377,7 +377,7 @@ Agent → POST /api/v1/pay only
           </section>
 
           <section id="line" className="scroll-mt-28">
-            <h2 className="font-display text-2xl tracking-tight text-fg sm:text-3xl">13. Product line (FORGE)</h2>
+            <h2 className="font-display text-2xl tracking-tight text-fg sm:text-3xl">13. Mandate family (roadmap)</h2>
             <div className="mt-4 overflow-x-auto border border-border">
               <table className="w-full min-w-[28rem] border-collapse text-left text-sm leading-6">
                 <thead className="bg-elevated text-fg">
@@ -392,9 +392,9 @@ Agent → POST /api/v1/pay only
                     <td className="border-b border-border px-3 py-2.5">Policy gate for agent spend (this submission)</td>
                   </tr>
                   <tr>
-                    <td className="border-b border-border px-3 py-2.5 text-fg">Mandate Receipts × ActSeal</td>
+                    <td className="border-b border-border px-3 py-2.5 text-fg">Mandate Receipts</td>
                     <td className="border-b border-border px-3 py-2.5">
-                      Cryptographic / audit seal of allow / reject receipts (roadmap)
+                      Audit seal of allow / reject receipts (roadmap)
                     </td>
                   </tr>
                   <tr>
@@ -446,7 +446,7 @@ Agent → POST /api/v1/pay only
             <h2 className="font-display text-2xl tracking-tight text-fg sm:text-3xl">15. Roadmap</h2>
             <p className="mt-4">
               <strong className="font-medium text-fg">Near:</strong> multi-agent caps · OutLayer funded dry-run ·
-              FCK issuance helpers · OutLayer attestation verify page (when wired) · ActSeal receipt seal.
+              Function Call Key helpers · OutLayer attestation verify page (when wired) · receipt audit seal.
             </p>
             <p className="mt-4">
               <strong className="font-medium text-fg">Later:</strong> on-chain encrypted policy verify page · swarm
@@ -477,11 +477,10 @@ Agent → POST /api/v1/pay only
                   NEAR access keys / Function Call Keys
                 </a>
               </li>
-              <li>Repo LOGBOOK.txt · AGENT.md · /llms.txt</li>
+              <li>Repo AGENT.md · /llms.txt · README</li>
             </ul>
             <p className="mt-8 border-t border-border pt-6 text-sm leading-6 text-subtle">
-              Contact / team: FORGE · arults. Fill submit contact before the 1–14 Nov 2026 UTC window. Do not
-              invent emails in copy.
+              Built by arults for NEAR HACKATHON 2026. Contact details go on the official submit form — not invented in this repo.
             </p>
           </section>
         </article>
