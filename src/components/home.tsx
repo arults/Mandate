@@ -50,7 +50,7 @@ export function Home() {
             </p>
             <h1 className="mt-7 font-display text-[2.75rem] leading-[1.02] tracking-tight text-fg sm:text-6xl lg:text-7xl">
               You set the rules.
-              <span className="mt-1 block text-muted">Your AI asks — without your keys.</span>
+              <span className="mt-1 block text-muted">Your AI asks to pay — without your keys.</span>
             </h1>
             <p className="mt-6 max-w-lg text-lg leading-relaxed text-muted">
               Mandate lets founders give an AI permission to pay vendors without handing it the wallet.
