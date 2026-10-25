@@ -45,6 +45,16 @@ const cases = [
     outcome:
       "Renewals go through when they fit. You stay in control. In today’s preview, Mandate checks the rules; money is not sent on-chain yet.",
   },
+  {
+    n: "5",
+    title: "Insurance premium and claims payout",
+    who: "A small agency, MGA, or claims lead whose AI helps with routine payouts",
+    situation:
+      "The AI needs to pay a premium installment, renew a binder fee, or release a small claim vendor payment or temporary living expense under policy rules.",
+    help: "You set caps, who can be paid, and when asks must wait for you. The AI asks to pay; a checker outside the AI allows what fits, holds what is over the line, and leaves a receipt. Keys stay with you.",
+    outcome:
+      "Routine insurance payouts move under your rules. Unusual amounts wait for your OK. Every ask leaves an audit trail. In today’s preview, Mandate checks the rules; money is not sent on-chain yet.",
+  },
 ];
 
 export function UseCase() {
