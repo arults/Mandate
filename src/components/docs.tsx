@@ -420,11 +420,16 @@ Agent → POST /api/v1/pay only
 
           <section id="demo" className="scroll-mt-28">
             <h2 className="font-display text-2xl tracking-tight text-fg sm:text-3xl">14. Hackathon demo protocol</h2>
-            <p className="mt-4">Do X → see Y. Judges: open live URL or clone → Run the agent → Approve → inspect receipt.</p>
+            <p className="mt-4">
+              Do X → see Y. Judges: open <strong className="font-medium text-fg">/console</strong>, read the travel
+              caps, click <strong className="font-medium text-fg">Run travel agent</strong>, then Approve the airline
+              hold on that row. The $8 vendor path is under <strong className="font-medium text-fg">Advanced</strong>.
+            </p>
             <ol className="mt-4 list-decimal space-y-3 pl-5">
               <li>
+                Under <strong className="font-medium text-fg">Advanced</strong>:{" "}
                 <strong className="font-medium text-fg">Reset demo</strong> (optional clean slate), then{" "}
-                <strong className="font-medium text-fg">Run the agent.</strong> Publishes the demo mandate.
+                <strong className="font-medium text-fg">Run the demo.</strong> Publishes the $8 vendor rules.
                 Remaining today $50. Balance $200. Run-the-agent prepares + four asks in one isolate (avoids
                 Vercel 409 across cold isolates).
               </li>
@@ -446,9 +451,15 @@ Agent → POST /api/v1/pay only
               </li>
             </ol>
             <p className="mt-4">
-              Travel ops, same preview: <strong className="font-medium text-fg">Load travel ops</strong>, then{" "}
-              <strong className="font-medium text-fg">Run travel agent</strong>. The $8 path above stays on Run
-              the demo.
+              Travel ops is the desk. Caps on the page are $300 / tx, $800 / day, approve above $150, merchants
+              hotel.near, airline.near, rides.near. Click <strong className="font-medium text-fg">Run travel agent</strong>.
+              The four lines are the result: allow, hold, over the cap, poisoned payee. Chips{" "}
+              <strong className="font-medium text-fg">Allow</strong>, <strong className="font-medium text-fg">Hold</strong>,{" "}
+              <strong className="font-medium text-fg">Cap</strong>, and <strong className="font-medium text-fg">Poison</strong>{" "}
+              each play one ask. Poison highlights the account-moved block. An allow says checked, not submitted, and
+              never invents a hash.{" "}
+              <strong className="font-medium text-fg">Load travel ops</strong> only fills the editor under Advanced.
+              The $8 path stays on <strong className="font-medium text-fg">Run the demo</strong> there too.
             </p>
             <ol className="mt-4 list-decimal space-y-3 pl-5">
               <li>
@@ -457,7 +468,7 @@ Agent → POST /api/v1/pay only
               </li>
               <li>
                 <strong className="font-medium text-fg">$250 to airline.near on Ethereum</strong> → Needs
-                approval. Approve in Waiting for you. Balance does not move until you do.
+                approval. Approve on the airline row. Balance does not move until you do.
               </li>
               <li>
                 <strong className="font-medium text-fg">$500</strong> → Blocked · max_per_transaction.

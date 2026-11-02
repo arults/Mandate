@@ -6,16 +6,6 @@ import { SiteNav } from "@/components/site-nav";
 
 const cases = [
   {
-    n: "1",
-    title: "SaaS tool invoice",
-    who: "A solo founder whose AI handles busywork",
-    situation:
-      "The AI finds a software tool the business needs and gets an invoice for a few hundred dollars.",
-    help: "You already set how much can go out per payment and per day, and who can be paid. The AI asks to pay. A checker outside the AI says yes if it fits your rules, or holds it for your OK.",
-    outcome:
-      "The tool can be paid under your rules. Clever prompts cannot raise the cap or change who gets paid. You keep the keys.",
-  },
-  {
     n: "2",
     title: "Hotel and flight booking",
     who: "A lean travel partner, or a founder whose AI books trips",
@@ -24,6 +14,16 @@ const cases = [
     help: "Your rules name a USD max per booking, a daily spend limit, an approval line, and the merchants who can be paid (hotel, airline, rides). Asks under the line can move. Asks above it wait for your OK. If a tool says the account moved, the new payee is still checked against that list.",
     outcome:
       "Travel ops: multi-merchant USD rules; poisoned payee blocked. Bookings stay fast when they fit. You only approve what is on hold. In today’s preview, Mandate checks the rules; money is not sent on-chain yet.",
+  },
+  {
+    n: "1",
+    title: "SaaS tool invoice",
+    who: "A solo founder whose AI handles busywork",
+    situation:
+      "The AI finds a software tool the business needs and gets an invoice for a few hundred dollars.",
+    help: "You already set how much can go out per payment and per day, and who can be paid. The AI asks to pay. A checker outside the AI says yes if it fits your rules, or holds it for your OK.",
+    outcome:
+      "The tool can be paid under your rules. Clever prompts cannot raise the cap or change who gets paid. You keep the keys.",
   },
   {
     n: "3",
@@ -63,17 +63,13 @@ export function UseCase() {
       <SiteNav current="use-case" />
       <main>
         <section className="border-b border-border">
-          <div className="mx-auto w-full max-w-3xl px-5 py-16 text-center sm:py-20">
-            <p className="inline-flex items-center gap-2 rounded-control border border-border bg-surface px-2.5 py-1 text-[11px] uppercase tracking-[0.14em] text-muted">
-              <span className="size-1.5 rounded-full bg-accent" aria-hidden="true" />
-              Real-life examples
-            </p>
-            <h1 className="mt-7 font-display text-[2.5rem] leading-[1.05] tracking-tight text-fg sm:text-5xl lg:text-6xl">
-              Where Mandate helps
+          <div className="mx-auto w-full max-w-xl px-5 py-16 text-left sm:py-20">
+            <h1 className="font-display text-[2.5rem] leading-[1.05] tracking-tight text-fg sm:text-5xl lg:text-6xl">
+              Where it helps
             </h1>
             <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-muted">
-              You set spending rules once. Your AI asks to pay. A checker outside the AI decides —
-              yes, ask you first, or no — so the agent never holds your keys.
+              The trip is the one to try: hotel, airline, and rides under caps you set. A swapped payee stays
+              blocked. The agent never holds the keys.
             </p>
           </div>
         </section>
@@ -83,11 +79,10 @@ export function UseCase() {
             <h2 id="cases-heading" className="sr-only">
               Use cases
             </h2>
-            <ol className="grid gap-5 sm:grid-cols-2">
+            <ol className="divide-y divide-border border-y border-border">
               {cases.map((c) => (
-                <li key={c.n} className="border border-border bg-surface p-6 text-left sm:p-7">
-                  <p className="text-xs font-medium uppercase tracking-[0.14em] text-accent">{c.n}</p>
-                  <h3 className="mt-3 font-display text-2xl tracking-tight text-fg">{c.title}</h3>
+                <li key={c.title} className="py-8 text-left">
+                  <h3 className="font-display text-2xl tracking-tight text-fg">{c.title}</h3>
                   <dl className="mt-5 space-y-4 text-sm leading-6 text-muted">
                     <div>
                       <dt className="font-medium text-fg">Who</dt>
@@ -117,12 +112,12 @@ export function UseCase() {
 
         <section className="border-b border-border">
           <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-4 px-5 py-14 text-center sm:py-16">
-            <p className="text-base text-muted">Ready to try the control panel?</p>
+            <p className="text-base text-muted">The travel desk plays the hotel, airline, and blocked payee.</p>
             <Link
               to="/console"
               className="inline-flex h-11 items-center gap-2 bg-fg px-5 text-sm font-medium text-bg transition-colors duration-150 hover:bg-fg/90"
             >
-              Open the control panel
+              Open the travel desk
               <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
             </Link>
           </div>

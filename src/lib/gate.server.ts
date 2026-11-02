@@ -641,9 +641,11 @@ export async function runDemoAgentFlow(
   policyInput: unknown,
   runId: string,
   script: AgentScript = "demo",
+  onlyBeat?: AgentBeat["id"],
 ): Promise<{ gate: Snapshot; receipts: PublicGateReceipt[]; results: DemoAgentResult[] }> {
   await prepareDemo(policyInput, script === "travel" ? TRAVEL_DEMO_BALANCE_USD : 200);
-  const beats = beatsForScript(script, runId);
+  const beats = beatsForScript(script, runId).filter((beat) => !onlyBeat || beat.id === onlyBeat);
+  if (beats.length === 0) throw new Error("That ask is not in this trip.");
   const results: DemoAgentResult[] = [];
   for (const beat of beats) {
     const full = await submitPayment(beat.body);

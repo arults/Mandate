@@ -28,6 +28,11 @@ const helpClass = "mt-1.5 text-xs leading-5 text-subtle";
 /** Flip when public/demo/console-walkthrough.mp4 is committed. */
 const HAS_CONSOLE_DEMO_VIDEO = true;
 
+const primaryBtn =
+  "h-11 rounded-control bg-accent px-4 text-sm font-medium text-accent-fg transition-colors duration-150 hover:bg-accent-hover disabled:opacity-50";
+const quietBtn =
+  "h-11 rounded-control border border-border bg-surface px-4 text-sm font-medium transition-colors duration-150 hover:border-fg disabled:opacity-50";
+
 function messageOf(error: unknown): string {
   if (error instanceof Error && error.message) return error.message;
   return "The gate could not complete that request.";
@@ -36,8 +41,37 @@ function messageOf(error: unknown): string {
 function statusLabel(status: GateReceipt["status"]): string {
   if (status === "allow") return "Allowed";
   if (status === "reject") return "Blocked";
-  if (status === "needs_approval") return "Needs approval";
+  if (status === "needs_approval") return "On hold";
   return "Cancelled";
+}
+
+const SCENARIOS = [
+  { id: "allow", label: "Allow", hint: "$80" },
+  { id: "hold", label: "Hold", hint: "$250" },
+  { id: "block", label: "Cap", hint: "$500" },
+  { id: "poison", label: "Poison", hint: "Block" },
+] as const;
+
+function quoteLine(settlement: GateReceipt["settlement"] | null | undefined): string | null {
+  if (!settlement) return null;
+  const quote = settlement.quote;
+  if (quote?.status === "ok" && quote.correlationId) {
+    const out = quote.amountOutFormatted ? ` · out ${quote.amountOutFormatted}` : "";
+    return `Checked · not submitted · dry quote ${quote.correlationId}${out}. No transaction hash.`;
+  }
+  if (quote && quote.note) return `Checked · not submitted. ${quote.note} No transaction hash.`;
+  return "Checked · not submitted. No transaction hash.";
+}
+
+function outcomeLine(status: GateReceipt["status"], rule: string | null): string {
+  if (status === "allow") return "Allowed";
+  if (status === "needs_approval") return "On hold";
+  if (status === "cancelled") return "Cancelled";
+  if (rule === "max_per_transaction") return "Blocked · over the cap";
+  if (rule === "allowed_recipients") return "Blocked · not on the list";
+  if (rule === "frozen") return "Blocked · frozen";
+  if (rule === "daily_limit") return "Blocked · over the day";
+  return "Blocked";
 }
 
 function statusClass(status: GateReceipt["status"]): string {
@@ -45,6 +79,22 @@ function statusClass(status: GateReceipt["status"]): string {
   if (status === "needs_approval") return "bg-hold-bg text-hold";
   if (status === "cancelled") return "bg-elevated text-muted";
   return "bg-deny-bg text-deny";
+}
+
+function askCue(beat: AgentBeat): { who: string; cue: string } {
+  const to = String(beat.body.to);
+  if (beat.id === "poison") return { who: "Poisoned payee", cue: `Account moved · ${to} · not on the list` };
+  if (beat.id === "jailbreak") return { who: "Not on the list", cue: `${to} · a fake approval is ignored` };
+  const who = to.startsWith("hotel")
+    ? "Hotel"
+    : to.startsWith("airline")
+      ? "Airline"
+      : to.startsWith("rides")
+        ? "Rides"
+        : "Vendor";
+  if (beat.id === "hold") return { who, cue: `Over the line · ${to}` };
+  if (beat.id === "block") return { who, cue: `Over the cap · ${to}` };
+  return { who, cue: `Under the line · ${to}` };
 }
 
 function PolicySummary({ policy }: { policy: HumanPolicy }) {
@@ -63,7 +113,7 @@ function ReceiptSlip({ receipt }: { receipt: GateReceipt | PublicGateReceipt }) 
     ? receipt.at
     : when.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   return (
-    <article className="rounded-card border border-border bg-surface p-5">
+    <article className="border-t border-border pt-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="font-mono text-lg font-medium tabular-nums">
@@ -86,7 +136,7 @@ function ReceiptSlip({ receipt }: { receipt: GateReceipt | PublicGateReceipt }) 
       </div>
       <p className="mt-4 text-sm leading-6">{receipt.detail}</p>
       {receipt.ignoredFields.length > 0 && (
-        <div className="mt-3 rounded-control border border-hold bg-hold-bg px-3 py-3" role="status">
+        <div className="mt-3 border border-hold bg-hold-bg px-3 py-3" role="status">
           <p className="text-sm font-medium text-hold">Fake approval ignored</p>
           <p className="mt-1 font-mono text-xs text-fg">{receipt.ignoredFields.join(", ")}</p>
           <p className="mt-1 text-sm text-muted">
@@ -100,9 +150,7 @@ function ReceiptSlip({ receipt }: { receipt: GateReceipt | PublicGateReceipt }) 
         <div className="mt-4 border-t border-border pt-4">
           <p
             className={`px-3 py-2 text-sm font-medium ${
-              receipt.attestation.kind === "outlayer-dry-run"
-                ? "bg-allow-bg text-allow"
-                : "bg-elevated text-fg"
+              receipt.attestation.kind === "outlayer-dry-run" ? "bg-allow-bg text-allow" : "bg-elevated text-fg"
             }`}
           >
             {receipt.attestation.kind === "outlayer-dry-run"
@@ -121,11 +169,9 @@ function ReceiptSlip({ receipt }: { receipt: GateReceipt | PublicGateReceipt }) 
               <li key={call}>{call}</li>
             ))}
           </ul>
-          {receipt.settlement.live && (
-            <p className="mt-2 text-sm text-muted">{receipt.settlement.live.note}</p>
-          )}
+          {receipt.settlement.live && <p className="mt-2 text-sm text-muted">{receipt.settlement.live.note}</p>}
           {receipt.settlement.quote && (
-            <div className="mt-3 rounded-control border border-border bg-bg px-3 py-3">
+            <div className="mt-3 border border-border bg-bg px-3 py-3">
               <p className="text-sm font-medium text-fg">NEAR Intents · 1-Click dry quote</p>
               {receipt.settlement.quote.status === "ok" ? (
                 <p className="mt-1 font-mono text-xs leading-5 text-muted">
@@ -133,9 +179,7 @@ function ReceiptSlip({ receipt }: { receipt: GateReceipt | PublicGateReceipt }) 
                   {receipt.settlement.quote.amountOutFormatted
                     ? ` · out ${receipt.settlement.quote.amountOutFormatted} USDC`
                     : ""}
-                  {receipt.settlement.quote.amountOutUsd
-                    ? ` · ≈ $${receipt.settlement.quote.amountOutUsd}`
-                    : ""}
+                  {receipt.settlement.quote.amountOutUsd ? ` · ≈ $${receipt.settlement.quote.amountOutUsd}` : ""}
                   <br />
                   path {receipt.settlement.sourceChain} → {receipt.settlement.destinationChain} · dry only
                   <br />
@@ -149,12 +193,9 @@ function ReceiptSlip({ receipt }: { receipt: GateReceipt | PublicGateReceipt }) 
         </div>
       )}
       <p className="mt-4 font-mono text-xs text-subtle">
-        {time} · remaining {formatUsd(receipt.remainingDailyUsd)} · fingerprint{" "}
-        {receipt.attestation.policyFingerprint}
+        {time} · remaining {formatUsd(receipt.remainingDailyUsd)} · fingerprint {receipt.attestation.policyFingerprint}
       </p>
-      <p className="mt-2 font-mono text-xs text-subtle break-all">
-        Share (agent-minimized): /api/v1/receipt?id={receipt.id}
-      </p>
+      <p className="mt-2 font-mono text-xs text-subtle break-all">Share (agent-minimized): /api/v1/receipt?id={receipt.id}</p>
     </article>
   );
 }
@@ -164,8 +205,8 @@ export function Console() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [draft, setDraft] = useState<HumanPolicy>(DEMO_POLICY);
-  const [recipientsText, setRecipientsText] = useState(DEMO_POLICY.allowedRecipients.join("\n"));
+  const [draft, setDraft] = useState<HumanPolicy>(TRAVEL_POLICY);
+  const [recipientsText, setRecipientsText] = useState(TRAVEL_POLICY.allowedRecipients.join("\n"));
   const [amount, setAmount] = useState("8");
   const [to, setTo] = useState("vendor.near");
   const [chain, setChain] = useState<(typeof CHAINS)[number]>("base");
@@ -174,9 +215,12 @@ export function Console() {
   const [focusId, setFocusId] = useState<string | null>(null);
   const [spoken, setSpoken] = useState<Array<{ beat: DemoBeatView; receipt: PublicGateReceipt | GateReceipt }>>([]);
   const [speaking, setSpeaking] = useState<string | null>(null);
-  const [script, setScript] = useState<AgentScript>("demo");
+  const [activeBeat, setActiveBeat] = useState<string | null>(null);
+  const [script, setScript] = useState<AgentScript>("travel");
   const revision = useRef(0);
   const inFlight = useRef(false);
+  const poisonRef = useRef<HTMLLIElement | null>(null);
+  const poisonSeen = useRef<string | null>(null);
 
   useEffect(() => {
     const ticket = ++revision.current;
@@ -197,6 +241,14 @@ export function Console() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    const poison = spoken.find((item) => item.beat.id === "poison");
+    if (!poison || poisonSeen.current === poison.receipt.id) return;
+    poisonSeen.current = poison.receipt.id;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    poisonRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+  }, [spoken]);
 
   async function run(task: () => Promise<void>) {
     if (inFlight.current) return;
@@ -242,6 +294,7 @@ export function Console() {
   async function resetDemo() {
     setSpoken([]);
     setSpeaking(null);
+    setActiveBeat(null);
     setFocusId(null);
     await prepare();
   }
@@ -267,6 +320,7 @@ export function Console() {
     setScript("travel");
     setSpoken([]);
     setSpeaking(null);
+    setActiveBeat(null);
     setFocusId(null);
     setFormError(null);
   }
@@ -274,7 +328,8 @@ export function Console() {
   async function playBeats(policy: HumanPolicy, nextScript: AgentScript) {
     setScript(nextScript);
     setSpoken([]);
-    setSpeaking(nextScript === "travel" ? "Preparing travel ops…" : "Preparing demo in one pass…");
+    setActiveBeat(null);
+    setSpeaking(nextScript === "travel" ? "Preparing the trip…" : "Preparing the vendor demo…");
     const runId = crypto.randomUUID().slice(0, 8);
     // One server fn: prepareDemo + four submitPayment calls share the same
     // isolate / in-memory PGLite. Separate prepare then POST /api/v1/pay
@@ -287,10 +342,12 @@ export function Console() {
     setDraft(policy);
     setRecipientsText(policy.allowedRecipients.join("\n"));
     for (const item of result.results) {
+      setActiveBeat(item.beat.id);
       setSpeaking(item.beat.says);
       await new Promise((resolve) => setTimeout(resolve, 280));
       setSpoken((current) => [...current, { beat: item.beat, receipt: item.receipt }]);
       setFocusId(item.receipt.id);
+      setActiveBeat(null);
       setSpeaking(null);
       await new Promise((resolve) => setTimeout(resolve, 220));
     }
@@ -302,6 +359,32 @@ export function Console() {
 
   async function runTravelAgent() {
     await playBeats(TRAVEL_POLICY, "travel");
+  }
+
+  async function runScenario(only: (typeof SCENARIOS)[number]["id"]) {
+    setScript("travel");
+    setSpoken([]);
+    setActiveBeat(only);
+    setSpeaking(only === "poison" ? "Replaying the swapped payee…" : "Preparing that ask…");
+    const runId = crypto.randomUUID().slice(0, 8);
+    const result = (await runDemoAgent({
+      data: { policy: TRAVEL_POLICY, runId, script: "travel", only },
+    })) as {
+      gate: Snapshot;
+      results: Array<{ beat: DemoBeatView; receipt: PublicGateReceipt }>;
+    };
+    setSnap(result.gate);
+    setDraft(TRAVEL_POLICY);
+    setRecipientsText(TRAVEL_POLICY.allowedRecipients.join("\n"));
+    const item = result.results[0];
+    if (!item) return;
+    setActiveBeat(item.beat.id);
+    setSpeaking(item.beat.says);
+    await new Promise((resolve) => setTimeout(resolve, 280));
+    setSpoken([{ beat: item.beat, receipt: item.receipt }]);
+    setFocusId(item.receipt.id);
+    setActiveBeat(null);
+    setSpeaking(null);
   }
 
   async function submitCurrent(extra?: Record<string, unknown>) {
@@ -316,395 +399,404 @@ export function Console() {
     });
   }
 
+  async function decide(id: string, action: "approve" | "reject") {
+    const result = await decideApproval({ data: { id, action } });
+    setSnap(result.gate);
+    setFocusId(result.receipt.id);
+  }
+
   const focused = snap?.ledger.find((item) => item.id === focusId) ?? snap?.ledger[0] ?? null;
   const saved = snap?.policy;
+  const plan = script === "travel" ? travelAgentBeats("plan") : agentBeats("plan");
+  const spokenIds = new Set(spoken.map((item) => item.receipt.id));
+  const extraPending = (snap?.pending ?? []).filter((item) => !spokenIds.has(item.id));
+  const holdNeedsYou = (snap?.pending.length ?? 0) > 0;
+  const runLabel = busy && script === "travel" ? "Running the trip…" : "Run travel agent";
 
   return (
     <>
       <SiteNav current="console" />
-    <main className="mx-auto w-full max-w-6xl px-5 py-8 sm:py-12">
-      <header className="grid gap-8 border-b border-border pb-8 lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-end">
-        <div className="max-w-xl">
-          <h1 className="text-3xl font-medium tracking-tight sm:text-5xl">Watch your AI ask to pay.</h1>
-          <p className="mt-4 text-base leading-relaxed text-muted">
-            You set the spending rules. Your AI can only ask — it never gets the keys. The badge on the right
-            shows how this demo remembers your rules (on this preview host, demo data can reset when the server
-            sleeps). Nothing here sends money on-chain.
+      <main className="mx-auto w-full max-w-lg px-5 py-8 sm:py-12">
+        <h1 className="font-display text-4xl tracking-tight text-fg sm:text-5xl">The trip asks to pay.</h1>
+        <p className="mt-3 max-w-[40rem] text-base leading-7 text-muted">
+          A travel-ops spending desk. Hotel, airline, and rides ask. The rules sit outside the model. Money is not
+          sent.
+        </p>
+
+        {loadError && (
+          <p className="mt-4 bg-deny-bg px-3 py-2 text-sm text-deny" role="alert">
+            {loadError}
           </p>
-        </div>
-        <div className="border border-border bg-surface px-5 py-4">
-          <p className="text-sm text-muted">Remaining today</p>
-          <p className="mt-1 font-mono text-3xl font-medium tabular-nums">
-            {snap?.remainingDailyUsd == null ? "—" : formatUsd(snap.remainingDailyUsd)}
+        )}
+
+        <section className="mt-10" aria-labelledby="caps-heading">
+          <h2 id="caps-heading" className="text-sm font-medium text-fg">
+            Caps
+          </h2>
+          <p className="mt-1 text-sm leading-6 text-muted">Run travel agent uses these caps. Edits live under Advanced.</p>
+          <dl className="mt-4 grid grid-cols-3 gap-3 border-y border-border py-4">
+            <div>
+              <dt className="text-xs text-muted">Per payment</dt>
+              <dd className="mt-1 font-mono text-lg tabular-nums">{formatUsd(TRAVEL_POLICY.maxPerTransactionUsd)}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted">Today</dt>
+              <dd className="mt-1 font-mono text-lg tabular-nums">{formatUsd(TRAVEL_POLICY.dailyLimitUsd)}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted">Ask you above</dt>
+              <dd className="mt-1 font-mono text-lg tabular-nums">{formatUsd(TRAVEL_POLICY.approvalThresholdUsd)}</dd>
+            </div>
+          </dl>
+          <ul className="mt-4 space-y-2 text-sm">
+            <li className="flex items-baseline justify-between gap-4">
+              <span className="font-medium">Hotel</span>
+              <span className="font-mono text-muted">hotel.near</span>
+            </li>
+            <li className="flex items-baseline justify-between gap-4">
+              <span className="font-medium">Airline</span>
+              <span className="font-mono text-muted">airline.near</span>
+            </li>
+            <li className="flex items-baseline justify-between gap-4">
+              <span className="font-medium">Rides</span>
+              <span className="font-mono text-muted">rides.near</span>
+            </li>
+          </ul>
+          <p className="mt-3 text-sm leading-6 text-subtle">
+            Preview float {formatUsd(TRAVEL_DEMO_BALANCE_USD)}. Not a wallet. Money is not sent.
           </p>
-          <p className="mt-2 flex flex-wrap gap-1.5 text-xs">
-            <span className="rounded-control bg-elevated px-2 py-0.5 font-mono text-fg">
-              {snap?.durability ?? "…"}
-            </span>
-            <span
-              className={`rounded-control px-2 py-0.5 font-mono ${
-                saved?.frozen ? "bg-deny-bg text-deny" : "bg-allow-bg text-allow"
-              }`}
-            >
-              {saved ? (saved.frozen ? "frozen" : "active") : "no policy"}
-            </span>
-            <span className="rounded-control bg-elevated px-2 py-0.5 font-mono text-subtle">
-              fp {(snap?.fingerprint ?? "—").slice(0, 8)}
-            </span>
+        </section>
+
+        {extraPending.length > 0 && (
+          <section className="mt-8" aria-labelledby="hold-heading">
+            <h2 id="hold-heading" className="text-sm font-medium">
+              On hold
+            </h2>
+            <ul className="mt-3 divide-y divide-border border-y border-border">
+              {extraPending.map((item) => (
+                <li key={item.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-mono text-sm tabular-nums">
+                      {formatUsd(item.request.amountUsd)} · {item.request.to}
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-muted">{item.detail}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      disabled={busy}
+                      className={primaryBtn}
+                      onClick={() => run(() => decide(item.id, "approve"))}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      className={quietBtn}
+                      onClick={() => run(() => decide(item.id, "reject"))}
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <div className="mt-8">
+          <button
+            type="button"
+            disabled={busy}
+            className={holdNeedsYou ? `${quietBtn} w-full` : `${primaryBtn} w-full`}
+            onClick={() => run(runTravelAgent)}
+          >
+            {runLabel}
+          </button>
+          <p className="mt-2 text-sm leading-6 text-muted">
+            Publishes the travel caps and plays four asks. The last one is an account-moved invoice that must block.
           </p>
-          <p className="mt-1 text-sm text-subtle">
-            Balance {formatUsd(snap?.balanceUsd ?? 0)}
-            {snap?.liveKey ? " · dry-run on allow" : " · dry-run not called"}
+          <ul className="mt-4 flex flex-wrap gap-2" aria-label="One ask">
+            {SCENARIOS.map((item) => {
+              const revealed = spoken.find((entry) => entry.beat.id === item.id);
+              const full = revealed ? snap?.ledger.find((entry) => entry.id === revealed.receipt.id) : undefined;
+              const status = full?.status ?? revealed?.receipt.status;
+              const rule = full?.rule ?? revealed?.receipt.rule ?? null;
+              return (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    className="h-9 rounded-control border border-border bg-surface px-3 text-sm font-medium transition-colors duration-150 hover:border-fg disabled:opacity-50"
+                    onClick={() => run(() => runScenario(item.id))}
+                  >
+                    {item.label} {item.hint}
+                    {status ? ` · ${outcomeLine(status, rule)}` : ""}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-2 text-sm leading-6 text-subtle">
+            One ask, same caps. Poison replays the swapped payee. If a cold server forgot the rules, run again.
           </p>
-          <p className="mt-2 text-sm text-muted">
-            {snap?.liveKey
-              ? "A yes runs a practice check with the custody partner. Money still is not sent."
-              : "This preview checks rules inside the app. It is not a hardware vault. Money is not sent."}
-          </p>
-          {snap && snap.pending.length > 0 && (
-            <p className="mt-2 text-sm text-fg">
-              {snap.pending.length} waiting. Remaining includes that hold. Balance has not moved.
+          {speaking && (
+            <p className="mt-2 text-sm text-fg" aria-live="polite">
+              {speaking}
+            </p>
+          )}
+          {formError && (
+            <p className="mt-3 text-sm text-deny" role="alert">
+              {formError}
             </p>
           )}
         </div>
-      </header>
 
-      <section className="mt-6 max-w-2xl rounded-card border border-border bg-surface p-5">
-        <h2 className="text-sm font-medium">Watch how it works</h2>
-        <p className="mt-1 text-sm text-muted">
-          About ninety seconds: set your dollar limits, who can be paid, when to ask you, save, then run the demo.
-        </p>
-        <div className="mt-4 overflow-hidden rounded-control border border-border bg-bg">
-          <video
-            controls
-            playsInline
-            preload="metadata"
-            poster="/demo/console-poster.jpg"
-            className="aspect-video w-full bg-bg"
-          >
-            <source src="/demo/console-walkthrough.mp4" type="video/mp4" />
-          </video>
-        </div>
-        {!HAS_CONSOLE_DEMO_VIDEO && (
-          <p className="mt-3 text-sm text-subtle">Demo video uploading… Field tips below work now.</p>
-        )}
-      </section>
-
-      {loadError && (
-        <p className="mt-4 rounded-control bg-deny-bg px-3 py-2 text-sm text-deny" role="alert">
-          {loadError}
-        </p>
-      )}
-
-      <div className="mt-6 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)]">
-        <section className="min-w-0 rounded-card border border-border bg-surface p-5">
-          <h2 className="text-lg font-medium">Your spending rules</h2>
-          <p className="mt-1 text-sm text-muted">
-            Saved by you. The AI cannot edit these. Shared receipts can hide some details from outsiders; you
-            still see the full picture here.
+        <section className="mt-10" aria-labelledby="asks-heading">
+          <h2 id="asks-heading" className="text-sm font-medium text-fg">
+            Allow, hold, or block
+          </h2>
+          <ol className="mt-3 divide-y divide-border border-y border-border" aria-live="polite">
+            {plan.map((beat) => {
+              const revealed = spoken.find((item) => item.beat.id === beat.id);
+              const full = revealed ? snap?.ledger.find((item) => item.id === revealed.receipt.id) : undefined;
+              const status = full?.status ?? revealed?.receipt.status;
+              const rule = full?.rule ?? revealed?.receipt.rule ?? null;
+              const pending = revealed ? snap?.pending.some((item) => item.id === revealed.receipt.id) : false;
+              const { who, cue } = askCue(beat);
+              const amountUsd = Number(beat.body.amountUsd);
+              const poisoned = beat.id === "poison" && Boolean(status);
+              const optics = quoteLine(full?.settlement);
+              return (
+                <li
+                  key={beat.id}
+                  ref={beat.id === "poison" ? poisonRef : undefined}
+                  className={poisoned ? "bg-deny-bg px-3 py-4" : "py-4"}
+                >
+                  <div className="flex items-baseline justify-between gap-4">
+                    <p className="font-medium">{who}</p>
+                    <p className="font-mono text-sm tabular-nums">{formatUsd(amountUsd)}</p>
+                  </div>
+                  <p className="mt-1 text-sm leading-6 text-muted">{cue}</p>
+                  {status ? (
+                    <p className="mt-3">
+                      <span className={`rounded-control px-2 py-0.5 text-sm font-medium ${statusClass(status)}`}>
+                        {outcomeLine(status, rule)}
+                      </span>
+                    </p>
+                  ) : activeBeat === beat.id ? (
+                    <p className="mt-3 text-sm text-fg">Asking…</p>
+                  ) : null}
+                  {full && <p className="mt-2 text-sm leading-6 text-muted">{full.detail}</p>}
+                  {full && full.ignoredFields.length > 0 && (
+                    <p className="mt-2 text-sm leading-6 text-deny">
+                      Fake approval ignored · {full.ignoredFields.join(", ")}
+                    </p>
+                  )}
+                  {optics && <p className="mt-2 text-sm leading-6 text-muted">{optics}</p>}
+                  {pending && revealed && (
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        type="button"
+                        disabled={busy}
+                        className={primaryBtn}
+                        onClick={() => run(() => decide(revealed.receipt.id, "approve"))}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        className={quietBtn}
+                        onClick={() => run(() => decide(revealed.receipt.id, "reject"))}
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+          <p className="mt-3 text-sm leading-6 text-subtle">
+            Rides stays on the list. This run does not ask it. A blocked ask does not spend the day.
           </p>
-          <details className="mt-3 rounded-control border border-border bg-bg px-3 py-2">
-            <summary className="cursor-pointer text-sm font-medium">How to play</summary>
-            <ul className="mt-2 list-disc space-y-1.5 pl-5 text-sm leading-5 text-muted">
-              <li>Set your limits below, then Save rules.</li>
-              <li>Or hit Prepare demo for a ready $50/day starter kit.</li>
-              <li>Run the demo — four asks (yes / ask you / no / ignore a fake approval).</li>
-              <li>Load travel ops, then Run travel agent — hotel, airline, and rides in USD, plus a poisoned payee.</li>
-              <li>Approve or reject anything that lands in Waiting on you.</li>
-            </ul>
-          </details>
-          {saved ? (
-            <div className="mt-3">
-              <PolicySummary policy={saved} />
-              <details className="mt-4">
-                <summary className="cursor-pointer text-sm font-medium">Policy document the gate evaluates</summary>
-                <pre className="mt-3 max-w-full overflow-x-auto whitespace-pre-wrap break-all bg-bg p-3 font-mono text-xs leading-5 text-muted">
-                  {JSON.stringify(enclaveDocument(saved), null, 2)}
-                </pre>
-                <p className="mt-2 text-sm text-muted">
-                  Same caps. Evaluated in process memory. This block is not an attestation.
-                </p>
-              </details>
-            </div>
-          ) : (
-            <p className="mt-3 text-sm text-hold">No rules saved yet. Payment asks will be refused.</p>
-          )}
+        </section>
 
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            <label className="col-span-1">
-              <span className={labelClass}>Max USD / tx</span>
-              <div className="relative">
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-subtle">
-                  $
-                </span>
+        <section className="mt-12 border-t border-border pt-6" aria-labelledby="limits-heading">
+          <h2 id="limits-heading" className="text-sm font-medium text-fg">
+            What this preview does not do
+          </h2>
+          <ul className="mt-3 space-y-2 text-sm leading-6 text-muted">
+            <li>It does not broadcast a transaction, and it never invents a settlement hash.</li>
+            <li>It is not a TEE and not a hardware vault. Rules are checked in this app.</li>
+            <li>A sleeping server can forget the desk. Run again. That is not a chain record.</li>
+          </ul>
+          <p className="mt-3 text-sm leading-6 text-muted">
+            Next, not now: OutLayer Agent Custody can hold the keys. A NEAR Function Call Key can only request a
+            payment. This desk stays the travel-ops rules in front of that.
+          </p>
+          <p className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm">
+            <a
+              href="https://app.outlayer.ai/docs/agent-custody"
+              className="text-fg underline decoration-border underline-offset-4 hover:decoration-fg"
+              rel="noreferrer"
+              target="_blank"
+            >
+              OutLayer Agent Custody
+            </a>
+            <a href="/docs#fck" className="text-fg underline decoration-border underline-offset-4 hover:decoration-fg">
+              Function Call Keys
+            </a>
+            <a
+              href="/docs#settlement"
+              className="text-fg underline decoration-border underline-offset-4 hover:decoration-fg"
+            >
+              Settlement
+            </a>
+          </p>
+        </section>
+
+        <details className="mt-12 border-t border-border pt-6">
+          <summary className="cursor-pointer text-sm font-medium">Advanced</summary>
+          <p className="mt-2 text-sm leading-6 text-muted">
+            Editor, the $8 vendor demo, ledger, and the raw receipt. Run travel agent still publishes the travel
+            caps, not unsaved edits.
+          </p>
+
+          <div className="mt-8">
+            <h2 className="text-sm font-medium">Your caps</h2>
+            {saved ? (
+              <div className="mt-3">
+                <PolicySummary policy={saved} />
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-hold">No rules saved yet. A single ask is refused until you save.</p>
+            )}
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <label>
+                <span className={labelClass}>Max USD / tx</span>
                 <input
-                  className={`${fieldClass} pl-7`}
+                  className={fieldClass}
                   inputMode="decimal"
                   value={draft.maxPerTransactionUsd}
-                  onChange={(event) =>
-                    setDraft({ ...draft, maxPerTransactionUsd: Number(event.target.value) })
-                  }
+                  onChange={(event) => setDraft({ ...draft, maxPerTransactionUsd: Number(event.target.value) })}
                 />
-              </div>
-              <span className={helpClass}>Hard ceiling for one payment in USD. Over this → reject.</span>
-            </label>
-            <label>
-              <span className={labelClass}>Daily USD limit</span>
-              <div className="relative">
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-subtle">
-                  $
-                </span>
+              </label>
+              <label>
+                <span className={labelClass}>Daily USD limit</span>
                 <input
-                  className={`${fieldClass} pl-7`}
+                  className={fieldClass}
                   inputMode="decimal"
                   value={draft.dailyLimitUsd}
                   onChange={(event) => setDraft({ ...draft, dailyLimitUsd: Number(event.target.value) })}
                 />
-              </div>
-              <span className={helpClass}>USD cap for all allows today. Remaining today tracks this.</span>
-            </label>
-            <label className="col-span-2">
-              <span className={labelClass}>Approval above USD</span>
-              <div className="relative">
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-subtle">
-                  $
-                </span>
+              </label>
+              <label className="col-span-2">
+                <span className={labelClass}>Approval above USD</span>
                 <input
-                  className={`${fieldClass} pl-7`}
+                  className={fieldClass}
                   inputMode="decimal"
                   value={draft.approvalThresholdUsd}
-                  onChange={(event) =>
-                    setDraft({ ...draft, approvalThresholdUsd: Number(event.target.value) })
-                  }
+                  onChange={(event) => setDraft({ ...draft, approvalThresholdUsd: Number(event.target.value) })}
                 />
-              </div>
-              <span className={helpClass}>
-                Soft USD line. At/above → needs your Approve/Reject; below can auto-allow if other rules pass.
-              </span>
-            </label>
-            <label className="col-span-2">
-              <span className={labelClass}>Allow-list</span>
-              <textarea
-                className="min-h-28 w-full max-w-full rounded-control border border-border bg-bg px-3 py-2 font-mono text-sm text-fg"
-                value={recipientsText}
-                onChange={(event) => setRecipientsText(event.target.value)}
-              />
-              <span className={helpClass}>
-                Only these recipients may get paid (one per line: .near or 0x…).
-              </span>
-            </label>
-          </div>
-
-          <div className="mt-4 rounded-control border border-border bg-bg p-3">
-            <p className="text-sm font-medium">Panic freeze</p>
-            <p className="mt-1 text-xs leading-5 text-subtle">
-              Takes effect immediately. Waiting holds cancel. New payment asks are blocked until you unfreeze.
-              The AI cannot unfreeze this.
-            </p>
-            <button
-              type="button"
-              disabled={busy || !saved}
-              className={`mt-3 h-11 w-full rounded-control px-4 text-sm font-medium transition-colors duration-150 disabled:opacity-50 ${
-                saved?.frozen
-                  ? "border border-border hover:border-fg"
-                  : "bg-deny-bg text-deny hover:opacity-90"
-              }`}
-              onClick={() => run(() => setFrozen(!(saved?.frozen ?? draft.frozen)))}
-            >
-              {saved?.frozen ? "Unfreeze wallet" : "Freeze wallet now"}
-            </button>
-          </div>
-
-          <label className="mt-3 flex min-h-11 items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              className="size-4"
-              checked={(draft.privacyMode ?? "minimize") === "minimize"}
-              onChange={(event) =>
-                setDraft({
-                  ...draft,
-                  privacyMode: event.target.checked ? "minimize" : "full",
-                })
-              }
-            />
-            Privacy minimize (agent receipts)
-          </label>
-          <p className={helpClass}>
-            When on, shared receipts hide purpose and payee from outsiders. You still see full detail here.
-          </p>
-
-          <div className="mt-4 flex flex-col gap-2">
-            <button
-              type="button"
-              disabled={busy}
-              className="h-11 rounded-control bg-accent px-4 text-sm font-medium text-accent-fg transition-colors duration-150 hover:bg-accent-hover disabled:opacity-50"
-              onClick={() => run(() => save())}
-            >
+              </label>
+              <label className="col-span-2">
+                <span className={labelClass}>Allow-list</span>
+                <textarea
+                  className="min-h-28 w-full rounded-control border border-border bg-bg px-3 py-2 font-mono text-sm text-fg"
+                  value={recipientsText}
+                  onChange={(event) => setRecipientsText(event.target.value)}
+                />
+                <span className={helpClass}>One recipient per line (.near or 0x…).</span>
+              </label>
+            </div>
+            <button type="button" disabled={busy} className={`${primaryBtn} mt-4 w-full`} onClick={() => run(() => save())}>
               Save rules
             </button>
-            <p className={helpClass}>
-              Draft stays on this page until you Save. Without saved rules, payment asks are refused.
-            </p>
-            <button
-              type="button"
-              disabled={busy}
-              className="h-11 rounded-control border border-border px-4 text-sm font-medium transition-colors duration-150 hover:border-fg disabled:opacity-50"
-              onClick={() => run(prepare)}
-            >
-              Prepare demo · $50/day · $200 USDC
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              className="h-11 rounded-control border border-border px-4 text-sm font-medium transition-colors duration-150 hover:border-fg disabled:opacity-50"
-              onClick={loadTravelOps}
-            >
-              Load travel ops
-            </button>
-            <p className={helpClass}>
-              Fills this draft: {formatUsd(TRAVEL_POLICY.maxPerTransactionUsd)} / tx,{" "}
-              {formatUsd(TRAVEL_POLICY.dailyLimitUsd)} / day, approve above{" "}
-              {formatUsd(TRAVEL_POLICY.approvalThresholdUsd)}, recipients{" "}
-              {TRAVEL_POLICY.allowedRecipients.join(", ")}. Save rules, or Run travel agent to publish and play
-              the four asks.
-            </p>
-            <button
-              type="button"
-              disabled={busy}
-              className="h-11 rounded-control border border-border px-4 text-sm font-medium transition-colors duration-150 hover:border-fg disabled:opacity-50"
-              onClick={() => run(resetDemo)}
-            >
-              Reset demo · wipe ledger + republish
-            </button>
-            <p className={helpClass}>
-              Reset clears the demo ledger and waiting holds, then restores the starter rules so you can run
-              the four asks again from a clean slate.
-            </p>
-          </div>
-
-          <div className="mt-5 border-t border-border pt-4">
-            <h3 className="text-sm font-medium">Fund demo balance</h3>
-            <div className="mt-2 flex gap-2">
+            <label className="mt-4 flex min-h-11 items-center gap-2 text-sm">
               <input
-                className={fieldClass}
-                inputMode="decimal"
-                aria-label="Amount to add"
-                value={fundAmount}
-                onChange={(event) => setFundAmount(event.target.value)}
-              />
-              <button
-                type="button"
-                disabled={busy}
-                className="h-11 shrink-0 rounded-control border border-border px-4 text-sm font-medium transition-colors duration-150 hover:border-fg disabled:opacity-50"
-                onClick={() =>
-                  run(async () => {
-                    const gate = await addFunds({ data: { amountUsd: Number(fundAmount), mode: "add" } });
-                    setSnap(gate);
+                type="checkbox"
+                className="size-4"
+                checked={(draft.privacyMode ?? "minimize") === "minimize"}
+                onChange={(event) =>
+                  setDraft({
+                    ...draft,
+                    privacyMode: event.target.checked ? "minimize" : "full",
                   })
                 }
+              />
+              Privacy minimize on shared receipts
+            </label>
+            <div className="mt-6 border-t border-border pt-4">
+              <p className="text-sm font-medium">Panic freeze</p>
+              <p className="mt-1 text-sm leading-6 text-subtle">
+                Waiting holds cancel. New asks are blocked until you unfreeze. The AI cannot unfreeze this.
+              </p>
+              <button
+                type="button"
+                disabled={busy || !saved}
+                className={`mt-3 h-11 w-full rounded-control px-4 text-sm font-medium transition-colors duration-150 disabled:opacity-50 ${
+                  saved?.frozen ? "border border-border hover:border-fg" : "bg-deny-bg text-deny hover:opacity-90"
+                }`}
+                onClick={() => run(() => setFrozen(!(saved?.frozen ?? draft.frozen)))}
               >
-                Add
+                {saved?.frozen ? "Unfreeze wallet" : "Freeze wallet now"}
               </button>
             </div>
           </div>
-        </section>
 
-        <section className="flex min-w-0 flex-col gap-4">
-          <div className="rounded-card border border-border bg-elevated p-5">
-            <h2 className="text-lg font-medium">Your AI asks</h2>
-            <p className="mt-1 text-sm text-muted">
-              Run the demo keeps the $8 vendor path. Run travel agent uses USD rules for hotel, airline, and
-              rides: under the line is allowed, over the line waits for you, and a poisoned payee stays blocked.
-            </p>
-            <p className="mt-3 rounded-control border border-border bg-bg px-3 py-2 text-xs leading-5 text-muted">
-              If the AI claims “already approved” or tries to rewrite your limits, those claims are ignored.
-              Only your saved rules decide. This preview checks rules in the app — not a hardware vault — and
-              does not send money on-chain.
-            </p>
-            <button
-              type="button"
-              disabled={busy}
-              className="mt-4 h-11 w-full rounded-control bg-accent px-4 text-sm font-medium text-accent-fg transition-colors duration-150 hover:bg-accent-hover disabled:opacity-50"
-              onClick={() => run(runAgent)}
-            >
-              {busy && speaking && script === "demo" ? "AI is asking…" : "Run the demo"}
+          <div className="mt-8 flex flex-col gap-2 border-t border-border pt-6">
+            <h2 className="text-sm font-medium">Other demos</h2>
+            <button type="button" disabled={busy} className={`${quietBtn} w-full`} onClick={loadTravelOps}>
+              Load travel ops
             </button>
-            <p className={`mt-2 ${helpClass}`}>
-              One-click demo: loads starter rules if needed and runs four asks (yes / ask you / no / ignore a
-              fake approval) in this same session.
-            </p>
-            <button
-              type="button"
-              disabled={busy}
-              className="mt-3 h-11 w-full rounded-control border border-border bg-bg px-4 text-sm font-medium transition-colors duration-150 hover:border-fg disabled:opacity-50"
-              onClick={() => run(runTravelAgent)}
-            >
-              {busy && speaking && script === "travel" ? "AI is asking…" : "Run travel agent"}
-            </button>
-            <p className={`mt-2 ${helpClass}`}>
-              Publishes travel ops ({formatUsd(TRAVEL_POLICY.maxPerTransactionUsd)} / tx,{" "}
+            <p className={helpClass}>
+              Fills this editor: {formatUsd(TRAVEL_POLICY.maxPerTransactionUsd)} / tx,{" "}
               {formatUsd(TRAVEL_POLICY.dailyLimitUsd)} / day, approve above{" "}
-              {formatUsd(TRAVEL_POLICY.approvalThresholdUsd)}) and a {formatUsd(TRAVEL_DEMO_BALANCE_USD)} demo
-              balance, then runs $80 allow, $250 hold, $500 cap block, and the poisoned payee. Money is not
-              sent.
+              {formatUsd(TRAVEL_POLICY.approvalThresholdUsd)}, {TRAVEL_POLICY.allowedRecipients.join(", ")}.
             </p>
-            <p className="mt-3 text-xs font-medium uppercase tracking-[0.14em] text-subtle">
-              {script === "travel" ? "Travel ops beats" : "$8 vendor beats"}
-            </p>
-            <ol className="mt-2 flex flex-col gap-3" aria-live="polite">
-              {(script === "travel" ? travelAgentBeats("plan") : agentBeats("plan")).map((beat) => {
-                const done = spoken.find((item) => item.beat.id === beat.id);
-                return (
-                  <li key={beat.id} className="border border-border bg-surface p-3">
-                    <p className="text-sm font-medium">{beat.title}</p>
-                    <p className="mt-1 text-sm text-muted">{done ? done.beat.says : beat.says}</p>
-                    {done ? (
-                      <p className="mt-2 text-sm">
-                        <span className={`rounded-control px-2 py-0.5 font-medium ${statusClass(done.receipt.status)}`}>
-                          {statusLabel(done.receipt.status)}
-                          {done.receipt.rule ? ` · ${done.receipt.rule}` : ""}
-                        </span>
-                        {done.receipt.status === "allow" && (
-                          <span className="ml-2 text-muted">
-                            {done.receipt.attestation.kind === "outlayer-dry-run"
-                              ? "· practice check passed · money not sent"
-                              : "· rules checked in-app · money not sent"}
-                          </span>
-                        )}
-                        {done.receipt.ignoredFields.length > 0 && (
-                          <span className="ml-2 rounded-control bg-hold-bg px-1.5 py-0.5 text-hold">
-                            {done.beat.id === "poison" ? "poison ignored" : "jailbreak ignored"} ·{" "}
-                            {done.receipt.ignoredFields.join(", ")}
-                          </span>
-                        )}
-                        {done.receipt.settlement && (
-                          <span className="ml-2 font-mono text-xs text-subtle">
-                            · submitted {String(done.receipt.settlement.submitted)}
-                            {done.receipt.settlement.quote?.status === "ok"
-                              ? ` · 1-Click quote ${done.receipt.settlement.quote.correlationId?.slice(0, 8) ?? ""}…`
-                              : ""}
-                          </span>
-                        )}
-                      </p>
-                    ) : (
-                      <p className="mt-2 font-mono text-xs text-subtle">waiting</p>
-                    )}
-                  </li>
-                );
-              })}
-            </ol>
-            {speaking && <p className="mt-3 text-sm text-fg">{speaking}</p>}
-            {formError && (
-              <p className="mt-3 text-sm text-deny" role="alert">
-                {formError}
-              </p>
-            )}
+            <button type="button" disabled={busy} className={`${quietBtn} w-full`} onClick={() => run(prepare)}>
+              Prepare demo · $50/day · $200 USDC
+            </button>
+            <button type="button" disabled={busy} className={`${quietBtn} w-full`} onClick={() => run(runAgent)}>
+              {busy && speaking && script === "demo" ? "Running the vendor demo…" : "Run the demo"}
+            </button>
+            <p className={helpClass}>$8 vendor path: allow, hold, over the cap, and a fake approval that is ignored.</p>
+            <button type="button" disabled={busy} className={`${quietBtn} w-full`} onClick={() => run(resetDemo)}>
+              Reset demo · wipe ledger + republish
+            </button>
+            <div className="mt-3">
+              <h3 className="text-sm font-medium">Fund demo balance</h3>
+              <div className="mt-2 flex gap-2">
+                <input
+                  className={fieldClass}
+                  inputMode="decimal"
+                  aria-label="Amount to add"
+                  value={fundAmount}
+                  onChange={(event) => setFundAmount(event.target.value)}
+                />
+                <button
+                  type="button"
+                  disabled={busy}
+                  className={quietBtn}
+                  onClick={() =>
+                    run(async () => {
+                      const gate = await addFunds({ data: { amountUsd: Number(fundAmount), mode: "add" } });
+                      setSnap(gate);
+                    })
+                  }
+                >
+                  Add
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div className="rounded-card border border-border bg-surface p-5">
-            <h2 className="text-lg font-medium">Or ask once</h2>
-            <p className="mt-1 text-sm text-muted">A single payment, still through the same gate. Extra fields are discarded.</p>
-
+          <div className="mt-8 border-t border-border pt-6">
+            <h2 className="text-sm font-medium">Ask once</h2>
+            <p className="mt-1 text-sm text-muted">A single payment through the same gate. Extra fields are discarded.</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <label>
                 <span className={labelClass}>Amount (USDC)</span>
@@ -733,109 +825,86 @@ export function Console() {
                 <input className={fieldClass} value={purpose} onChange={(e) => setPurpose(e.target.value)} />
               </label>
             </div>
-
             <button
               type="button"
               disabled={busy}
-              className="mt-4 h-11 w-full rounded-control border border-border px-4 text-sm font-medium transition-colors duration-150 hover:border-fg disabled:opacity-50"
+              className={`${quietBtn} mt-4 w-full`}
               onClick={() => run(() => submitCurrent())}
             >
               Request this payment
             </button>
           </div>
 
-          <div aria-live="polite">
-            {focused ? (
-              <ReceiptSlip receipt={focused} />
+          {saved && (
+            <div className="mt-8 border-t border-border pt-6">
+              <h2 className="text-sm font-medium">Policy document</h2>
+              <pre className="mt-3 max-w-full overflow-x-auto whitespace-pre-wrap break-all bg-bg p-3 font-mono text-xs leading-5 text-muted">
+                {JSON.stringify(enclaveDocument(saved), null, 2)}
+              </pre>
+              <p className="mt-2 text-sm text-muted">Same caps. Evaluated in process memory. This block is not an attestation.</p>
+            </div>
+          )}
+
+          <div className="mt-8 border-t border-border pt-6">
+            <h2 className="text-sm font-medium">Ledger</h2>
+            <p className="mt-1 text-sm text-muted">Newest first. Blocks do not spend the daily limit.</p>
+            {snap && snap.ledger.length > 0 ? (
+              <ul className="mt-3 divide-y divide-border border-y border-border">
+                {snap.ledger.map((item) => (
+                  <li key={item.id}>
+                    <button
+                      type="button"
+                      onClick={() => setFocusId(item.id)}
+                      className="flex w-full flex-col gap-1 py-3 text-left sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <span className="font-mono text-sm tabular-nums">
+                        {formatUsd(item.request.amountUsd)} → {item.request.to}
+                      </span>
+                      <span className="text-sm text-muted">
+                        {statusLabel(item.status)}
+                        {item.rule ? ` · ${item.rule}` : ""} · {item.request.chain}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
             ) : (
-              <p className="rounded-card border border-dashed border-border px-5 py-8 text-sm text-muted">
-                No receipt yet. Run the demo, or Run travel agent. An allowed payment should say money was not
-                sent.
-              </p>
+              <p className="mt-3 text-sm text-subtle">The ledger is empty.</p>
             )}
+            {focused ? (
+              <div className="mt-4">
+                <ReceiptSlip receipt={focused} />
+              </div>
+            ) : (
+              <p className="mt-4 text-sm text-muted">No receipt yet.</p>
+            )}
+            <p className="mt-4 text-xs leading-5 text-subtle">
+              {snap?.durability ?? "…"}
+              {saved ? ` · ${saved.frozen ? "frozen" : "active"}` : " · no policy"}
+              {snap?.fingerprint ? ` · fp ${snap.fingerprint.slice(0, 8)}` : ""}
+              {" · "}
+              balance {formatUsd(snap?.balanceUsd ?? 0)}
+              {snap?.liveKey ? " · dry-run on allow" : " · dry-run not called"}
+            </p>
           </div>
-        </section>
-      </div>
 
-      {snap && snap.pending.length > 0 && (
-        <section className="mt-6">
-          <h2 className="text-lg font-medium">Waiting on you</h2>
-          <p className="mt-1 text-sm text-muted">The agent cannot press these. Balance has not moved.</p>
-          <ul className="mt-3 flex flex-col gap-3">
-            {snap.pending.map((item) => (
-              <li key={item.id} className="rounded-card border border-border bg-surface p-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="font-mono tabular-nums">
-                      {formatUsd(item.request.amountUsd)} to {item.request.to}
-                    </p>
-                    <p className="text-sm text-muted">{item.detail}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      disabled={busy}
-                      className="h-11 rounded-control bg-accent px-4 text-sm font-medium text-accent-fg transition-colors duration-150 hover:bg-accent-hover disabled:opacity-50"
-                      onClick={() =>
-                        run(async () => {
-                          const result = await decideApproval({ data: { id: item.id, action: "approve" } });
-                          setSnap(result.gate);
-                          setFocusId(result.receipt.id);
-                        })
-                      }
-                    >
-                      Approve
-                    </button>
-                    <button
-                      type="button"
-                      disabled={busy}
-                      className="h-11 rounded-control border border-border px-4 text-sm font-medium transition-colors duration-150 hover:border-fg disabled:opacity-50"
-                      onClick={() =>
-                        run(async () => {
-                          const result = await decideApproval({ data: { id: item.id, action: "reject" } });
-                          setSnap(result.gate);
-                          setFocusId(result.receipt.id);
-                        })
-                      }
-                    >
-                      Reject
-                    </button>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <section className="mt-8">
-        <h2 className="text-lg font-medium">Ledger</h2>
-        <p className="mt-1 text-sm text-muted">Every decision, newest first. Blocks do not spend the daily limit.</p>
-        {snap && snap.ledger.length > 0 ? (
-          <ul className="mt-3 flex flex-col gap-2">
-            {snap.ledger.map((item) => (
-              <li key={item.id}>
-                <button
-                  type="button"
-                  onClick={() => setFocusId(item.id)}
-                  className="flex w-full flex-col gap-1 rounded-card border border-border bg-surface px-4 py-3 text-left sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <span className="font-mono text-sm tabular-nums">
-                    {formatUsd(item.request.amountUsd)} → {item.request.to}
-                  </span>
-                  <span className="text-sm text-muted">
-                    {statusLabel(item.status)}
-                    {item.rule ? ` · ${item.rule}` : ""} · {item.request.chain}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-3 text-sm text-subtle">The ledger is empty.</p>
-        )}
-      </section>
-    </main>
+          <div className="mt-8 border-t border-border pt-6">
+            <h2 className="text-sm font-medium">Walkthrough</h2>
+            <div className="mt-3 overflow-hidden border border-border bg-bg">
+              <video
+                controls
+                playsInline
+                preload="metadata"
+                poster="/demo/console-poster.jpg"
+                className="aspect-video w-full bg-bg"
+              >
+                <source src="/demo/console-walkthrough.mp4" type="video/mp4" />
+              </video>
+            </div>
+            {!HAS_CONSOLE_DEMO_VIDEO && <p className="mt-3 text-sm text-subtle">Demo video uploading.</p>}
+          </div>
+        </details>
+      </main>
       <SiteFooter />
     </>
   );

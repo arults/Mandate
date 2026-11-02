@@ -4,33 +4,17 @@ import { ArrowRight } from "lucide-react";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteNav } from "@/components/site-nav";
 
-const steps = [
-  {
-    n: "1",
-    title: "You write the rules once",
-    body: "How much can go out per payment and per day. Who can be paid. When you must approve first.",
-  },
-  {
-    n: "2",
-    title: "Your AI asks to pay",
-    body: "It can request a payment to a vendor. It never holds your wallet keys.",
-  },
-  {
-    n: "3",
-    title: "A separate checker decides",
-    body: "Not the AI. It says yes, ask you first, or no — using only the rules you set.",
-  },
-  {
-    n: "4",
-    title: "You stay in control",
-    body: "Approve what is on hold. Freeze anytime. Every ask leaves a receipt you can read.",
-  },
+const asks = [
+  { who: "Hotel", amount: "$80", cue: "Airport night · hotel.near · under the line", outcome: "Allowed" },
+  { who: "Airline", amount: "$250", cue: "Flight deposit · airline.near · over the line", outcome: "On hold" },
+  { who: "Hotel", amount: "$500", cue: "Over the $300 cap · hotel.near", outcome: "Blocked" },
+  { who: "Poisoned payee", amount: "$80", cue: "Account moved · not on the list", outcome: "Blocked" },
 ];
 
-const outcomes = [
-  { label: "Yes", hint: "under your limits", tone: "text-allow" },
-  { label: "Ask you", hint: "above your line", tone: "text-hold" },
-  { label: "No", hint: "over the cap or wrong payee", tone: "text-deny" },
+const steps = [
+  { title: "Caps", body: "Per payment, per day, and the line where you have to approve. Hotel, airline, and rides are the list." },
+  { title: "The agent asks", body: "It can request a payment. It never holds the keys, and it cannot approve itself." },
+  { title: "Allow, hold, or block", body: "Under the line can pass. Over the line waits for you. A swapped payee is blocked." },
 ];
 
 export function Home() {
@@ -38,75 +22,97 @@ export function Home() {
     <>
       <SiteNav current="home" />
       <main>
-        <section className="relative overflow-hidden border-b border-border">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 hero-grid opacity-[0.4]"
-          />
-          <div className="relative mx-auto flex w-full max-w-3xl flex-col items-center px-5 py-20 text-center sm:py-28">
-            <p className="inline-flex items-center gap-2 rounded-control border border-border bg-surface px-2.5 py-1 text-[11px] uppercase tracking-[0.14em] text-muted">
-              <span className="size-1.5 rounded-full bg-accent" aria-hidden="true" />
-              Spending rules for AI that pay
-            </p>
-            <h1 className="mt-7 font-display text-[2.75rem] leading-[1.02] tracking-tight text-fg sm:text-6xl lg:text-7xl">
-              You set the rules.
-              <span className="mt-1 block text-muted">Your AI asks to pay — without your keys.</span>
+        <section className="border-b border-border">
+          <div className="mx-auto w-full max-w-xl px-5 py-16 sm:py-24">
+            <h1 className="font-display text-5xl leading-[1.05] tracking-tight text-fg sm:text-6xl">
+              You set the caps.
             </h1>
-            <p className="mt-6 max-w-lg text-lg leading-relaxed text-muted">
-              Mandate lets founders give an AI permission to pay vendors without handing it the wallet.
-              Clever prompts cannot raise the cap, change who gets paid, or approve themselves.
+            <p className="mt-5 text-lg leading-8 text-muted">
+              A travel-ops spending desk. Hotel, airline, and rides can ask. The rules sit outside the model. A
+              swapped payee is blocked. They never hold the keys.
             </p>
-            <p className="mt-4 max-w-lg text-sm font-medium leading-6 text-fg">
-              Travel ops: multi-merchant USD rules; poisoned payee blocked.
+            <p className="mt-4 text-sm leading-6 text-fg">
+              $300 per payment, $800 a day, you approve above $150. This is not a vault and not a chain broadcast.
             </p>
-            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+            <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
               <Link
                 to="/console"
                 className="inline-flex h-11 items-center gap-2 bg-fg px-5 text-sm font-medium text-bg transition-colors duration-150 hover:bg-fg/90"
               >
-                Open the control panel
+                Open the travel desk
                 <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
               </Link>
-              <a
-                href="#travel-demo"
-                className="inline-flex h-11 items-center border border-border bg-surface px-5 text-sm font-medium transition-colors duration-150 hover:border-fg"
-              >
-                Watch travel demo
-              </a>
-              <a
-                href="#how"
-                className="inline-flex h-11 items-center border border-border bg-surface px-5 text-sm font-medium transition-colors duration-150 hover:border-fg"
-              >
-                See how it works
+              <a href="#travel-demo" className="text-sm font-medium text-fg underline decoration-border underline-offset-4 hover:decoration-fg">
+                Watch the trip
               </a>
             </div>
-            <p className="mt-5 max-w-md text-sm text-subtle">
-              Preview demo — payments are checked, not sent on-chain yet. No fake transaction hashes.
+            <p className="mt-5 max-w-md text-sm leading-6 text-subtle">
+              Preview. Payments are checked, not sent on-chain. No fake transaction hashes.
             </p>
           </div>
         </section>
 
-        <section
-          id="travel-demo"
-          className="border-b border-border scroll-mt-24"
-          aria-labelledby="travel-demo-heading"
-        >
-          <div className="mx-auto w-full max-w-3xl px-5 py-14 sm:py-16">
-            <div className="text-center">
-              <h2
-                id="travel-demo-heading"
-                className="font-display text-3xl tracking-tight text-fg sm:text-4xl"
-              >
-                Watch the travel console demo
-              </h2>
-              <p className="mx-auto mt-3 max-w-xl text-base leading-7 text-muted">
-                Travel ops: multi-merchant USD rules; poisoned payee blocked. About 78 seconds on the reel
-                below: set travel spending rules, run the agent, auto-allow under the line, then approve one
-                hold. In the control panel, Load travel ops and Run travel agent block a payee the tool
-                tries to swap.
-              </p>
-            </div>
-            <div className="mt-8 overflow-hidden rounded-card border border-border bg-bg">
+        <section className="border-b border-border" aria-labelledby="folio-heading">
+          <div className="mx-auto w-full max-w-xl px-5 py-14 sm:py-16">
+            <h2 id="folio-heading" className="font-display text-3xl tracking-tight text-fg sm:text-4xl">
+              What the desk checks
+            </h2>
+            <p className="mt-3 text-base leading-7 text-muted">
+              One trip. Four asks. Rides stays on the list and is not asked in this run.
+            </p>
+            <ol className="mt-8 divide-y divide-border border-y border-border">
+              {asks.map((ask) => (
+                <li key={`${ask.who}-${ask.amount}-${ask.cue}`} className="py-4">
+                  <div className="flex items-baseline justify-between gap-4">
+                    <p className="font-medium text-fg">{ask.who}</p>
+                    <p className="font-mono text-sm tabular-nums text-fg">{ask.amount}</p>
+                  </div>
+                  <p className="mt-1 text-sm leading-6 text-muted">{ask.cue}</p>
+                  <p className="mt-2 text-sm font-medium text-fg">{ask.outcome}</p>
+                </li>
+              ))}
+            </ol>
+            <p className="mt-4 text-sm leading-6 text-subtle">
+              These are the checks the desk will show. Money is not sent. No transaction hash is invented.
+            </p>
+            <h3 className="mt-10 text-sm font-medium text-fg">What this preview does not do</h3>
+            <ul className="mt-3 space-y-2 text-sm leading-6 text-muted">
+              <li>It does not broadcast, and it does not prove a TEE.</li>
+              <li>A sleeping server can forget the desk. That is not a chain record.</li>
+              <li>
+                Next, not now: OutLayer can hold the keys. A Function Call Key can only request. This page stays the
+                rules.
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <section id="how" className="border-b border-border scroll-mt-24" aria-labelledby="how-heading">
+          <div className="mx-auto w-full max-w-xl px-5 py-14 sm:py-16">
+            <h2 id="how-heading" className="font-display text-3xl tracking-tight text-fg sm:text-4xl">
+              How it works
+            </h2>
+            <ol className="mt-8 divide-y divide-border border-y border-border">
+              {steps.map((step) => (
+                <li key={step.title} className="py-4">
+                  <h3 className="text-base font-medium text-fg">{step.title}</h3>
+                  <p className="mt-1 text-sm leading-6 text-muted">{step.body}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        <section id="travel-demo" className="border-b border-border scroll-mt-24" aria-labelledby="travel-demo-heading">
+          <div className="mx-auto w-full max-w-xl px-5 py-14 sm:py-16">
+            <h2 id="travel-demo-heading" className="font-display text-3xl tracking-tight text-fg sm:text-4xl">
+              The same trip, on a reel
+            </h2>
+            <p className="mt-3 text-base leading-7 text-muted">
+              Caps, then the agent, then an allow, a hold you approve, and a blocked payee. On the desk, Run
+              travel agent plays it live. Money is not sent.
+            </p>
+            <div className="mt-6 overflow-hidden border border-border bg-bg">
               <video
                 controls
                 playsInline
@@ -117,143 +123,31 @@ export function Home() {
                 <source src="/demo/mandate-travel-console-demo-v3.mp4" type="video/mp4" />
               </video>
             </div>
-            <p className="mt-4 text-center text-sm text-subtle">
+            <p className="mt-4 text-sm text-subtle">
               Prefer a direct link?{" "}
               <a
                 href="/demo/mandate-travel-console-demo-v3.mp4"
-                className="font-medium text-fg underline decoration-border underline-offset-4 transition-colors hover:decoration-fg"
+                className="font-medium text-fg underline decoration-border underline-offset-4 hover:decoration-fg"
               >
-                Open travel demo v3
+                Open the trip reel
               </a>
             </p>
           </div>
         </section>
 
-        <section className="border-b border-border" aria-labelledby="who-heading">
-          <div className="mx-auto grid w-full max-w-5xl gap-8 px-5 py-14 sm:grid-cols-2 sm:py-16">
-            <div>
-              <h2 id="who-heading" className="font-display text-3xl tracking-tight text-fg sm:text-4xl">
-                Who it is for
-              </h2>
-              <p className="mt-4 text-base leading-7 text-muted">
-                Founders and operators running a lean business — a “company of one” — where an AI handles
-                busywork and sometimes needs to pay a vendor. You want speed under the line you draw. You keep
-                the keys.
-              </p>
-            </div>
-            <div>
-              <h2 className="font-display text-3xl tracking-tight text-fg sm:text-4xl">The problem</h2>
-              <p className="mt-4 text-base leading-7 text-muted">
-                If the AI holds your wallet keys, a clever message can talk it into sending money. Rules typed
-                into a chat are requests, not locks — they can be ignored under pressure. Mandate puts the lock
-                outside the AI.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section id="how" className="border-b border-border scroll-mt-24" aria-labelledby="how-heading">
-          <div className="mx-auto w-full max-w-5xl px-5 py-14 sm:py-16">
-            <div className="max-w-2xl">
-              <h2 id="how-heading" className="font-display text-3xl tracking-tight text-fg sm:text-4xl">
-                How it works
-              </h2>
-              <p className="mt-3 text-base leading-7 text-muted">
-                Four steps. Same idea a judge or a non-technical founder can follow in a few minutes.
-              </p>
-            </div>
-            <ol className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {steps.map((step) => (
-                <li key={step.n} className="border border-border bg-surface p-6 text-left">
-                  <p className="text-xs font-medium uppercase tracking-[0.14em] text-accent">{step.n}</p>
-                  <h3 className="mt-3 text-lg font-medium text-fg">{step.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-muted">{step.body}</p>
-                </li>
-              ))}
-            </ol>
-            <p className="mt-8 max-w-2xl text-sm leading-6 text-muted">
-              If the AI tries to claim “already approved” or rewrite your limits, those claims are ignored. Only
-              your saved rules count.
+        <section className="border-b border-border">
+          <div className="mx-auto flex w-full max-w-xl flex-col items-start gap-4 px-5 py-14 sm:py-16">
+            <h2 className="font-display text-3xl tracking-tight text-fg sm:text-4xl">Open the desk.</h2>
+            <p className="text-sm leading-6 text-muted">
+              Run the trip, approve the airline hold, and read the block on the swapped payee. This preview stops
+              before sending.
             </p>
-          </div>
-        </section>
-
-        <section className="border-b border-border" aria-labelledby="get-heading">
-          <div className="mx-auto w-full max-w-5xl px-5 py-14 sm:py-16">
-            <h2 id="get-heading" className="font-display text-3xl tracking-tight text-fg sm:text-4xl">
-              What you get
-            </h2>
-            <ul className="mt-8 grid gap-4 sm:grid-cols-3">
-              <li className="border border-border bg-surface p-6">
-                <h3 className="text-lg font-medium text-fg">A control panel</h3>
-                <p className="mt-2 text-sm leading-6 text-muted">
-                  Set caps, who can be paid, and when you must approve. Freeze everything in one click if you
-                  need to.
-                </p>
-              </li>
-              <li className="border border-border bg-surface p-6">
-                <h3 className="text-lg font-medium text-fg">Clear outcomes</h3>
-                <p className="mt-2 text-sm leading-6 text-muted">
-                  Every ask ends as yes, ask you, or no — with a plain-language receipt you can share.
-                </p>
-              </li>
-              <li className="border border-border bg-surface p-6">
-                <h3 className="text-lg font-medium text-fg">Honest preview</h3>
-                <p className="mt-2 text-sm leading-6 text-muted">
-                  This demo checks payments against your rules. It does not broadcast money on-chain yet. Demo
-                  data can reset when the server sleeps.
-                </p>
-              </li>
-            </ul>
-            <ul className="mt-10 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted">
-              {outcomes.map((item, index) => (
-                <li key={item.label} className="flex items-center gap-4">
-                  {index > 0 && (
-                    <span className="text-subtle" aria-hidden="true">
-                      ·
-                    </span>
-                  )}
-                  <span>
-                    <span className={`font-medium ${item.tone}`}>{item.label}</span>
-                    <span className="text-subtle"> — {item.hint}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        <section className="bg-fg text-bg" aria-labelledby="cta-heading">
-          <div className="mx-auto flex w-full max-w-5xl flex-col items-start gap-6 px-5 py-12 sm:flex-row sm:items-center sm:justify-between sm:py-14">
-            <div className="max-w-lg">
-              <h2 id="cta-heading" className="font-display text-3xl tracking-tight sm:text-4xl">
-                Try it in a few minutes.
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-bg/70">
-                Open the control panel, run the demo, approve one hold, and read the receipt. Built toward NEAR
-                settlement — this preview stops before sending.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <Link
-                to="/console"
-                className="inline-flex h-11 shrink-0 items-center bg-accent px-5 text-sm font-medium text-accent-fg transition-colors duration-150 hover:bg-accent-hover"
-              >
-                Control panel
-              </Link>
-              <a
-                href="#travel-demo"
-                className="inline-flex h-11 shrink-0 items-center border border-bg/30 px-5 text-sm font-medium text-bg/80 transition-colors duration-150 hover:border-bg hover:text-bg"
-              >
-                Watch travel demo
-              </a>
-              <Link
-                to="/docs"
-                className="inline-flex h-11 shrink-0 items-center border border-bg/30 px-5 text-sm font-medium text-bg/80 transition-colors duration-150 hover:border-bg hover:text-bg"
-              >
-                Docs for builders
-              </Link>
-            </div>
+            <Link
+              to="/console"
+              className="inline-flex h-11 items-center bg-accent px-5 text-sm font-medium text-accent-fg transition-colors duration-150 hover:bg-accent-hover"
+            >
+              Travel desk
+            </Link>
           </div>
         </section>
       </main>

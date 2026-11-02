@@ -102,6 +102,21 @@ test("travel beats allow, hold, cap-block, and block a poisoned payee", async ()
   assert.equal(snapshot().pending[0]!.request.to, "airline.near");
 });
 
+test("travel poison-only ask blocks the swapped payee and does not spend", async () => {
+  const { results, gate } = await runDemoAgentFlow(TRAVEL_POLICY, "poisononly", "travel", "poison");
+  assert.equal(results.length, 1);
+  assert.equal(results[0]!.beat.id, "poison");
+  assert.equal(results[0]!.receipt.status, "reject");
+  assert.equal(results[0]!.receipt.rule, "allowed_recipients");
+  assert.ok(results[0]!.receipt.ignoredFields.includes("approved"));
+  assert.equal(results[0]!.receipt.settlement, null);
+  assert.equal(gate.ledger.length, 1);
+  assert.equal(gate.ledger[0]!.request.to, "attacker.near");
+  assert.match(gate.ledger[0]!.request.purpose, /account moved/i);
+  assert.equal(gate.balanceUsd, TRAVEL_DEMO_BALANCE_USD);
+  assert.equal(snapshot().pending.length, 0);
+});
+
 test("runDemoAgentFlow accepts a custom policy input", async () => {
   const { results } = await runDemoAgentFlow(
     { ...DEMO_POLICY, maxPerTransactionUsd: 5, approvalThresholdUsd: 4 },

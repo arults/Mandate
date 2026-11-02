@@ -42,31 +42,33 @@ Another agent should call only `POST /api/v1/pay`. See [AGENT.md](AGENT.md).
 
 Demo policy: **$25 max per transaction**, **$50 per day**, **approve above $10**, USDC only, recipients `vendor.near`, `studio.near`, and one EVM address. Destination chains in the demo: Base, Ethereum, Arbitrum, Solana, Polygon, NEAR.
 
-Travel ops preset: **$300 max per transaction**, **$800 per day**, **approve above $150**, USDC, privacy minimize, recipients `hotel.near`, `airline.near`, `rides.near`. Console: **Load travel ops**, then **Run travel agent**. **Run the demo** still plays the $8 path.
+Travel ops preset: **$300 max per transaction**, **$800 per day**, **approve above $150**, USDC, privacy minimize, recipients `hotel.near`, `airline.near`, `rides.near`. The desk at `/console` is a travel-ops spending desk (rules outside the model — not a vault). **Run travel agent** plays four asks. Chips **Allow $80**, **Hold $250**, **Cap $500**, and **Poison Block** each play one ask in the same gate. **Load travel ops** and **Run the demo** ($8 path) are under **Advanced**.
 
 ## Judge path (do X → see Y)
 
 No clone required for the console walkthrough. Prefer the **[travel console demo (~78s)](https://mandate-ashy.vercel.app/demo/mandate-travel-console-demo-v3.mp4)** on the homepage (`#travel-demo`) if you want the story first; then open `/console` for the live four beats below.
 
-### A · Cold console walkthrough (≤3 min)
+### A · Cold $8 path (under Advanced, ≤3 min)
 
 1. Open https://mandate-ashy.vercel.app/console (prefer a private window).
-2. Click **Reset demo** (wipes ledger + republishes `DEMO_POLICY` on **this** isolate).
-3. Click **Run the agent**.
-4. Read four receipts: **Allowed** $8 · **Needs approval** $18 · **Blocked** $40 · **Blocked** jailbreak with `ignoredFields` (`approved`, `policy`).
-5. **Approve** the $18 hold in Waiting for you.
-6. Scroll the **$8** receipt: `settlement.submitted` is **`false`**; optional 1-Click dry quote; attestation is **not** a TEE unless an OutLayer dry-run returned `would_succeed: true`.
+2. Open **Advanced**. Click **Reset demo** (wipes ledger + republishes `DEMO_POLICY` on **this** isolate).
+3. Click **Run the demo**.
+4. Read four receipts in the list (or the raw receipt under Advanced): **Allowed** $8 · **On hold** $18 · **Blocked** $40 · **Blocked** jailbreak with `ignoredFields` (`approved`, `policy`).
+5. **Approve** the $18 hold on that row.
+6. Open the **$8** receipt under Advanced: `settlement.submitted` is **`false`**; optional 1-Click dry quote; attestation is **not** a TEE unless an OutLayer dry-run returned `would_succeed: true`. No transaction hash.
 7. Optional: **Freeze wallet now** → next ask dies with `rule: frozen`.
 8. Copy `receipt.id` → `GET /api/v1/receipt?id=…` for a shareable agent-minimized decision (still not a TEE / not broadcast).
 
 ### A2 · Travel ops (USD multi-merchant + poisoned payee)
 
-1. Open https://mandate-ashy.vercel.app/console (prefer a private window).
-2. Click **Load travel ops**. The draft fills: $300 / tx, $800 / day, approve above $150, recipients `hotel.near`, `airline.near`, `rides.near`.
-3. Click **Run travel agent**. That publishes the travel mandate and a **$2,000** demo balance (so the $500 ask fails on the cap, not on an empty wallet). The balance is a preview float. Nothing is broadcast.
-4. Read four receipts: **Allowed** $80 `hotel.near` / base · **Needs approval** $250 `airline.near` / ethereum · **Blocked** $500 `max_per_transaction` · **Blocked** poisoned `attacker.near` with `allowed_recipients` and `ignoredFields` (`approved`). The tool line is “account moved”.
-5. **Approve** the $250 hold in Waiting for you.
-6. Scroll the **$80** receipt: `settlement.submitted` is **`false`**. No transaction hash. Durability badge stays `local-db-ephemeral` on Vercel.
+1. Open https://mandate-ashy.vercel.app/console (prefer a private window). The desk already shows the caps: $300 / tx, $800 / day, approve above $150, merchants `hotel.near`, `airline.near`, `rides.near`.
+2. Click **Run travel agent**. That publishes the travel rules and a **$2,000** preview float (so the $500 ask fails on the cap, not on an empty wallet). Nothing is broadcast. A cold isolate that forgot the rules: run again. That is not a chain record.
+3. Or tap one chip — **Allow $80**, **Hold $250**, **Cap $500**, **Poison Block** — to play that ask alone. **Poison** replays the account-moved invoice.
+4. Read the path: **Allowed** $80 `hotel.near` · **On hold** $250 `airline.near` · **Blocked · over the cap** $500 · **Blocked · not on the list** poisoned `attacker.near` with `ignoredFields` (`approved`). The poison row is highlighted. The tool line is “account moved”.
+5. **Approve** the $250 hold on the airline row. Balance does not move until you do.
+6. An allowed row says **Checked · not submitted**. `settlement.submitted` is **`false`**. A dry quote id appears only when the server returned one. No transaction hash.
+7. Read **What this preview does not do**: not a broadcast, not a TEE, not a vault. OutLayer Agent Custody and Function Call Keys are the next composition, not this preview.
+8. **Advanced → Load travel ops** only fills the editor. **Run the demo** is still the $8 path. Durability on Vercel stays `local-db-ephemeral`.
 
 **Run the demo** still publishes `DEMO_POLICY` and the $8 / $18 / $40 / jailbreak path.
 
@@ -76,7 +78,7 @@ Durability badge on the console shows `local-db-ephemeral` on Vercel (warm isola
 
 On Vercel, durability is **`local-db-ephemeral`**: a cold isolate has **no** published policy. A bare `curl` from your laptop to `https://mandate-ashy.vercel.app/api/v1/pay` often returns **`409 no_policy`** even right after you clicked Run in the browser — browser and curl hit different isolates. That is expected. Prefer console for the four beats; use curl against **`npm run dev`** locally after Reset/Run, or accept 409 on the public host.
 
-After **Reset demo** + **Run the agent** on a **local** `npm run dev` (same process):
+After **Advanced → Reset demo** + **Run the demo** on a **local** `npm run dev` (same process):
 
 ```bash
 # Allow $8
@@ -172,7 +174,9 @@ NEAR **Function Call Keys (FCK)** can limit a key to a receiver contract + metho
 
 ## Demo steps (console)
 
-1. **Reset demo** (optional clean slate), then **Run the agent.** Publishes the demo mandate. Remaining today **$50.00**. Balance **$200.00**.
+Travel desk first: **Run travel agent**, or one chip (**Allow $80** / **Hold $250** / **Cap $500** / **Poison Block**). The $8 path is under **Advanced**.
+
+1. **Advanced → Reset demo** (optional clean slate), then **Run the demo.** Publishes the $8 vendor rules. Remaining today **$50.00**. Balance **$200.00**.
 2. **$8 to vendor.near on Base** → **Allowed**. Optional live 1-Click dry quote id/amount on the receipt. `settlement.submitted` is **false**.
 3. **$18 to studio.near** → **Needs approval**. Approve spends; Reject releases.
 4. **$40** → **Blocked · max_per_transaction**.
