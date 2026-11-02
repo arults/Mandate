@@ -13,7 +13,7 @@ import {
   type PersistedState,
 } from "@/lib/gate-persist.server";
 import { fetchOneClickQuote, ONECLICK_QUOTE_URL } from "@/lib/oneclick-quote.server";
-import { agentBeats, type AgentBeat } from "@/lib/agent-script";
+import { beatsForScript, type AgentBeat, type AgentScript } from "@/lib/agent-script";
 import {
   cents,
   evaluatePolicy,
@@ -22,6 +22,7 @@ import {
   normalizeRecipient,
   parsePayment,
   parsePolicy,
+  TRAVEL_DEMO_BALANCE_USD,
   usdToUsdcUnits,
   type HumanPolicy,
   type PaymentRequest,
@@ -416,11 +417,11 @@ export function publishPolicy(input: unknown): Promise<Snapshot> {
   });
 }
 
-export function prepareDemo(input: unknown): Promise<Snapshot> {
+export function prepareDemo(input: unknown, balanceUsd = 200): Promise<Snapshot> {
   return enqueue(async () => {
     const current = state();
     current.policy = parsePolicy(input);
-    current.balanceCents = cents(200);
+    current.balanceCents = cents(balanceUsd);
     current.spentCents = 0;
     current.pending = [];
     current.ledger = [];
@@ -639,9 +640,10 @@ export type DemoAgentResult = {
 export async function runDemoAgentFlow(
   policyInput: unknown,
   runId: string,
+  script: AgentScript = "demo",
 ): Promise<{ gate: Snapshot; receipts: PublicGateReceipt[]; results: DemoAgentResult[] }> {
-  await prepareDemo(policyInput);
-  const beats = agentBeats(runId);
+  await prepareDemo(policyInput, script === "travel" ? TRAVEL_DEMO_BALANCE_USD : 200);
+  const beats = beatsForScript(script, runId);
   const results: DemoAgentResult[] = [];
   for (const beat of beats) {
     const full = await submitPayment(beat.body);
