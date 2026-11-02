@@ -56,6 +56,9 @@ export function Home() {
               Mandate lets founders give an AI permission to pay vendors without handing it the wallet.
               Clever prompts cannot raise the cap, change who gets paid, or approve themselves.
             </p>
+            <p className="mt-4 max-w-lg text-sm font-medium leading-6 text-fg">
+              Travel ops: multi-merchant USD rules; poisoned payee blocked.
+            </p>
             <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
               <Link
                 to="/console"
@@ -97,8 +100,10 @@ export function Home() {
                 Watch the travel console demo
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-base leading-7 text-muted">
-                About 80 seconds: load travel spending rules, run the agent, allow under the line, approve one
-                hold, and block a poisoned payee — same control panel judges will open.
+                Travel ops: multi-merchant USD rules; poisoned payee blocked. About 80 seconds on the reel
+                below: load travel spending rules, run the agent, allow under the line, approve one hold, and
+                block a poisoned payee. In the control panel, Load travel ops and Run travel agent block a
+                payee the tool tries to swap.
               </p>
             </div>
             <div className="mt-8 overflow-hidden rounded-card border border-border bg-bg">

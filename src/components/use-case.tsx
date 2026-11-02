@@ -20,10 +20,10 @@ const cases = [
     title: "Hotel and flight booking",
     who: "A lean travel partner, or a founder whose AI books trips",
     situation:
-      "The AI finds a hotel or flight for a client (or for you) and needs to pay a deposit or fare under caps you set.",
-    help: "Your rules name max amount per booking, a daily spend limit, and who can be paid. Asks that fit can move; asks above your line wait for your OK.",
+      "The AI finds a hotel, a flight, or a ride and needs to pay a deposit or fare under caps you set — across more than one merchant.",
+    help: "Your rules name a USD max per booking, a daily spend limit, an approval line, and the merchants who can be paid (hotel, airline, rides). Asks under the line can move. Asks above it wait for your OK. If a tool says the account moved, the new payee is still checked against that list.",
     outcome:
-      "Bookings stay fast when they fit your rules. You only approve what is on hold. Every ask leaves a receipt. In today’s preview, Mandate checks the rules; money is not sent on-chain yet.",
+      "Travel ops: multi-merchant USD rules; poisoned payee blocked. Bookings stay fast when they fit. You only approve what is on hold. In today’s preview, Mandate checks the rules; money is not sent on-chain yet.",
   },
   {
     n: "3",

@@ -221,6 +221,11 @@ Agent → POST /api/v1/pay only
               Demo mandate: $25 max per payment, $50 per day, approve above $10. Recipients vendor.near,
               studio.near, and one EVM address. Chains: base, ethereum, arbitrum, solana, polygon, near.
             </p>
+            <p className="mt-4 text-sm leading-6">
+              Travel ops mandate: $300 max per payment, $800 per day, approve above $150. Recipients
+              hotel.near, airline.near, and rides.near. Same USDC asset and privacy minimize. Still not an
+              attestation, and settlement.submitted stays false.
+            </p>
           </section>
 
           <section id="agents" className="scroll-mt-28">
@@ -438,6 +443,29 @@ Agent → POST /api/v1/pay only
               <li>
                 <strong className="font-medium text-fg">Jailbreak</strong> → body includes approved: true and a
                 fake policy. Receipt lists those as ignored. Status Blocked · allowed_recipients.
+              </li>
+            </ol>
+            <p className="mt-4">
+              Travel ops, same preview: <strong className="font-medium text-fg">Load travel ops</strong>, then{" "}
+              <strong className="font-medium text-fg">Run travel agent</strong>. The $8 path above stays on Run
+              the demo.
+            </p>
+            <ol className="mt-4 list-decimal space-y-3 pl-5">
+              <li>
+                <strong className="font-medium text-fg">$80 to hotel.near on Base</strong> → Allowed.
+                settlement.submitted stays false.
+              </li>
+              <li>
+                <strong className="font-medium text-fg">$250 to airline.near on Ethereum</strong> → Needs
+                approval. Approve in Waiting for you. Balance does not move until you do.
+              </li>
+              <li>
+                <strong className="font-medium text-fg">$500</strong> → Blocked · max_per_transaction.
+              </li>
+              <li>
+                <strong className="font-medium text-fg">Poisoned payee</strong> → the tool says the hotel
+                account moved and asks to pay attacker.near, with approved: true. That field is ignored. Status
+                Blocked · allowed_recipients.
               </li>
             </ol>
           </section>
