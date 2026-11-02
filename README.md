@@ -6,7 +6,7 @@ The **Mandate policy gate** enforces USD caps / allow-list / holds on `POST /api
 
 This is a NEAR hackathon prototype (tracks: **security**, **agents**, **business**). The preview gate is a **local process policy gate** — not a TEE and not an OutLayer enclave. It does not invent a transaction hash. When `OUTLAYER_API_KEY` is present, an allowed payment also dry-runs `POST /wallet/v1/intents/withdraw` and still does not broadcast. Production path (roadmap): OutLayer Agent Custody.
 
-**Live (clone-free):** [mandate-ashy.vercel.app](https://mandate-ashy.vercel.app) · console [ /console ](https://mandate-ashy.vercel.app/console) · litepaper [ /docs ](https://mandate-ashy.vercel.app/docs) · **travel demo (~78s)** [ /demo/mandate-travel-console-demo-v3.mp4 ](https://mandate-ashy.vercel.app/demo/mandate-travel-console-demo-v3.mp4) (also embedded on the homepage)
+**Live (clone-free):** [mandate-ashy.vercel.app](https://mandate-ashy.vercel.app) · console [ /console ](https://mandate-ashy.vercel.app/console) · litepaper [ /docs ](https://mandate-ashy.vercel.app/docs) · **travel demo (~80s)** [ /demo/mandate-travel-console-demo-v4.mp4 ](https://mandate-ashy.vercel.app/demo/mandate-travel-console-demo-v4.mp4) (also embedded on the homepage)
 
 ## Problem
 
@@ -46,7 +46,7 @@ Travel ops preset: **$300 max per transaction**, **$800 per day**, **approve abo
 
 ## Judge path (do X → see Y)
 
-No clone required for the console walkthrough. Prefer the **[travel console demo (~78s)](https://mandate-ashy.vercel.app/demo/mandate-travel-console-demo-v3.mp4)** on the homepage (`#travel-demo`) if you want the story first; then open `/console` for the live four beats below.
+No clone required for the console walkthrough. Prefer the **[travel console demo (~80s)](https://mandate-ashy.vercel.app/demo/mandate-travel-console-demo-v4.mp4)** on the homepage (`#travel-demo`) if you want the story first; then open `/console` for the live four beats below.
 
 ### A · Cold console walkthrough (≤3 min)
 
@@ -196,7 +196,7 @@ A jailbreak that sends approved: true still dies.
 Preview durability is local-db-ephemeral on Vercel, not a TEE. No invented transaction hash.
 
 https://mandate-ashy.vercel.app
-https://mandate-ashy.vercel.app/demo/mandate-travel-console-demo-v3.mp4
+https://mandate-ashy.vercel.app/demo/mandate-travel-console-demo-v4.mp4
 https://github.com/arults/Mandate
 ```
 

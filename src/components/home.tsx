@@ -100,10 +100,10 @@ export function Home() {
                 Watch the travel console demo
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-base leading-7 text-muted">
-                Travel ops: multi-merchant USD rules; poisoned payee blocked. About 78 seconds on the reel
-                below: set travel spending rules, run the agent, auto-allow under the line, then approve one
-                hold. In the control panel, Load travel ops and Run travel agent block a payee the tool
-                tries to swap.
+                Travel ops: multi-merchant USD rules; poisoned payee blocked. About 80 seconds on the reel
+                below: load travel spending rules, run the agent, allow under the line, approve one hold, and
+                block a poisoned payee. In the control panel, Load travel ops and Run travel agent block a
+                payee the tool tries to swap.
               </p>
             </div>
             <div className="mt-8 overflow-hidden rounded-card border border-border bg-bg">
@@ -111,19 +111,19 @@ export function Home() {
                 controls
                 playsInline
                 preload="metadata"
-                poster="/demo/mandate-travel-console-demo-v3-poster.jpg"
+                poster="/demo/mandate-travel-console-demo-v4-poster.jpg"
                 className="aspect-video w-full bg-bg"
               >
-                <source src="/demo/mandate-travel-console-demo-v3.mp4" type="video/mp4" />
+                <source src="/demo/mandate-travel-console-demo-v4.mp4" type="video/mp4" />
               </video>
             </div>
             <p className="mt-4 text-center text-sm text-subtle">
               Prefer a direct link?{" "}
               <a
-                href="/demo/mandate-travel-console-demo-v3.mp4"
+                href="/demo/mandate-travel-console-demo-v4.mp4"
                 className="font-medium text-fg underline decoration-border underline-offset-4 transition-colors hover:decoration-fg"
               >
-                Open travel demo v3
+                Open travel demo v4
               </a>
             </p>
           </div>
