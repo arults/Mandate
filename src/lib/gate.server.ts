@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 
-import type { GateReceipt, Settlement, Snapshot } from "@/lib/gate-types";
+import type { DemoBeatLeg, GateReceipt, Settlement, Snapshot } from "@/lib/gate-types";
 import {
   clearPersistedState,
   durabilityMode,
@@ -13,7 +13,7 @@ import {
   type PersistedState,
 } from "@/lib/gate-persist.server";
 import { fetchOneClickQuote, ONECLICK_QUOTE_URL } from "@/lib/oneclick-quote.server";
-import { beatsForScript, type AgentBeat, type AgentScript } from "@/lib/agent-script";
+import { TRAVEL_BURST_MAX_LEGS, beatsForScript, type AgentBeat, type AgentScript } from "@/lib/agent-script";
 import {
   cents,
   evaluatePolicy,
@@ -628,11 +628,40 @@ export function resolveApproval(id: string, action: "approve" | "reject"): Promi
 
 export type DemoAgentResult = {
   beat: AgentBeat;
+  /** Decisive receipt. For a burst, this is the leg the day (or another rule) stopped. */
   receipt: PublicGateReceipt;
+  legs: DemoBeatLeg[];
 };
 
+function toLeg(full: GateReceipt): DemoBeatLeg {
+  return {
+    id: full.id,
+    amountUsd: full.request.amountUsd,
+    to: full.request.to,
+    status: full.status,
+    rule: full.rule,
+    detail: full.detail,
+  };
+}
+
 /**
- * Prepare + four agent asks in ONE process.
+ * A burst is several payments of the same ride. Each leg gets its own
+ * idempotency key. Stop at the first block so a full day does not keep asking.
+ */
+async function submitBurst(beat: AgentBeat): Promise<GateReceipt[]> {
+  const legs: GateReceipt[] = [];
+  const rawKey = beat.body.idempotencyKey;
+  const baseKey = typeof rawKey === "string" && rawKey.trim() ? rawKey.trim() : "burst";
+  for (let i = 1; i <= TRAVEL_BURST_MAX_LEGS; i++) {
+    const full = await submitPayment({ ...beat.body, idempotencyKey: `${baseKey}-${i}` });
+    legs.push(full);
+    if (full.status === "reject") return legs;
+  }
+  return legs;
+}
+
+/**
+ * Prepare + the scripted asks in ONE process.
  * Console uses this so Vercel serverless does not lose in-memory PGLite policy
  * between prepareDemoGate and a separate /api/v1/pay isolate.
  * /api/v1/pay remains the agent contract for curl / external agents.
@@ -648,9 +677,10 @@ export async function runDemoAgentFlow(
   if (beats.length === 0) throw new Error("That ask is not in this trip.");
   const results: DemoAgentResult[] = [];
   for (const beat of beats) {
-    const full = await submitPayment(beat.body);
-    const receipt = projectReceipt(full, snapshot().policy, "agent");
-    results.push({ beat, receipt });
+    const fullLegs = beat.id === "burst" ? await submitBurst(beat) : [await submitPayment(beat.body)];
+    const decisive = fullLegs[fullLegs.length - 1]!;
+    const receipt = projectReceipt(decisive, snapshot().policy, "agent");
+    results.push({ beat, receipt, legs: fullLegs.map(toLeg) });
   }
   return {
     gate: snapshot(),

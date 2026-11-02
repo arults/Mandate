@@ -8,7 +8,8 @@ const asks = [
   { who: "Hotel", amount: "$80", cue: "Airport night · hotel.near · under the line", outcome: "Allowed" },
   { who: "Airline", amount: "$250", cue: "Flight deposit · airline.near · over the line", outcome: "On hold" },
   { who: "Hotel", amount: "$500", cue: "Over the $300 cap · hotel.near", outcome: "Blocked" },
-  { who: "Poisoned payee", amount: "$80", cue: "Account moved · not on the list", outcome: "Blocked" },
+  { who: "Look-alike payee", amount: "$80", cue: "hote1.near looks like hotel.near · not on the list", outcome: "Blocked" },
+  { who: "Burst of rides", amount: "$120", cue: "rides.near · one after another · the day stops the last", outcome: "Blocked" },
 ];
 
 const steps = [
@@ -58,7 +59,7 @@ export function Home() {
               What the desk checks
             </h2>
             <p className="mt-3 text-base leading-7 text-muted">
-              One trip. Four asks. Rides stays on the list and is not asked in this run.
+              One trip. Five asks. A look-alike hotel account is blocked. A burst of rides stops when the day is full.
             </p>
             <ol className="mt-8 divide-y divide-border border-y border-border">
               {asks.map((ask) => (

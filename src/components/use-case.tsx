@@ -11,7 +11,7 @@ const cases = [
     who: "A lean travel partner, or a founder whose AI books trips",
     situation:
       "The AI finds a hotel, a flight, or a ride and needs to pay a deposit or fare under caps you set — across more than one merchant.",
-    help: "Your rules name a USD max per booking, a daily spend limit, an approval line, and the merchants who can be paid (hotel, airline, rides). Asks under the line can move. Asks above it wait for your OK. If a tool says the account moved, the new payee is still checked against that list.",
+    help: "Your rules name a USD max per booking, a daily spend limit, an approval line, and the merchants who can be paid (hotel, airline, rides). Asks under the line can move. Asks above it wait for your OK. If a tool says the account moved, a look-alike payee is still checked against that list. A burst of rides stops when the day is full.",
     outcome:
       "Travel ops: multi-merchant USD rules; poisoned payee blocked. Bookings stay fast when they fit. You only approve what is on hold. In today’s preview, Mandate checks the rules; money is not sent on-chain yet.",
   },

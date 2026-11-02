@@ -42,7 +42,7 @@ Another agent should call only `POST /api/v1/pay`. See [AGENT.md](AGENT.md).
 
 Demo policy: **$25 max per transaction**, **$50 per day**, **approve above $10**, USDC only, recipients `vendor.near`, `studio.near`, and one EVM address. Destination chains in the demo: Base, Ethereum, Arbitrum, Solana, Polygon, NEAR.
 
-Travel ops preset: **$300 max per transaction**, **$800 per day**, **approve above $150**, USDC, privacy minimize, recipients `hotel.near`, `airline.near`, `rides.near`. The desk at `/console` is a travel-ops spending desk (rules outside the model — not a vault). **Run travel agent** plays four asks. Chips **Allow $80**, **Hold $250**, **Cap $500**, and **Poison Block** each play one ask in the same gate. **Load travel ops** and **Run the demo** ($8 path) are under **Advanced**.
+Travel ops preset: **$300 max per transaction**, **$800 per day**, **approve above $150**, USDC, privacy minimize, recipients `hotel.near`, `airline.near`, `rides.near`. The desk at `/console` is a travel-ops spending desk (rules outside the model — not a vault). **Run travel agent** plays five asks. Chips **Allow $80**, **Hold $250**, **Cap $500**, **Look-alike**, and **Burst** each play one ask in the same gate. **Load travel ops** and **Run the demo** ($8 path) are under **Advanced**.
 
 ## Judge path (do X → see Y)
 
@@ -63,8 +63,8 @@ No clone required for the console walkthrough. Prefer the **[travel console demo
 
 1. Open https://mandate-ashy.vercel.app/console (prefer a private window). The desk already shows the caps: $300 / tx, $800 / day, approve above $150, merchants `hotel.near`, `airline.near`, `rides.near`.
 2. Click **Run travel agent**. That publishes the travel rules and a **$2,000** preview float (so the $500 ask fails on the cap, not on an empty wallet). Nothing is broadcast. A cold isolate that forgot the rules: run again. That is not a chain record.
-3. Or tap one chip — **Allow $80**, **Hold $250**, **Cap $500**, **Poison Block** — to play that ask alone. **Poison** replays the account-moved invoice.
-4. Read the path: **Allowed** $80 `hotel.near` · **On hold** $250 `airline.near` · **Blocked · over the cap** $500 · **Blocked · not on the list** poisoned `attacker.near` with `ignoredFields` (`approved`). The poison row is highlighted. The tool line is “account moved”.
+3. Or tap one chip — **Allow $80**, **Hold $250**, **Cap $500**, **Look-alike**, **Burst** — to play that ask alone. **Look-alike** replays the account-moved invoice. **Burst** replays the rides until the day stops.
+4. Read the path: **Allowed** $80 `hotel.near` · **On hold** $250 `airline.near` · **Blocked · over the cap** $500 · **Blocked · not on the list** look-alike `hote1.near` (not `hotel.near`) with `ignoredFields` (`approved`) · **Blocked · over the day** on the last $120 ride to `rides.near` (earlier rides in that burst are **Allowed**). The look-alike row is highlighted. The tool line is “account moved”. No transaction hash. `settlement.submitted` stays **false**.
 5. **Approve** the $250 hold on the airline row. Balance does not move until you do.
 6. An allowed row says **Checked · not submitted**. `settlement.submitted` is **`false`**. A dry quote id appears only when the server returned one. No transaction hash.
 7. Read **What this preview does not do**: not a broadcast, not a TEE, not a vault. OutLayer Agent Custody and Function Call Keys are the next composition, not this preview.
@@ -174,7 +174,7 @@ NEAR **Function Call Keys (FCK)** can limit a key to a receiver contract + metho
 
 ## Demo steps (console)
 
-Travel desk first: **Run travel agent**, or one chip (**Allow $80** / **Hold $250** / **Cap $500** / **Poison Block**). The $8 path is under **Advanced**.
+Travel desk first: **Run travel agent**, or one chip (**Allow $80** / **Hold $250** / **Cap $500** / **Look-alike** / **Burst**). The $8 path is under **Advanced**.
 
 1. **Advanced → Reset demo** (optional clean slate), then **Run the demo.** Publishes the $8 vendor rules. Remaining today **$50.00**. Balance **$200.00**.
 2. **$8 to vendor.near on Base** → **Allowed**. Optional live 1-Click dry quote id/amount on the receipt. `settlement.submitted` is **false**.

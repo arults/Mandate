@@ -49,6 +49,16 @@ export type GateReceipt = {
   settlement: Settlement | null;
 };
 
+/** One payment inside a scripted ask. A burst is several of these. */
+export type DemoBeatLeg = {
+  id: string;
+  amountUsd: number;
+  to: string;
+  status: GateReceipt["status"];
+  rule: string | null;
+  detail: string;
+};
+
 export type Snapshot = {
   policy: HumanPolicy | null;
   fingerprint: string | null;

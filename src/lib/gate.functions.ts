@@ -82,7 +82,7 @@ export const runDemoAgent = createServerFn({ method: "POST" })
       typeof raw.runId === "string" && raw.runId.trim()
         ? raw.runId.trim().slice(0, 32)
         : crypto.randomUUID().slice(0, 8);
-    const onlyIds: AgentBeat["id"][] = ["allow", "hold", "block", "jailbreak", "poison"];
+    const onlyIds: AgentBeat["id"][] = ["allow", "hold", "block", "jailbreak", "poison", "burst"];
     const only = onlyIds.find((id) => id === raw.only);
     return { policy, runId, script, only };
   })
@@ -94,9 +94,10 @@ export const runDemoAgent = createServerFn({ method: "POST" })
     return {
       gate: out.gate,
       receipts: out.receipts,
-      results: out.results.map(({ beat, receipt }) => ({
+      results: out.results.map(({ beat, receipt, legs }) => ({
         beat: { id: beat.id, title: beat.title, says: beat.says },
         receipt,
+        legs,
       })),
     };
   });

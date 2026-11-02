@@ -453,11 +453,11 @@ Agent → POST /api/v1/pay only
             <p className="mt-4">
               Travel ops is the desk. Caps on the page are $300 / tx, $800 / day, approve above $150, merchants
               hotel.near, airline.near, rides.near. Click <strong className="font-medium text-fg">Run travel agent</strong>.
-              The four lines are the result: allow, hold, over the cap, poisoned payee. Chips{" "}
+              The five lines are the result: allow, hold, over the cap, look-alike payee, burst of rides. Chips{" "}
               <strong className="font-medium text-fg">Allow</strong>, <strong className="font-medium text-fg">Hold</strong>,{" "}
-              <strong className="font-medium text-fg">Cap</strong>, and <strong className="font-medium text-fg">Poison</strong>{" "}
-              each play one ask. Poison highlights the account-moved block. An allow says checked, not submitted, and
-              never invents a hash.{" "}
+              <strong className="font-medium text-fg">Cap</strong>, <strong className="font-medium text-fg">Look-alike</strong>,{" "}
+              and <strong className="font-medium text-fg">Burst</strong> each play one ask. Look-alike highlights the
+              account-moved block. An allow says checked, not submitted, and never invents a hash.{" "}
               <strong className="font-medium text-fg">Load travel ops</strong> only fills the editor under Advanced.
               The $8 path stays on <strong className="font-medium text-fg">Run the demo</strong> there too.
             </p>
@@ -474,9 +474,14 @@ Agent → POST /api/v1/pay only
                 <strong className="font-medium text-fg">$500</strong> → Blocked · max_per_transaction.
               </li>
               <li>
-                <strong className="font-medium text-fg">Poisoned payee</strong> → the tool says the hotel
-                account moved and asks to pay attacker.near, with approved: true. That field is ignored. Status
-                Blocked · allowed_recipients.
+                <strong className="font-medium text-fg">Look-alike payee</strong> → the tool says the hotel
+                account moved and asks to pay hote1.near (it looks like hotel.near), with approved: true. That field
+                is ignored. Status Blocked · allowed_recipients.
+              </li>
+              <li>
+                <strong className="font-medium text-fg">Burst of rides</strong> → $120 to rides.near, again, until
+                the $800 day stops the last one. Earlier rides in the burst are Allowed. The last is Blocked ·
+                daily_limit. Those allows are checked, not submitted.
               </li>
             </ol>
           </section>

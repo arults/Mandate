@@ -5,7 +5,7 @@ import { SiteNav } from "@/components/site-nav";
 
 import { agentBeats, travelAgentBeats, type AgentBeat, type AgentScript } from "@/lib/agent-script";
 import { addFunds, decideApproval, getGate, prepareDemoGate, requestPayment, runDemoAgent, savePolicy } from "@/lib/gate.functions";
-import type { GateReceipt, Snapshot } from "@/lib/gate-types";
+import type { DemoBeatLeg, GateReceipt, Snapshot } from "@/lib/gate-types";
 import {
   CHAINS,
   DEMO_POLICY,
@@ -49,7 +49,8 @@ const SCENARIOS = [
   { id: "allow", label: "Allow", hint: "$80" },
   { id: "hold", label: "Hold", hint: "$250" },
   { id: "block", label: "Cap", hint: "$500" },
-  { id: "poison", label: "Poison", hint: "Block" },
+  { id: "poison", label: "Look-alike", hint: "" },
+  { id: "burst", label: "Burst", hint: "" },
 ] as const;
 
 function quoteLine(settlement: GateReceipt["settlement"] | null | undefined): string | null {
@@ -83,7 +84,10 @@ function statusClass(status: GateReceipt["status"]): string {
 
 function askCue(beat: AgentBeat): { who: string; cue: string } {
   const to = String(beat.body.to);
-  if (beat.id === "poison") return { who: "Poisoned payee", cue: `Account moved · ${to} · not on the list` };
+  if (beat.id === "poison") return { who: "Look-alike payee", cue: `${to} looks like hotel.near · not on the list` };
+  if (beat.id === "burst") {
+    return { who: "Burst of rides", cue: `${to} · ${formatUsd(Number(beat.body.amountUsd))} each · the day stops the last` };
+  }
   if (beat.id === "jailbreak") return { who: "Not on the list", cue: `${to} · a fake approval is ignored` };
   const who = to.startsWith("hotel")
     ? "Hotel"
@@ -213,14 +217,16 @@ export function Console() {
   const [purpose, setPurpose] = useState("API invoice 14");
   const [fundAmount, setFundAmount] = useState("50");
   const [focusId, setFocusId] = useState<string | null>(null);
-  const [spoken, setSpoken] = useState<Array<{ beat: DemoBeatView; receipt: PublicGateReceipt | GateReceipt }>>([]);
+  const [spoken, setSpoken] = useState<
+    Array<{ beat: DemoBeatView; receipt: PublicGateReceipt | GateReceipt; legs: DemoBeatLeg[] }>
+  >([]);
   const [speaking, setSpeaking] = useState<string | null>(null);
   const [activeBeat, setActiveBeat] = useState<string | null>(null);
   const [script, setScript] = useState<AgentScript>("travel");
   const revision = useRef(0);
   const inFlight = useRef(false);
-  const poisonRef = useRef<HTMLLIElement | null>(null);
-  const poisonSeen = useRef<string | null>(null);
+  const matrixRef = useRef<HTMLLIElement | null>(null);
+  const matrixSeen = useRef<string | null>(null);
 
   useEffect(() => {
     const ticket = ++revision.current;
@@ -243,11 +249,11 @@ export function Console() {
   }, []);
 
   useEffect(() => {
-    const poison = spoken.find((item) => item.beat.id === "poison");
-    if (!poison || poisonSeen.current === poison.receipt.id) return;
-    poisonSeen.current = poison.receipt.id;
+    const anchor = spoken.find((item) => item.beat.id === "burst") ?? spoken.find((item) => item.beat.id === "poison");
+    if (!anchor || matrixSeen.current === anchor.receipt.id) return;
+    matrixSeen.current = anchor.receipt.id;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    poisonRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+    matrixRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
   }, [spoken]);
 
   async function run(task: () => Promise<void>) {
@@ -336,7 +342,7 @@ export function Console() {
     // races cold isolates on Vercel and returns 409 no_policy.
     const result = (await runDemoAgent({ data: { policy, runId, script: nextScript } })) as {
       gate: Snapshot;
-      results: Array<{ beat: DemoBeatView; receipt: PublicGateReceipt }>;
+      results: Array<{ beat: DemoBeatView; receipt: PublicGateReceipt; legs?: DemoBeatLeg[] }>;
     };
     setSnap(result.gate);
     setDraft(policy);
@@ -345,7 +351,7 @@ export function Console() {
       setActiveBeat(item.beat.id);
       setSpeaking(item.beat.says);
       await new Promise((resolve) => setTimeout(resolve, 280));
-      setSpoken((current) => [...current, { beat: item.beat, receipt: item.receipt }]);
+      setSpoken((current) => [...current, { beat: item.beat, receipt: item.receipt, legs: item.legs ?? [] }]);
       setFocusId(item.receipt.id);
       setActiveBeat(null);
       setSpeaking(null);
@@ -365,13 +371,21 @@ export function Console() {
     setScript("travel");
     setSpoken([]);
     setActiveBeat(only);
-    setSpeaking(only === "poison" ? "Replaying the swapped payee…" : "Preparing that ask…");
+    setSpeaking(
+      only === "poison"
+        ? "Replaying the look-alike payee…"
+        : only === "burst"
+          ? "Replaying the burst of rides…"
+          : only === "block"
+            ? "Replaying the over-cap ask…"
+            : "Preparing that ask…",
+    );
     const runId = crypto.randomUUID().slice(0, 8);
     const result = (await runDemoAgent({
       data: { policy: TRAVEL_POLICY, runId, script: "travel", only },
     })) as {
       gate: Snapshot;
-      results: Array<{ beat: DemoBeatView; receipt: PublicGateReceipt }>;
+      results: Array<{ beat: DemoBeatView; receipt: PublicGateReceipt; legs?: DemoBeatLeg[] }>;
     };
     setSnap(result.gate);
     setDraft(TRAVEL_POLICY);
@@ -381,7 +395,7 @@ export function Console() {
     setActiveBeat(item.beat.id);
     setSpeaking(item.beat.says);
     await new Promise((resolve) => setTimeout(resolve, 280));
-    setSpoken([{ beat: item.beat, receipt: item.receipt }]);
+    setSpoken([{ beat: item.beat, receipt: item.receipt, legs: item.legs ?? [] }]);
     setFocusId(item.receipt.id);
     setActiveBeat(null);
     setSpeaking(null);
@@ -515,14 +529,14 @@ export function Console() {
             {runLabel}
           </button>
           <p className="mt-2 text-sm leading-6 text-muted">
-            Publishes the travel caps and plays four asks. The last one is an account-moved invoice that must block.
+            Publishes the travel caps and plays five asks. The look-alike payee blocks. The ride burst stops when the
+            day is full.
           </p>
           <ul className="mt-4 flex flex-wrap gap-2" aria-label="One ask">
             {SCENARIOS.map((item) => {
               const revealed = spoken.find((entry) => entry.beat.id === item.id);
               const full = revealed ? snap?.ledger.find((entry) => entry.id === revealed.receipt.id) : undefined;
               const status = full?.status ?? revealed?.receipt.status;
-              const rule = full?.rule ?? revealed?.receipt.rule ?? null;
               return (
                 <li key={item.id}>
                   <button
@@ -531,15 +545,17 @@ export function Console() {
                     className="h-9 rounded-control border border-border bg-surface px-3 text-sm font-medium transition-colors duration-150 hover:border-fg disabled:opacity-50"
                     onClick={() => run(() => runScenario(item.id))}
                   >
-                    {item.label} {item.hint}
-                    {status ? ` · ${outcomeLine(status, rule)}` : ""}
+                    {item.label}
+                    {item.hint ? ` ${item.hint}` : ""}
+                    {status ? ` · ${statusLabel(status)}` : ""}
                   </button>
                 </li>
               );
             })}
           </ul>
           <p className="mt-2 text-sm leading-6 text-subtle">
-            One ask, same caps. Poison replays the swapped payee. If a cold server forgot the rules, run again.
+            One ask, same caps. Look-alike replays hote1.near. Burst replays the rides. If a cold server forgot the
+            rules, run again.
           </p>
           {speaking && (
             <p className="mt-2 text-sm text-fg" aria-live="polite">
@@ -567,11 +583,22 @@ export function Console() {
               const { who, cue } = askCue(beat);
               const amountUsd = Number(beat.body.amountUsd);
               const poisoned = beat.id === "poison" && Boolean(status);
-              const optics = quoteLine(full?.settlement);
+              const legs = revealed?.legs ?? [];
+              const showLegs = legs.length > 1;
+              const quotedAllow = legs
+                .filter((leg) => leg.status === "allow")
+                .map((leg) => snap?.ledger.find((item) => item.id === leg.id))
+                .find((item) => item?.settlement?.quote?.status === "ok");
+              const optics = showLegs
+                ? quotedAllow
+                  ? quoteLine(quotedAllow.settlement)
+                  : "Checked · not submitted. No transaction hash."
+                : quoteLine(full?.settlement);
+              const anchorId = spoken.some((item) => item.beat.id === "burst") ? "burst" : "poison";
               return (
                 <li
                   key={beat.id}
-                  ref={beat.id === "poison" ? poisonRef : undefined}
+                  ref={beat.id === anchorId ? matrixRef : undefined}
                   className={poisoned ? "bg-deny-bg px-3 py-4" : "py-4"}
                 >
                   <div className="flex items-baseline justify-between gap-4">
@@ -588,12 +615,29 @@ export function Console() {
                   ) : activeBeat === beat.id ? (
                     <p className="mt-3 text-sm text-fg">Asking…</p>
                   ) : null}
-                  {full && <p className="mt-2 text-sm leading-6 text-muted">{full.detail}</p>}
+                  {full && !showLegs && <p className="mt-2 text-sm leading-6 text-muted">{full.detail}</p>}
                   {full && full.ignoredFields.length > 0 && (
                     <p className="mt-2 text-sm leading-6 text-deny">
                       Fake approval ignored · {full.ignoredFields.join(", ")}
                     </p>
                   )}
+                  {showLegs && (
+                    <ol className="mt-3 space-y-2">
+                      {legs.map((leg, index) => (
+                        <li key={leg.id} className="flex items-baseline justify-between gap-3 text-sm">
+                          <span className="text-muted">
+                            {index + 1}. {formatUsd(leg.amountUsd)}
+                          </span>
+                          <span
+                            className={`shrink-0 rounded-control px-2 py-0.5 font-medium ${statusClass(leg.status)}`}
+                          >
+                            {outcomeLine(leg.status, leg.rule)}
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                  {full && showLegs && <p className="mt-2 text-sm leading-6 text-muted">{full.detail}</p>}
                   {optics && <p className="mt-2 text-sm leading-6 text-muted">{optics}</p>}
                   {pending && revealed && (
                     <div className="mt-3 flex gap-2">
@@ -620,7 +664,7 @@ export function Console() {
             })}
           </ol>
           <p className="mt-3 text-sm leading-6 text-subtle">
-            Rides stays on the list. This run does not ask it. A blocked ask does not spend the day.
+            A blocked ask does not spend the day. The burst spends only the rides that fit. Nothing is broadcast.
           </p>
         </section>
 

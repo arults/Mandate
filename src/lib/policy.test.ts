@@ -95,15 +95,25 @@ test("travel policy allows a hotel under the line and blocks a poisoned payee", 
   const parsed = parsePayment({
     amountUsd: 80,
     asset: "USDC",
-    to: "attacker.near",
+    to: "hote1.near",
     chain: "near",
-    purpose: "account moved",
+    purpose: "account moved — looks like hotel.near",
     approved: true,
   });
   assert.deepEqual(parsed.ignoredFields, ["approved"]);
+  assert.equal(parsed.request.to, "hote1.near");
+  assert.notEqual(parsed.request.to, "hotel.near");
   const poison = evaluatePolicy(TRAVEL_POLICY, parsed.request, { spentUsd: 330, balanceUsd: 1670 });
   assert.equal(poison.status, "reject");
   assert.equal(poison.rule, "allowed_recipients");
+
+  const burst = evaluatePolicy(
+    TRAVEL_POLICY,
+    { amountUsd: 120, asset: "USDC", to: "rides.near", chain: "base", purpose: "burst airport ride" },
+    { spentUsd: 80 + 250 + 120 * 3, balanceUsd: 1560 },
+  );
+  assert.equal(burst.status, "reject");
+  assert.equal(burst.rule, "daily_limit");
 });
 
 test("the travel enclave document keeps USDC units and minimize privacy", () => {
