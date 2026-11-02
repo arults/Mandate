@@ -456,8 +456,9 @@ Agent → POST /api/v1/pay only
               The five lines are the result: allow, hold, over the cap, look-alike payee, burst of rides. Chips{" "}
               <strong className="font-medium text-fg">Allow</strong>, <strong className="font-medium text-fg">Hold</strong>,{" "}
               <strong className="font-medium text-fg">Cap</strong>, <strong className="font-medium text-fg">Look-alike</strong>,{" "}
-              and <strong className="font-medium text-fg">Burst</strong> each play one ask. Look-alike highlights the
-              account-moved block. An allow says checked, not submitted, and never invents a hash.{" "}
+              and <strong className="font-medium text-fg">Burst</strong>               each play one ask. Look-alike highlights the
+              account-moved block. An allow row shows a NEAR Intents receipt: submitted false, the dry quote id when
+              one came back, and tx hash none.{" "}
               <strong className="font-medium text-fg">Load travel ops</strong> only fills the editor under Advanced.
               The $8 path stays on <strong className="font-medium text-fg">Run the demo</strong> there too.
             </p>

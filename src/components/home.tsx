@@ -1,15 +1,17 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 
+import { MerchantMark } from "@/components/merchant-mark";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteNav } from "@/components/site-nav";
+import { merchantTextClass, type MerchantId } from "@/lib/merchants";
 
-const asks = [
-  { who: "Hotel", amount: "$80", cue: "Airport night · hotel.near · under the line", outcome: "Allowed" },
-  { who: "Airline", amount: "$250", cue: "Flight deposit · airline.near · over the line", outcome: "On hold" },
-  { who: "Hotel", amount: "$500", cue: "Over the $300 cap · hotel.near", outcome: "Blocked" },
-  { who: "Look-alike payee", amount: "$80", cue: "hote1.near looks like hotel.near · not on the list", outcome: "Blocked" },
-  { who: "Burst of rides", amount: "$120", cue: "rides.near · one after another · the day stops the last", outcome: "Blocked" },
+const asks: Array<{ who: string; amount: string; cue: string; outcome: string; merchant: MerchantId }> = [
+  { who: "Hotel", amount: "$80", cue: "Airport night · hotel.near · under the line", outcome: "Allowed", merchant: "hotel" },
+  { who: "Airline", amount: "$250", cue: "Flight deposit · airline.near · over the line", outcome: "On hold", merchant: "airline" },
+  { who: "Hotel", amount: "$500", cue: "Over the $300 cap · hotel.near", outcome: "Blocked", merchant: "hotel" },
+  { who: "Look-alike payee", amount: "$80", cue: "hote1.near looks like hotel.near · not on the list", outcome: "Blocked", merchant: "hotel" },
+  { who: "Burst of rides", amount: "$120", cue: "rides.near · one after another · the day stops the last", outcome: "Blocked", merchant: "rides" },
 ];
 
 const steps = [
@@ -64,8 +66,11 @@ export function Home() {
             <ol className="mt-8 divide-y divide-border border-y border-border">
               {asks.map((ask) => (
                 <li key={`${ask.who}-${ask.amount}-${ask.cue}`} className="py-4">
-                  <div className="flex items-baseline justify-between gap-4">
-                    <p className="font-medium text-fg">{ask.who}</p>
+                  <div className="flex items-center justify-between gap-4">
+                    <p className={`flex items-center gap-2 font-medium ${merchantTextClass(ask.merchant)}`}>
+                      <MerchantMark id={ask.merchant} decorative />
+                      {ask.who}
+                    </p>
                     <p className="font-mono text-sm tabular-nums text-fg">{ask.amount}</p>
                   </div>
                   <p className="mt-1 text-sm leading-6 text-muted">{ask.cue}</p>
@@ -76,15 +81,22 @@ export function Home() {
             <p className="mt-4 text-sm leading-6 text-subtle">
               These are the checks the desk will show. Money is not sent. No transaction hash is invented.
             </p>
-            <h3 className="mt-10 text-sm font-medium text-fg">What this preview does not do</h3>
-            <ul className="mt-3 space-y-2 text-sm leading-6 text-muted">
-              <li>It does not broadcast, and it does not prove a TEE.</li>
-              <li>A sleeping server can forget the desk. That is not a chain record.</li>
-              <li>
-                Next, not now: OutLayer can hold the keys. A Function Call Key can only request. This page stays the
-                rules.
-              </li>
-            </ul>
+            <h3 className="mt-10 text-sm font-medium text-fg">NEAR composition</h3>
+            <dl className="mt-3 grid gap-4 sm:grid-cols-2">
+              <div>
+                <dt className="text-sm font-medium text-fg">Live today</dt>
+                <dd className="mt-1 text-sm leading-6 text-muted">
+                  Rules checked in this app. NEAR Intents dry quote when one comes back. submitted false. No
+                  transaction hash.
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-fg">Next</dt>
+                <dd className="mt-1 text-sm leading-6 text-muted">
+                  OutLayer Agent Custody holds the keys. A Function Call Key can only request. Roadmap.
+                </dd>
+              </div>
+            </dl>
           </div>
         </section>
 

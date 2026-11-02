@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 
+import { MerchantMark } from "@/components/merchant-mark";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteNav } from "@/components/site-nav";
 
 import { agentBeats, travelAgentBeats, type AgentBeat, type AgentScript } from "@/lib/agent-script";
 import { addFunds, decideApproval, getGate, prepareDemoGate, requestPayment, runDemoAgent, savePolicy } from "@/lib/gate.functions";
-import type { DemoBeatLeg, GateReceipt, Snapshot } from "@/lib/gate-types";
+import type { DemoBeatLeg, GateReceipt, Settlement, Snapshot } from "@/lib/gate-types";
+import { intentsOptics } from "@/lib/intents-optics";
+import { merchantOf, merchantTextClass, type MerchantId } from "@/lib/merchants";
 import {
   CHAINS,
   DEMO_POLICY,
@@ -46,22 +49,37 @@ function statusLabel(status: GateReceipt["status"]): string {
 }
 
 const SCENARIOS = [
-  { id: "allow", label: "Allow", hint: "$80" },
-  { id: "hold", label: "Hold", hint: "$250" },
-  { id: "block", label: "Cap", hint: "$500" },
-  { id: "poison", label: "Look-alike", hint: "" },
-  { id: "burst", label: "Burst", hint: "" },
-] as const;
+  { id: "allow", label: "Allow", hint: "$80", merchant: "hotel" },
+  { id: "hold", label: "Hold", hint: "$250", merchant: "airline" },
+  { id: "block", label: "Cap", hint: "$500", merchant: "hotel" },
+  { id: "poison", label: "Look-alike", hint: "", merchant: "hotel" },
+  { id: "burst", label: "Burst", hint: "", merchant: "rides" },
+] as const satisfies ReadonlyArray<{ id: string; label: string; hint: string; merchant: MerchantId }>;
 
-function quoteLine(settlement: GateReceipt["settlement"] | null | undefined): string | null {
-  if (!settlement) return null;
-  const quote = settlement.quote;
-  if (quote?.status === "ok" && quote.correlationId) {
-    const out = quote.amountOutFormatted ? ` · out ${quote.amountOutFormatted}` : "";
-    return `Checked · not submitted · dry quote ${quote.correlationId}${out}. No transaction hash.`;
-  }
-  if (quote && quote.note) return `Checked · not submitted. ${quote.note} No transaction hash.`;
-  return "Checked · not submitted. No transaction hash.";
+function IntentsReceipt({ settlement }: { settlement: Settlement }) {
+  const lines = intentsOptics(settlement);
+  if (!lines) return null;
+  return (
+    <div className="mt-3 border border-border bg-surface px-3 py-3">
+      <p className="text-sm font-medium text-fg">NEAR Intents · dry quote</p>
+      <dl className="mt-2 grid grid-cols-[5.5rem_1fr] gap-x-3 gap-y-1 font-mono text-xs leading-5">
+        <dt className="text-subtle">submitted</dt>
+        <dd className="text-fg">{lines.submitted}</dd>
+        <dt className="text-subtle">path</dt>
+        <dd className="text-fg">{lines.path}</dd>
+        <dt className="text-subtle">dry quote</dt>
+        <dd className="break-all text-fg">{lines.dryQuote}</dd>
+        {lines.out && (
+          <>
+            <dt className="text-subtle">out</dt>
+            <dd className="text-fg">{lines.out}</dd>
+          </>
+        )}
+        <dt className="text-subtle">tx hash</dt>
+        <dd className="text-fg">{lines.txHash}</dd>
+      </dl>
+    </div>
+  );
 }
 
 function outcomeLine(status: GateReceipt["status"], rule: string | null): string {
@@ -463,18 +481,21 @@ export function Console() {
             </div>
           </dl>
           <ul className="mt-4 space-y-2 text-sm">
-            <li className="flex items-baseline justify-between gap-4">
-              <span className="font-medium">Hotel</span>
-              <span className="font-mono text-muted">hotel.near</span>
-            </li>
-            <li className="flex items-baseline justify-between gap-4">
-              <span className="font-medium">Airline</span>
-              <span className="font-mono text-muted">airline.near</span>
-            </li>
-            <li className="flex items-baseline justify-between gap-4">
-              <span className="font-medium">Rides</span>
-              <span className="font-mono text-muted">rides.near</span>
-            </li>
+            {(
+              [
+                ["hotel", "Hotel", "hotel.near"],
+                ["airline", "Airline", "airline.near"],
+                ["rides", "Rides", "rides.near"],
+              ] as const
+            ).map(([id, label, account]) => (
+              <li key={id} className="flex items-center justify-between gap-4">
+                <span className={`flex items-center gap-2 font-medium ${merchantTextClass(id)}`}>
+                  <MerchantMark id={id} decorative />
+                  {label}
+                </span>
+                <span className="font-mono text-muted">{account}</span>
+              </li>
+            ))}
           </ul>
           <p className="mt-3 text-sm leading-6 text-subtle">
             Preview float {formatUsd(TRAVEL_DEMO_BALANCE_USD)}. Not a wallet. Money is not sent.
@@ -542,9 +563,10 @@ export function Console() {
                   <button
                     type="button"
                     disabled={busy}
-                    className="h-9 rounded-control border border-border bg-surface px-3 text-sm font-medium transition-colors duration-150 hover:border-fg disabled:opacity-50"
+                    className="inline-flex h-9 items-center gap-1.5 rounded-control border border-border bg-surface px-3 text-sm font-medium text-fg transition-colors duration-150 hover:border-fg disabled:opacity-50"
                     onClick={() => run(() => runScenario(item.id))}
                   >
+                    <MerchantMark id={item.merchant} />
                     {item.label}
                     {item.hint ? ` ${item.hint}` : ""}
                     {status ? ` · ${statusLabel(status)}` : ""}
@@ -581,19 +603,20 @@ export function Console() {
               const rule = full?.rule ?? revealed?.receipt.rule ?? null;
               const pending = revealed ? snap?.pending.some((item) => item.id === revealed.receipt.id) : false;
               const { who, cue } = askCue(beat);
+              const merchant = merchantOf(String(beat.body.to));
               const amountUsd = Number(beat.body.amountUsd);
               const poisoned = beat.id === "poison" && Boolean(status);
               const legs = revealed?.legs ?? [];
               const showLegs = legs.length > 1;
-              const quotedAllow = legs
+              const allowSettlements = legs
                 .filter((leg) => leg.status === "allow")
-                .map((leg) => snap?.ledger.find((item) => item.id === leg.id))
-                .find((item) => item?.settlement?.quote?.status === "ok");
-              const optics = showLegs
-                ? quotedAllow
-                  ? quoteLine(quotedAllow.settlement)
-                  : "Checked · not submitted. No transaction hash."
-                : quoteLine(full?.settlement);
+                .map((leg) => snap?.ledger.find((item) => item.id === leg.id)?.settlement)
+                .filter((item): item is Settlement => Boolean(item));
+              const rowSettlement = showLegs
+                ? (allowSettlements.find((item) => item.quote?.status === "ok") ?? allowSettlements[0] ?? null)
+                : status === "allow"
+                  ? (full?.settlement ?? revealed?.receipt.settlement ?? null)
+                  : null;
               const anchorId = spoken.some((item) => item.beat.id === "burst") ? "burst" : "poison";
               return (
                 <li
@@ -601,9 +624,12 @@ export function Console() {
                   ref={beat.id === anchorId ? matrixRef : undefined}
                   className={poisoned ? "bg-deny-bg px-3 py-4" : "py-4"}
                 >
-                  <div className="flex items-baseline justify-between gap-4">
-                    <p className="font-medium">{who}</p>
-                    <p className="font-mono text-sm tabular-nums">{formatUsd(amountUsd)}</p>
+                  <div className="flex items-center justify-between gap-4">
+                    <p className={`flex items-center gap-2 font-medium ${merchant ? merchantTextClass(merchant) : ""}`}>
+                      {merchant && <MerchantMark id={merchant} decorative />}
+                      {who}
+                    </p>
+                    <p className="font-mono text-sm tabular-nums text-fg">{formatUsd(amountUsd)}</p>
                   </div>
                   <p className="mt-1 text-sm leading-6 text-muted">{cue}</p>
                   {status ? (
@@ -638,7 +664,7 @@ export function Console() {
                     </ol>
                   )}
                   {full && showLegs && <p className="mt-2 text-sm leading-6 text-muted">{full.detail}</p>}
-                  {optics && <p className="mt-2 text-sm leading-6 text-muted">{optics}</p>}
+                  {rowSettlement && <IntentsReceipt settlement={rowSettlement} />}
                   {pending && revealed && (
                     <div className="mt-3 flex gap-2">
                       <button
@@ -668,19 +694,27 @@ export function Console() {
           </p>
         </section>
 
-        <section className="mt-12 border-t border-border pt-6" aria-labelledby="limits-heading">
-          <h2 id="limits-heading" className="text-sm font-medium text-fg">
-            What this preview does not do
+        <section className="mt-12 border-t border-border pt-6" aria-labelledby="composition-heading">
+          <h2 id="composition-heading" className="text-sm font-medium text-fg">
+            NEAR composition
           </h2>
-          <ul className="mt-3 space-y-2 text-sm leading-6 text-muted">
-            <li>It does not broadcast a transaction, and it never invents a settlement hash.</li>
-            <li>It is not a TEE and not a hardware vault. Rules are checked in this app.</li>
-            <li>A sleeping server can forget the desk. Run again. That is not a chain record.</li>
-          </ul>
-          <p className="mt-3 text-sm leading-6 text-muted">
-            Next, not now: OutLayer Agent Custody can hold the keys. A NEAR Function Call Key can only request a
-            payment. This desk stays the travel-ops rules in front of that.
-          </p>
+          <dl className="mt-3 grid gap-4 border-y border-border py-4 sm:grid-cols-2">
+            <div>
+              <dt className="text-sm font-medium text-fg">Live today</dt>
+              <dd className="mt-1 text-sm leading-6 text-muted">
+                Rules checked in this app. NEAR Intents dry quote when the server returns one.{" "}
+                <span className="font-mono text-fg">submitted false</span>. No transaction hash. A sleeping server can
+                forget the desk. Run again.
+              </dd>
+            </div>
+            <div>
+              <dt className="text-sm font-medium text-fg">Next</dt>
+              <dd className="mt-1 text-sm leading-6 text-muted">
+                OutLayer Agent Custody holds the keys. A Function Call Key can only request a payment. Roadmap. This
+                desk stays the travel-ops rules in front of that.
+              </dd>
+            </div>
+          </dl>
           <p className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm">
             <a
               href="https://app.outlayer.ai/docs/agent-custody"

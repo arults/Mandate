@@ -22,6 +22,10 @@
   --color-hold-bg: #e7e4d8;
   --color-deny: #8a2e22;
   --color-deny-bg: #fde4df;
+  /* Merchant scan cues. Status chips stay allow / hold / deny. */
+  --color-hotel: #0e5c57;
+  --color-airline: #075985;
+  --color-rides: #92400e;
 
   --radius-control: 0.125rem;
   --radius-card: 0.125rem;

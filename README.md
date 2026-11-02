@@ -66,8 +66,8 @@ No clone required for the console walkthrough. Prefer the **[travel console demo
 3. Or tap one chip — **Allow $80**, **Hold $250**, **Cap $500**, **Look-alike**, **Burst** — to play that ask alone. **Look-alike** replays the account-moved invoice. **Burst** replays the rides until the day stops.
 4. Read the path: **Allowed** $80 `hotel.near` · **On hold** $250 `airline.near` · **Blocked · over the cap** $500 · **Blocked · not on the list** look-alike `hote1.near` (not `hotel.near`) with `ignoredFields` (`approved`) · **Blocked · over the day** on the last $120 ride to `rides.near` (earlier rides in that burst are **Allowed**). The look-alike row is highlighted. The tool line is “account moved”. No transaction hash. `settlement.submitted` stays **false**.
 5. **Approve** the $250 hold on the airline row. Balance does not move until you do.
-6. An allowed row says **Checked · not submitted**. `settlement.submitted` is **`false`**. A dry quote id appears only when the server returned one. No transaction hash.
-7. Read **What this preview does not do**: not a broadcast, not a TEE, not a vault. OutLayer Agent Custody and Function Call Keys are the next composition, not this preview.
+6. An allowed row shows a NEAR Intents receipt: `submitted false`, the path, the dry quote id when the server returned one, and `tx hash none`.
+7. Read **NEAR composition**: live today is the in-app rule check and the dry quote. OutLayer Agent Custody and Function Call Keys are next, named as roadmap.
 8. **Advanced → Load travel ops** only fills the editor. **Run the demo** is still the $8 path. Durability on Vercel stays `local-db-ephemeral`.
 
 **Run the demo** still publishes `DEMO_POLICY` and the $8 / $18 / $40 / jailbreak path.
