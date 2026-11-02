@@ -51,6 +51,26 @@ export const DEMO_POLICY: HumanPolicy = {
   privacyMode: "minimize",
 };
 
+/**
+ * Travel-ops preset: several USD merchants, an approval line, USDC, privacy minimize.
+ * The $8 vendor demo stays on DEMO_POLICY.
+ */
+export const TRAVEL_POLICY: HumanPolicy = {
+  maxPerTransactionUsd: 300,
+  dailyLimitUsd: 800,
+  allowedRecipients: ["hotel.near", "airline.near", "rides.near"],
+  approvalThresholdUsd: 150,
+  allowedAssets: ["USDC"],
+  frozen: false,
+  privacyMode: "minimize",
+};
+
+/**
+ * Demo float for the travel script. After the $80 allow and the $250 hold
+ * reserve, the $500 ask must still fail on the per-transaction cap.
+ */
+export const TRAVEL_DEMO_BALANCE_USD = 2_000;
+
 export const MAX_USD = 1_000_000;
 
 export function cents(usd: number): number {

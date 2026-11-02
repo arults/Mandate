@@ -3,12 +3,14 @@ import { useEffect, useRef, useState } from "react";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteNav } from "@/components/site-nav";
 
-import { agentBeats, type AgentBeat } from "@/lib/agent-script";
+import { agentBeats, travelAgentBeats, type AgentBeat, type AgentScript } from "@/lib/agent-script";
 import { addFunds, decideApproval, getGate, prepareDemoGate, requestPayment, runDemoAgent, savePolicy } from "@/lib/gate.functions";
 import type { GateReceipt, Snapshot } from "@/lib/gate-types";
 import {
   CHAINS,
   DEMO_POLICY,
+  TRAVEL_DEMO_BALANCE_USD,
+  TRAVEL_POLICY,
   enclaveDocument,
   formatUsd,
   type HumanPolicy,
@@ -172,6 +174,7 @@ export function Console() {
   const [focusId, setFocusId] = useState<string | null>(null);
   const [spoken, setSpoken] = useState<Array<{ beat: DemoBeatView; receipt: PublicGateReceipt | GateReceipt }>>([]);
   const [speaking, setSpeaking] = useState<string | null>(null);
+  const [script, setScript] = useState<AgentScript>("demo");
   const revision = useRef(0);
   const inFlight = useRef(false);
 
@@ -257,20 +260,32 @@ export function Console() {
     setFocusId(result.receipt.id);
   }
 
-  async function runAgent() {
+  function loadTravelOps() {
+    if (inFlight.current) return;
+    setDraft(TRAVEL_POLICY);
+    setRecipientsText(TRAVEL_POLICY.allowedRecipients.join("\n"));
+    setScript("travel");
     setSpoken([]);
-    setSpeaking("Preparing demo in one pass…");
+    setSpeaking(null);
+    setFocusId(null);
+    setFormError(null);
+  }
+
+  async function playBeats(policy: HumanPolicy, nextScript: AgentScript) {
+    setScript(nextScript);
+    setSpoken([]);
+    setSpeaking(nextScript === "travel" ? "Preparing travel ops…" : "Preparing demo in one pass…");
     const runId = crypto.randomUUID().slice(0, 8);
     // One server fn: prepareDemo + four submitPayment calls share the same
     // isolate / in-memory PGLite. Separate prepare then POST /api/v1/pay
     // races cold isolates on Vercel and returns 409 no_policy.
-    const result = (await runDemoAgent({ data: { policy: DEMO_POLICY, runId } })) as {
+    const result = (await runDemoAgent({ data: { policy, runId, script: nextScript } })) as {
       gate: Snapshot;
       results: Array<{ beat: DemoBeatView; receipt: PublicGateReceipt }>;
     };
     setSnap(result.gate);
-    setDraft(DEMO_POLICY);
-    setRecipientsText(DEMO_POLICY.allowedRecipients.join("\n"));
+    setDraft(policy);
+    setRecipientsText(policy.allowedRecipients.join("\n"));
     for (const item of result.results) {
       setSpeaking(item.beat.says);
       await new Promise((resolve) => setTimeout(resolve, 280));
@@ -279,6 +294,14 @@ export function Console() {
       setSpeaking(null);
       await new Promise((resolve) => setTimeout(resolve, 220));
     }
+  }
+
+  async function runAgent() {
+    await playBeats(DEMO_POLICY, "demo");
+  }
+
+  async function runTravelAgent() {
+    await playBeats(TRAVEL_POLICY, "travel");
   }
 
   async function submitCurrent(extra?: Record<string, unknown>) {
@@ -386,6 +409,7 @@ export function Console() {
               <li>Set your limits below, then Save rules.</li>
               <li>Or hit Prepare demo for a ready $50/day starter kit.</li>
               <li>Run the demo — four asks (yes / ask you / no / ignore a fake approval).</li>
+              <li>Load travel ops, then Run travel agent — hotel, airline, and rides in USD, plus a poisoned payee.</li>
               <li>Approve or reject anything that lands in Waiting on you.</li>
             </ul>
           </details>
@@ -533,6 +557,21 @@ export function Console() {
               type="button"
               disabled={busy}
               className="h-11 rounded-control border border-border px-4 text-sm font-medium transition-colors duration-150 hover:border-fg disabled:opacity-50"
+              onClick={loadTravelOps}
+            >
+              Load travel ops
+            </button>
+            <p className={helpClass}>
+              Fills this draft: {formatUsd(TRAVEL_POLICY.maxPerTransactionUsd)} / tx,{" "}
+              {formatUsd(TRAVEL_POLICY.dailyLimitUsd)} / day, approve above{" "}
+              {formatUsd(TRAVEL_POLICY.approvalThresholdUsd)}, recipients{" "}
+              {TRAVEL_POLICY.allowedRecipients.join(", ")}. Save rules, or Run travel agent to publish and play
+              the four asks.
+            </p>
+            <button
+              type="button"
+              disabled={busy}
+              className="h-11 rounded-control border border-border px-4 text-sm font-medium transition-colors duration-150 hover:border-fg disabled:opacity-50"
               onClick={() => run(resetDemo)}
             >
               Reset demo · wipe ledger + republish
@@ -574,8 +613,8 @@ export function Console() {
           <div className="rounded-card border border-border bg-elevated p-5">
             <h2 className="text-lg font-medium">Your AI asks</h2>
             <p className="mt-1 text-sm text-muted">
-              One click runs four payment asks against your saved rules. The mid-size ask waits for your
-              approval. Builders who want the machine contract can still open Docs or For agents in the footer.
+              Run the demo keeps the $8 vendor path. Run travel agent uses USD rules for hotel, airline, and
+              rides: under the line is allowed, over the line waits for you, and a poisoned payee stays blocked.
             </p>
             <p className="mt-3 rounded-control border border-border bg-bg px-3 py-2 text-xs leading-5 text-muted">
               If the AI claims “already approved” or tries to rewrite your limits, those claims are ignored.
@@ -588,14 +627,32 @@ export function Console() {
               className="mt-4 h-11 w-full rounded-control bg-accent px-4 text-sm font-medium text-accent-fg transition-colors duration-150 hover:bg-accent-hover disabled:opacity-50"
               onClick={() => run(runAgent)}
             >
-              {busy && speaking ? "AI is asking…" : "Run the demo"}
+              {busy && speaking && script === "demo" ? "AI is asking…" : "Run the demo"}
             </button>
             <p className={`mt-2 ${helpClass}`}>
               One-click demo: loads starter rules if needed and runs four asks (yes / ask you / no / ignore a
               fake approval) in this same session.
             </p>
-            <ol className="mt-4 flex flex-col gap-3" aria-live="polite">
-              {agentBeats("plan").map((beat) => {
+            <button
+              type="button"
+              disabled={busy}
+              className="mt-3 h-11 w-full rounded-control border border-border bg-bg px-4 text-sm font-medium transition-colors duration-150 hover:border-fg disabled:opacity-50"
+              onClick={() => run(runTravelAgent)}
+            >
+              {busy && speaking && script === "travel" ? "AI is asking…" : "Run travel agent"}
+            </button>
+            <p className={`mt-2 ${helpClass}`}>
+              Publishes travel ops ({formatUsd(TRAVEL_POLICY.maxPerTransactionUsd)} / tx,{" "}
+              {formatUsd(TRAVEL_POLICY.dailyLimitUsd)} / day, approve above{" "}
+              {formatUsd(TRAVEL_POLICY.approvalThresholdUsd)}) and a {formatUsd(TRAVEL_DEMO_BALANCE_USD)} demo
+              balance, then runs $80 allow, $250 hold, $500 cap block, and the poisoned payee. Money is not
+              sent.
+            </p>
+            <p className="mt-3 text-xs font-medium uppercase tracking-[0.14em] text-subtle">
+              {script === "travel" ? "Travel ops beats" : "$8 vendor beats"}
+            </p>
+            <ol className="mt-2 flex flex-col gap-3" aria-live="polite">
+              {(script === "travel" ? travelAgentBeats("plan") : agentBeats("plan")).map((beat) => {
                 const done = spoken.find((item) => item.beat.id === beat.id);
                 return (
                   <li key={beat.id} className="border border-border bg-surface p-3">
@@ -616,7 +673,8 @@ export function Console() {
                         )}
                         {done.receipt.ignoredFields.length > 0 && (
                           <span className="ml-2 rounded-control bg-hold-bg px-1.5 py-0.5 text-hold">
-                            jailbreak ignored · {done.receipt.ignoredFields.join(", ")}
+                            {done.beat.id === "poison" ? "poison ignored" : "jailbreak ignored"} ·{" "}
+                            {done.receipt.ignoredFields.join(", ")}
                           </span>
                         )}
                         {done.receipt.settlement && (
@@ -691,7 +749,8 @@ export function Console() {
               <ReceiptSlip receipt={focused} />
             ) : (
               <p className="rounded-card border border-dashed border-border px-5 py-8 text-sm text-muted">
-                No receipt yet. Run the demo. The small allowed payment should say money was not sent.
+                No receipt yet. Run the demo, or Run travel agent. An allowed payment should say money was not
+                sent.
               </p>
             )}
           </div>

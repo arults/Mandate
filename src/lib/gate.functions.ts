@@ -2,7 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 
 import { awaitGateReady, fundWallet, prepareDemo, publishPolicy, resolveApproval, runDemoAgentFlow, snapshot, submitPayment } from "@/lib/gate.server";
 import { assertHumanServerFn } from "@/lib/human-route.server";
-import { DEMO_POLICY, parsePolicy } from "@/lib/policy";
+import type { AgentScript } from "@/lib/agent-script";
+import { DEMO_POLICY, parsePolicy, TRAVEL_POLICY } from "@/lib/policy";
 
 export const getGate = createServerFn({ method: "GET" }).handler(async () => {
   assertHumanServerFn();
@@ -69,20 +70,25 @@ export const decideApproval = createServerFn({ method: "POST" })
   });
 
 export const runDemoAgent = createServerFn({ method: "POST" })
-  .validator((data: { policy?: unknown; runId?: string } | unknown) => {
-    const raw = data && typeof data === "object" ? (data as { policy?: unknown; runId?: string }) : {};
-    const policy = raw.policy === undefined ? DEMO_POLICY : parsePolicy(raw.policy);
+  .validator((data: { policy?: unknown; runId?: string; script?: string } | unknown) => {
+    const raw =
+      data && typeof data === "object"
+        ? (data as { policy?: unknown; runId?: string; script?: unknown })
+        : {};
+    const script: AgentScript = raw.script === "travel" ? "travel" : "demo";
+    const policy =
+      raw.policy === undefined ? (script === "travel" ? TRAVEL_POLICY : DEMO_POLICY) : parsePolicy(raw.policy);
     const runId =
       typeof raw.runId === "string" && raw.runId.trim()
         ? raw.runId.trim().slice(0, 32)
         : crypto.randomUUID().slice(0, 8);
-    return { policy, runId };
+    return { policy, runId, script };
   })
   .handler(async ({ data }) => {
     assertHumanServerFn();
     // Strip beat.body: Record<string, unknown> is not TanStack-serializable.
     // Console only needs id/title/says + the privacy-minimized receipt.
-    const out = await runDemoAgentFlow(data.policy, data.runId);
+    const out = await runDemoAgentFlow(data.policy, data.runId, data.script);
     return {
       gate: out.gate,
       receipts: out.receipts,

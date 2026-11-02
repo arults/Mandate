@@ -42,6 +42,8 @@ Another agent should call only `POST /api/v1/pay`. See [AGENT.md](AGENT.md).
 
 Demo policy: **$25 max per transaction**, **$50 per day**, **approve above $10**, USDC only, recipients `vendor.near`, `studio.near`, and one EVM address. Destination chains in the demo: Base, Ethereum, Arbitrum, Solana, Polygon, NEAR.
 
+Travel ops preset: **$300 max per transaction**, **$800 per day**, **approve above $150**, USDC, privacy minimize, recipients `hotel.near`, `airline.near`, `rides.near`. Console: **Load travel ops**, then **Run travel agent**. **Run the demo** still plays the $8 path.
+
 ## Judge path (do X → see Y)
 
 No clone required for the console walkthrough. Prefer the **[travel console demo (~78s)](https://mandate-ashy.vercel.app/demo/mandate-travel-console-demo-v3.mp4)** on the homepage (`#travel-demo`) if you want the story first; then open `/console` for the live four beats below.
@@ -56,6 +58,17 @@ No clone required for the console walkthrough. Prefer the **[travel console demo
 6. Scroll the **$8** receipt: `settlement.submitted` is **`false`**; optional 1-Click dry quote; attestation is **not** a TEE unless an OutLayer dry-run returned `would_succeed: true`.
 7. Optional: **Freeze wallet now** → next ask dies with `rule: frozen`.
 8. Copy `receipt.id` → `GET /api/v1/receipt?id=…` for a shareable agent-minimized decision (still not a TEE / not broadcast).
+
+### A2 · Travel ops (USD multi-merchant + poisoned payee)
+
+1. Open https://mandate-ashy.vercel.app/console (prefer a private window).
+2. Click **Load travel ops**. The draft fills: $300 / tx, $800 / day, approve above $150, recipients `hotel.near`, `airline.near`, `rides.near`.
+3. Click **Run travel agent**. That publishes the travel mandate and a **$2,000** demo balance (so the $500 ask fails on the cap, not on an empty wallet). The balance is a preview float. Nothing is broadcast.
+4. Read four receipts: **Allowed** $80 `hotel.near` / base · **Needs approval** $250 `airline.near` / ethereum · **Blocked** $500 `max_per_transaction` · **Blocked** poisoned `attacker.near` with `allowed_recipients` and `ignoredFields` (`approved`). The tool line is “account moved”.
+5. **Approve** the $250 hold in Waiting for you.
+6. Scroll the **$80** receipt: `settlement.submitted` is **`false`**. No transaction hash. Durability badge stays `local-db-ephemeral` on Vercel.
+
+**Run the demo** still publishes `DEMO_POLICY` and the $8 / $18 / $40 / jailbreak path.
 
 Durability badge on the console shows `local-db-ephemeral` on Vercel (warm isolate only).
 
