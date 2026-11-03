@@ -10,13 +10,13 @@ Open https://mandate-git-cursor-travel-desk-ux-512a-eden-0d67.vercel.app/console
 
 That is the Vercel Preview for branch `cursor/travel-desk-ux-512a`. Do not screen https://mandate-ashy.vercel.app/console for this branch. That host is `main` and does not have this desk.
 
-1. Read the caps before you click: **$300.00** per payment, **$800.00** today, **Ask you above $150.00**. Merchants `hotel.near`, `airline.near`, `rides.near`. Preview float **$2,000.00**. Not a wallet.
+1. Read the caps before you click: **$300.00** per payment, **$800.00** today, **Ask you above $150.00**. **Allow-list** chips `hotel.near`, `airline.near`, `rides.near` are that policy. A look-alike is spelling against the list, not a scam registry. Preview float **$2,000.00**. Not a wallet.
 2. Click **Run travel agent**. Leave **Advanced** closed.
 3. Under **Allow, hold, or block**, see:
    - Hotel **$80.00** → **Allowed**. **NEAR Intents · dry quote**: `submitted` **false**, path `near → base`, click or copy the dry quote id when the server returned one (otherwise the line says **dry quote not attached**), `tx hash` **none**.
    - Airline **$250.00** → **On hold**. Approve or Reject on that row. Balance does not move until Approve.
    - Hotel **$500.00** → **Blocked · over the cap**.
-   - Look-alike **$80.00** to `hote1.near` → Who you pay beside Allow-list `hotel.near` (**digit 1** vs **letter l**), **Look-alike · not on allow-list**, then **Blocked · not on the list**. Allow-list and look-alike spelling, not a scam registry. **Fake approval ignored · approved**.
+   - Look-alike **$80.00** to `hote1.near` → Who you pay beside Allow-list `hotel.near` (**digit 1** vs **letter l**), **Look-alike · not on allow-list**, then **Blocked · not on the list**. Not among the allow-list above. Allow-list and look-alike spelling, not a scam registry. **Fake approval ignored · approved**.
    - Burst of **$120.00** rides to `rides.near` → three legs **Allowed**, the fourth **Blocked · over the day**. The burst row chip is **Blocked · over the day**. An allowed ride shows the same receipt: `submitted` **false**, `tx hash` **none**.
 4. **NEAR composition**: **Live today** is the in-app check and the dry quote (`submitted false`, no transaction hash). **Next** names OutLayer Agent Custody and Function Call Keys as roadmap.
 5. Chips **Allow $80**, **Hold $250**, **Cap $500**, **Look-alike**, and **Burst** replay one ask. A cold server that forgot the rules: click again.

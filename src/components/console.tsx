@@ -267,7 +267,7 @@ function WhoAsked({
         </div>
       </div>
       <p className="mt-2 text-sm leading-5 text-subtle">
-        Allow-list and look-alike spelling. Not a scam registry.
+        Not among the allow-list above. Allow-list and look-alike spelling, not a scam registry.
       </p>
     </div>
   );
@@ -844,25 +844,26 @@ export function Console() {
                 </dd>
               </div>
             </dl>
-            <ul className="space-y-2 border-t border-border py-3 text-sm">
-              {(
-                [
-                  ["hotel", "Hotel", "hotel.near"],
-                  ["airline", "Airline", "airline.near"],
-                  ["rides", "Rides", "rides.near"],
-                ] as const
-              ).map(([id, label, account]) => (
-                <li key={id} className="flex items-center justify-between gap-4">
-                  <span
-                    className={`flex items-center gap-2.5 font-medium ${merchantTextClass(id)}`}
-                  >
-                    <MerchantMark id={id} decorative framed />
-                    {label}
-                  </span>
-                  <span className="font-mono text-sm text-muted">{account}</span>
-                </li>
-              ))}
-            </ul>
+            <div className="border-t border-border py-3">
+              <p className="text-xs text-muted">Allow-list</p>
+              <ul className="mt-2 flex flex-wrap gap-2" aria-label="Allow-list">
+                {TRAVEL_POLICY.allowedRecipients.map((account) => {
+                  const id = merchantOf(account);
+                  return (
+                    <li key={account}>
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-control border border-border bg-surface px-2 py-1 font-mono text-sm ${
+                          id ? merchantTextClass(id) : "text-fg"
+                        }`}
+                      >
+                        {id ? <MerchantMark id={id} decorative /> : null}
+                        {account}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           </div>
           <p className="mt-3 text-sm leading-6 text-subtle">
             Preview float {formatUsd(TRAVEL_DEMO_BALANCE_USD)}. Not a wallet. Money is not sent.
