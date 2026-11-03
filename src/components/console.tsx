@@ -155,6 +155,37 @@ function WhoAsked({ asked, listed }: { asked: string; listed: string }) {
   );
 }
 
+function attackTone(status: GateReceipt["status"] | undefined): string {
+  if (status === "allow") return "text-allow";
+  if (status === "needs_approval") return "text-fg";
+  if (!status) return "text-muted";
+  return "text-deny";
+}
+
+function attackMatrix(spoken: SpokenAsk[], frozen: boolean) {
+  const beat = (id: string) => spoken.find((item) => item.beat.id === id);
+  const allow = beat("allow");
+  const hold = beat("hold");
+  const block = beat("block");
+  const poison = beat("poison");
+  const burst = beat("burst");
+  return [
+    { text: allow ? "Allowed" : "Allow", className: attackTone(allow?.receipt.status) },
+    {
+      text: hold ? (hold.receipt.rule === "frozen" ? "Dropped" : "On hold") : "Hold",
+      className: attackTone(hold?.receipt.status),
+    },
+    { text: "Over cap", className: block ? "text-deny" : "text-muted" },
+    { text: "Look-alike", className: poison ? "text-deny" : "text-muted" },
+    { text: burst ? "Over day" : "Burst", className: burst ? "text-deny" : "text-muted" },
+    {
+      text: allow?.replay ? "Duplicate" : "Same key",
+      className: allow?.replay ? "text-fg" : "text-muted",
+    },
+    { text: frozen ? "Frozen" : "Freeze", className: "font-medium text-deny" },
+  ];
+}
+
 function DuplicateKey({ who, amount }: { who: string; amount: string }) {
   return (
     <div className="mt-3 border-t border-border pt-2">
@@ -795,7 +826,20 @@ export function Console() {
           )}
         </div>
 
-        <section ref={asksRef} className="mt-10 scroll-mt-20" aria-labelledby="asks-heading">
+        {showFreeze && (
+          <p
+            className="sticky top-[57px] z-30 -mx-5 mt-8 flex flex-wrap gap-x-3 gap-y-0.5 border-b border-border bg-bg px-5 py-2 text-xs leading-5 sm:top-[69px]"
+            aria-label="Attacks"
+          >
+            {attackMatrix(spoken, deskFrozen).map((mark) => (
+              <span key={mark.text} className={mark.className}>
+                {mark.text}
+              </span>
+            ))}
+          </p>
+        )}
+
+        <section ref={asksRef} className="mt-6 scroll-mt-32" aria-labelledby="asks-heading">
           <h2 id="asks-heading" className="text-base font-medium text-fg">
             Allow, hold, or block
           </h2>
