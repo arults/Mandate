@@ -1287,25 +1287,9 @@ export function Console() {
               />
               Privacy minimize on shared receipts
             </label>
-            <div className="mt-6 border-t border-border pt-4">
-              <p className="text-sm font-medium">Panic freeze</p>
-              <p className="mt-1 text-sm leading-6 text-subtle">
-                Waiting holds cancel. New asks are blocked until you unfreeze. The AI cannot
-                unfreeze this.
-              </p>
-              <button
-                type="button"
-                disabled={busy || !saved}
-                className={`mt-3 h-11 w-full rounded-control px-4 text-sm font-medium transition-colors duration-150 disabled:opacity-50 ${
-                  saved?.frozen
-                    ? "border border-border hover:border-fg"
-                    : "bg-deny-bg text-deny hover:opacity-90"
-                }`}
-                onClick={() => run(() => setFrozen(!(saved?.frozen ?? draft.frozen)))}
-              >
-                {saved?.frozen ? "Unfreeze wallet" : "Freeze wallet now"}
-              </button>
-            </div>
+            <p className="mt-6 border-t border-border pt-4 text-sm leading-6 text-subtle">
+              Freeze desk is on the Operate path after Run.
+            </p>
           </div>
 
           <div className="mt-8 flex flex-col gap-2 border-t border-border pt-6">

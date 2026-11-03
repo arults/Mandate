@@ -114,7 +114,7 @@ That run includes `src/lib/attack-suite.test.ts` (15 asserted cases) and `src/li
    - **Burst of rides $120.00** · `rides.near` → the row chip is **Blocked · over the day**. Legs: three **Allowed** $120 rides, then the fourth **Blocked · over the day**. An allowed ride in that burst shows the same NEAR receipt (`submitted` **false**, `tx hash` **none**).
 3. Read **NEAR composition** under the list. **Live today**: off-chain Mandate gate plus a NEAR Intents 1-Click dry quote. The decision is not a broadcast. `submitted false`. No transaction hash. **Next** (roadmap, not live): a Function Call Key can limit an agent key to a receiver, methods, and allowance. It still cannot express USD daily caps, an allow-list, or a human hold. Mandate stays the policy. Not a vault, and no testnet explorer proof.
 4. Chips replay one ask on the same caps: **Allow $80**, **Hold $250**, **Cap $500**, **Look-alike**, **Burst**. **Look-alike** replays `hote1.near`. **Burst** replays the rides.
-5. **Freeze desk** sits on the screen after the run. It does not require **Advanced**. Click it. The airline hold is dropped. A hotel **$80.00** asked again is **Blocked · frozen**. The line says the wallet is frozen and no payment can be signed. `submitted` **false** · `tx hash` **none**. **Unfreeze** clears the stop. **Advanced** still has the same freeze for the editor. Leave **Advanced** closed for the five asks. **Advanced → Load travel ops** only fills the editor. **Run the demo** is the $8 vendor path below. Durability on this preview stays `local-db-ephemeral`.
+5. **Freeze desk** sits on the screen after the run. It does not require **Advanced**. Click it. The airline hold is dropped. A hotel **$80.00** asked again is **Blocked · frozen**. The line says the wallet is frozen and no payment can be signed. `submitted` **false** · `tx hash` **none**. **Unfreeze** clears the stop. That bar is the only freeze control. Leave **Advanced** closed for the five asks. **Advanced → Load travel ops** only fills the editor. **Run the demo** is the $8 vendor path below. Durability on this preview stays `local-db-ephemeral`.
 
 ### A · Cold $8 path (under Advanced, same preview)
 
@@ -124,7 +124,7 @@ That run includes `src/lib/attack-suite.test.ts` (15 asserted cases) and `src/li
 4. Read four receipts in the list (or the raw receipt under Advanced): **Allowed** $8 · **On hold** $18 · **Blocked** $40 · **Blocked** jailbreak with `ignoredFields` (`approved`, `policy`).
 5. **Approve** the $18 hold on that row.
 6. Open the **$8** receipt under Advanced: `settlement.submitted` is **`false`**; optional 1-Click dry quote; attestation is **not** a TEE unless an OutLayer dry-run returned `would_succeed: true`. No transaction hash.
-7. Optional: **Freeze wallet now** → next ask dies with `rule: frozen`.
+7. Freeze is not a second button here. **Freeze desk** is on the Operate path after **Run travel agent**.
 8. Copy `receipt.id` → `GET /api/v1/receipt?id=…` for a shareable agent-minimized decision (still not a TEE / not broadcast).
 
 **Run the demo** still publishes `DEMO_POLICY` and the $8 / $18 / $40 / jailbreak path.
