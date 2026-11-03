@@ -90,9 +90,9 @@ function IntentsReceipt({ settlement }: { settlement: Settlement }) {
   const lines = intentsOptics(settlement);
   if (!lines) return null;
   return (
-    <div className="mt-3 border-t border-border pt-3">
+    <div className="mt-3 border-t border-border pt-2">
       <p className="text-sm font-medium text-fg">NEAR Intents · dry quote</p>
-      <dl className="mt-2 grid grid-cols-[5.5rem_1fr] gap-x-3 gap-y-1 font-mono text-xs leading-5">
+      <dl className="mt-1.5 grid grid-cols-[5.5rem_1fr] gap-x-3 gap-y-0.5 font-mono text-xs leading-4">
         <dt className="text-subtle">submitted</dt>
         <dd className="text-fg">{lines.submitted}</dd>
         <dt className="text-subtle">path</dt>
@@ -294,6 +294,7 @@ export function Console() {
   const revision = useRef(0);
   const inFlight = useRef(false);
   const matrixRef = useRef<HTMLLIElement | null>(null);
+  const asksRef = useRef<HTMLElement | null>(null);
   const matrixSeen = useRef<string | null>(null);
 
   useEffect(() => {
@@ -323,8 +324,9 @@ export function Console() {
     if (matrixSeen.current === String(runSerial)) return;
     matrixSeen.current = String(runSerial);
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    matrixRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
-  }, [busy, runSerial, landedBeatId]);
+    const target = spoken.length > 1 ? asksRef.current : matrixRef.current;
+    target?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+  }, [busy, runSerial, landedBeatId, spoken]);
 
   async function run(task: () => Promise<void>) {
     if (inFlight.current) return;
@@ -523,11 +525,11 @@ export function Console() {
   return (
     <>
       <SiteNav current="console" />
-      <main className="mx-auto w-full max-w-xl px-5 py-8 sm:py-12">
-        <h1 className="font-display text-4xl tracking-tight text-fg sm:text-5xl">
+      <main className="mx-auto w-full max-w-xl px-5 py-6 sm:py-10">
+        <h1 className="font-display text-3xl leading-tight tracking-tight text-fg sm:text-5xl">
           The trip asks to pay.
         </h1>
-        <p className="mt-3 max-w-[40rem] text-base leading-7 text-muted">
+        <p className="mt-2 max-w-[40rem] text-sm leading-6 text-muted sm:mt-3 sm:text-base sm:leading-7">
           A travel-ops spending desk. Hotel, airline, and rides ask. The rules sit outside the
           model. Money is not sent.
         </p>
@@ -538,7 +540,7 @@ export function Console() {
           </p>
         )}
 
-        <section className="mt-10" aria-labelledby="caps-heading">
+        <section className="mt-6 sm:mt-8" aria-labelledby="caps-heading">
           <h2 id="caps-heading" className="text-base font-medium text-fg">
             Caps
           </h2>
@@ -566,7 +568,7 @@ export function Console() {
                 </dd>
               </div>
             </dl>
-            <ul className="space-y-3 border-t border-border py-4 text-sm">
+            <ul className="space-y-2 border-t border-border py-3 text-sm">
               {(
                 [
                   ["hotel", "Hotel", "hotel.near"],
@@ -608,11 +610,11 @@ export function Console() {
                     </p>
                     <p className="mt-1 text-sm leading-6 text-muted">{item.detail}</p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2">
                     <button
                       type="button"
                       disabled={busy}
-                      className={`${primaryBtn} min-w-28`}
+                      className={`${primaryBtn} flex-1 sm:flex-none sm:min-w-28`}
                       onClick={() => run(() => decide(item.id, "approve"))}
                     >
                       Approve
@@ -620,7 +622,7 @@ export function Console() {
                     <button
                       type="button"
                       disabled={busy}
-                      className={`${quietBtn} min-w-28`}
+                      className={`${quietBtn} shrink-0`}
                       onClick={() => run(() => decide(item.id, "reject"))}
                     >
                       Reject
@@ -632,7 +634,7 @@ export function Console() {
           </section>
         )}
 
-        <div className="mt-8">
+        <div className="mt-6">
           <button
             type="button"
             disabled={busy}
@@ -651,17 +653,14 @@ export function Console() {
             Publishes the travel caps and plays five asks. The look-alike payee blocks. The ride
             burst stops when the day is full.
           </p>
-          <ul
-            className="mt-3 grid grid-cols-2 gap-x-2 gap-y-1 min-[480px]:grid-cols-3"
-            aria-label="One ask"
-          >
+          <ul className="mt-3 flex flex-wrap gap-x-1 gap-y-1" aria-label="One ask">
             {SCENARIOS.map((item) => (
               <li key={item.id}>
                 <button
                   type="button"
                   disabled={busy}
-                  className={`inline-flex h-10 w-full items-center gap-1.5 rounded-control px-1.5 text-left text-sm font-medium transition-colors duration-150 hover:bg-elevated disabled:opacity-50 ${
-                    activeBeat === item.id ? "bg-elevated text-fg" : "text-fg"
+                  className={`inline-flex h-9 items-center gap-1.5 rounded-control px-1.5 text-sm transition-colors duration-150 hover:bg-elevated hover:text-fg disabled:opacity-50 ${
+                    activeBeat === item.id ? "bg-elevated font-medium text-fg" : "text-muted"
                   }`}
                   onClick={() => run(() => runScenario(item.id))}
                 >
@@ -683,7 +682,7 @@ export function Console() {
           )}
         </div>
 
-        <section className="mt-12" aria-labelledby="asks-heading">
+        <section ref={asksRef} className="mt-10 scroll-mt-20" aria-labelledby="asks-heading">
           <h2 id="asks-heading" className="text-base font-medium text-fg">
             Allow, hold, or block
           </h2>
@@ -749,18 +748,40 @@ export function Console() {
                           {formatUsd(amountUsd)}
                         </p>
                       </div>
-                      <div className="mt-1 flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
-                        <p className="min-w-[12rem] flex-1 text-sm leading-6 text-muted">{cue}</p>
-                        {status ? (
+                      {status ? (
+                        <p className="mt-2">
                           <span
-                            className={`shrink-0 rounded-control px-2 py-0.5 text-sm font-medium ${statusClass(status)}`}
+                            className={`inline-flex rounded-control px-2 py-0.5 font-medium ${
+                              pending ? "text-base" : "text-sm"
+                            } ${statusClass(status)}`}
                           >
                             {outcomeLine(status, rule)}
                           </span>
-                        ) : activeBeat === beat.id ? (
-                          <span className="shrink-0 text-sm font-medium text-fg">Asking…</span>
-                        ) : null}
-                      </div>
+                        </p>
+                      ) : activeBeat === beat.id ? (
+                        <p className="mt-2 text-sm font-medium text-fg">Asking…</p>
+                      ) : null}
+                      <p className="mt-1 text-sm leading-6 text-muted">{cue}</p>
+                      {pending && revealed && (
+                        <div className="mt-3 flex items-center gap-2">
+                          <button
+                            type="button"
+                            disabled={busy}
+                            className={`${primaryBtn} flex-1`}
+                            onClick={() => run(() => decide(revealed.receipt.id, "approve"))}
+                          >
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            className={`${quietBtn} shrink-0`}
+                            onClick={() => run(() => decide(revealed.receipt.id, "reject"))}
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      )}
                       {full && !showLegs && (
                         <p className="mt-2 text-sm leading-6 text-muted">{full.detail}</p>
                       )}
@@ -792,26 +813,6 @@ export function Console() {
                         <p className="mt-2 text-sm leading-6 text-muted">{full.detail}</p>
                       )}
                       {rowSettlement && <IntentsReceipt settlement={rowSettlement} />}
-                      {pending && revealed && (
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          <button
-                            type="button"
-                            disabled={busy}
-                            className={`${primaryBtn} min-w-28`}
-                            onClick={() => run(() => decide(revealed.receipt.id, "approve"))}
-                          >
-                            Approve
-                          </button>
-                          <button
-                            type="button"
-                            disabled={busy}
-                            className={`${quietBtn} min-w-28`}
-                            onClick={() => run(() => decide(revealed.receipt.id, "reject"))}
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </li>
