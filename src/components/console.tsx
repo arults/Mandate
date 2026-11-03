@@ -812,8 +812,11 @@ export function Console() {
           The trip asks to pay.
         </h1>
         <p className="mt-2 max-w-[40rem] text-sm leading-6 text-muted sm:mt-3 sm:text-base sm:leading-7">
-          An agent can ask to pay hotels, airlines, and rides; Mandate enforces the human's caps,
-          allow-list, hold, and freeze — the agent cannot sign.
+          A company-of-one travel founder. An agent can ask to pay hotels, airlines, and rides in USD; you keep the
+          caps, allow-list, hold, and Freeze. The agent cannot sign.
+        </p>
+        <p className="mt-2 max-w-[40rem] text-sm leading-6 text-muted">
+          Not an FCK vault, a TEE, or a scam registry. Dry quote · submitted false · no invented transaction.
         </p>
 
         {loadError && (
@@ -1168,28 +1171,6 @@ export function Console() {
               </dd>
             </div>
           </dl>
-          <p className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm">
-            <a
-              href="https://app.outlayer.ai/docs/agent-custody"
-              className="text-fg underline decoration-border underline-offset-4 hover:decoration-fg"
-              rel="noreferrer"
-              target="_blank"
-            >
-              OutLayer Agent Custody
-            </a>
-            <a
-              href="/docs#fck"
-              className="text-fg underline decoration-border underline-offset-4 hover:decoration-fg"
-            >
-              Function Call Keys
-            </a>
-            <a
-              href="/docs#settlement"
-              className="text-fg underline decoration-border underline-offset-4 hover:decoration-fg"
-            >
-              Settlement
-            </a>
-          </p>
         </section>
 
         <details className="desk-disclosure mt-10 border-t border-border">

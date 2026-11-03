@@ -51,14 +51,20 @@ export function Docs() {
 
         <article className="max-w-xl space-y-14 text-base leading-7 text-muted sm:text-lg sm:leading-8">
           <header className="border-b border-border pb-10">
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-subtle">
-              Litepaper v0.1 · 2026-10-22
-            </p>
-            <h1 className="mt-4 font-display text-4xl leading-tight tracking-tight text-fg sm:text-6xl">
+            <h1 className="font-display text-4xl leading-tight tracking-tight text-fg sm:text-6xl">
               Mandate
             </h1>
             <p className="mt-3 font-display text-xl text-muted sm:text-2xl">
               The agent can ask. It cannot sign.
+            </p>
+            <p className="mt-6">
+              Version 1 is a company-of-one travel desk. USD caps, an allow-list for hotel, airline, and rides, a
+              hold, and Freeze. The agent only asks to pay.{" "}
+              <Link to="/console" className="text-fg underline">
+                Run travel agent
+              </Link>{" "}
+              on the desk: allow, hold, and block — look-alike and burst — in under a minute. Dry quotes. submitted
+              false. Not an FCK vault, a TEE, or a scam registry.
             </p>
             <p className="mt-6 text-sm leading-6 text-subtle">
               Tracks: AI Security &amp; Defense · Agent Economy · Autonomous Business (NEAR HACKATHON 2026).

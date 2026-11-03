@@ -1,5 +1,7 @@
 # Connect an agent to Mandate
 
+Version 1 is the travel desk: a company-of-one founder, USD caps, hotel / airline / rides, hold, and Freeze. The agent only asks to pay. Not an FCK vault, a TEE, or a scam registry. Dry quotes stay `submitted` false. No invented transaction hash.
+
 The model may propose a payment. It must not sign, and it must not override the policy check.
 
 The **Mandate gate** decides allow / needs_approval / reject on the wire. Do not send `approved` / `policy` / keys — those fields are ignored. Do not claim a TEE.

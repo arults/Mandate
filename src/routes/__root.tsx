@@ -5,7 +5,7 @@ import appCss from "../styles.css?url";
 
 const APP_NAME = "Mandate";
 const DESCRIPTION =
-  "You set spending rules. Your AI asks to pay — without your keys. A checker outside the AI says yes, ask you, or no.";
+  "Version 1. A company-of-one travel founder lets an agent ask to pay hotels, airlines, and rides in USD under caps, an allow-list, hold, and Freeze. Not a vault. Dry quotes, submitted false.";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -15,7 +15,7 @@ export const Route = createRootRoute({
       { title: APP_NAME },
       { name: "description", content: DESCRIPTION },
       { name: "theme-color", content: "#f2f1e9" },
-      { property: "og:title", content: "Mandate — you set the rules. Your AI asks without your keys." },
+      { property: "og:title", content: "Mandate — the agent asks. You keep the caps." },
       { property: "og:description", content: DESCRIPTION },
       { property: "og:type", content: "website" },
       { property: "og:image", content: "/og.jpg" },

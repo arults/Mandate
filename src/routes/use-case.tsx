@@ -10,7 +10,7 @@ export const Route = createFileRoute("/use-case")({
       {
         name: "description",
         content:
-          "Real-life examples: how founders use Mandate so an AI can ask to pay vendors under rules — without holding the keys.",
+          "Version 1 use case: a company-of-one travel founder. USD caps, hotel / airline / rides, hold, and Freeze. The agent only asks to pay.",
       },
     ],
   }),

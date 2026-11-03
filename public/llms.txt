@@ -1,6 +1,6 @@
 # Mandate
 
-> An agent can ask to pay hotels, airlines, and rides; Mandate enforces the human's caps, allow-list, hold, and freeze — the agent cannot sign.
+> Version 1. A company-of-one travel founder lets an agent ask to pay hotels, airlines, and rides in USD. Mandate enforces caps, allow-list, hold, and Freeze. The agent cannot sign. Not an FCK vault, a TEE, or a scam registry. Dry quotes. submitted false. No invented transaction.
 
 This file is the agent contract. Humans can read the same rules at /docs.
 
@@ -8,9 +8,10 @@ The Mandate gate on POST /api/v1/pay is the hard lock (caps, allow-list, holds).
 
 ## Pages
 
-- [Home](/): the problem, how a payment is decided, why the refusal is structural, and what fail-closed means.
+- [Home](/): Version 1. Company-of-one travel desk. One path to the console.
+- [Use case](/use-case): who it is for. The same job, not a second product.
 - [Docs](/docs): the same rules, written for a person.
-- [Console](/console): the human sets the mandate and approves holds. Not an agent endpoint.
+- [Console](/console): Run travel agent. Allow, hold, or block. Not an agent endpoint.
 
 ## Call only this
 

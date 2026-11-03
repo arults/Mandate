@@ -1,6 +1,10 @@
 # Mandate
 
-An agent can ask to pay hotels, airlines, and rides; Mandate enforces the human's caps, allow-list, hold, and freeze — the agent cannot sign.
+**Version 1** is the travel desk.
+
+A company-of-one travel or ops founder lets an agent ask to pay hotels, airlines, and rides in USD. Mandate enforces caps, an allow-list, hold, and Freeze outside the model. The agent cannot sign. This is not an FCK vault, a TEE, or a scam registry.
+
+Cold path: open `/console` and click **Run travel agent**. In under a minute: allow $80, hold $250, block the over-cap, the look-alike (`hote1.near`), and a ride burst. Receipts are dry quotes with `submitted` **false**. No invented transaction hash.
 
 A human sets a spending policy once. The policy is enforced **outside the model**, so a prompt injection cannot raise the cap, swap the recipient, or mark a payment approved.
 
@@ -8,7 +12,7 @@ The **Mandate policy gate** enforces USD caps / allow-list / holds on `POST /api
 
 This is a NEAR hackathon prototype (tracks: **security**, **agents**, **business**). The preview gate is a **local process policy gate** — not a TEE and not an OutLayer enclave. It does not invent a transaction hash. When `OUTLAYER_API_KEY` is present, an allowed payment also dry-runs `POST /wallet/v1/intents/withdraw` and still does not broadcast. Production path (roadmap): OutLayer Agent Custody.
 
-**Judge this branch (clone-free):** [preview /console](https://mandate-git-cursor-travel-desk-ux-512a-eden-0d67.vercel.app/console) — five asks, NEAR honesty strip, merchant marks. That host is the Vercel Preview for `cursor/travel-desk-ux-512a`. Production [mandate-ashy.vercel.app](https://mandate-ashy.vercel.app) is still `main` and does not have this desk until the PR merges. Litepaper on the preview: [ /docs ](https://mandate-git-cursor-travel-desk-ux-512a-eden-0d67.vercel.app/docs).
+**Judge this branch (clone-free):** [preview /console](https://mandate-git-cursor-travel-desk-ux-512a-eden-0d67.vercel.app/console) — Version 1 travel desk. That host is the Vercel Preview for `cursor/travel-desk-ux-512a`. Production [mandate-ashy.vercel.app](https://mandate-ashy.vercel.app) is still `main` and does not have this desk until the PR merges. Landing: [ / ](https://mandate-git-cursor-travel-desk-ux-512a-eden-0d67.vercel.app/). Litepaper: [ /docs ](https://mandate-git-cursor-travel-desk-ux-512a-eden-0d67.vercel.app/docs).
 
 ## Sustainability
 
@@ -62,7 +66,7 @@ No clone required. Screen the **preview**, not production.
 
 Open https://mandate-git-cursor-travel-desk-ux-512a-eden-0d67.vercel.app/console (prefer a private window).
 
-You should see **The trip asks to pay.** Under it, one line: an agent can ask to pay hotels, airlines, and rides; Mandate enforces the human's caps, allow-list, hold, and freeze — the agent cannot sign. Caps read **$300.00** per payment, **$800.00** today, **Ask you above $150.00**. **Allow-list** chips are the travel policy: `hotel.near`, `airline.near`, `rides.near`. A look-alike is spelling against that list, not a scam registry. Preview float **$2,000.00**. Not a wallet. One button: **Run travel agent**. Chips sit under it. **Advanced** stays closed.
+You should see **The trip asks to pay.** Under it: a company-of-one travel founder; the agent asks to pay hotels, airlines, and rides in USD; you keep the caps, allow-list, hold, and Freeze; the agent cannot sign. Then: not an FCK vault, a TEE, or a scam registry; dry quote; submitted false; no invented transaction. Caps read **$300.00** per payment, **$800.00** today, **Ask you above $150.00**. **Allow-list** chips are the travel policy: `hotel.near`, `airline.near`, `rides.near`. A look-alike is spelling against that list, not a scam registry. Preview float **$2,000.00**. Not a wallet. One button: **Run travel agent**. Chips sit under it. **Advanced** stays closed.
 
 https://mandate-ashy.vercel.app/console is `main`. It does not show this five-ask desk.
 

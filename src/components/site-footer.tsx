@@ -7,7 +7,8 @@ export function SiteFooter() {
         <div className="max-w-sm">
           <p className="font-display text-xl tracking-tight text-fg">Mandate</p>
           <p className="mt-2 text-sm leading-6 text-muted">
-            Hotel, airline, and rides can ask. You keep the caps. Money is not sent.
+            Version 1. A company-of-one travel desk. The agent asks to pay hotels, airlines, and rides. You keep the
+            caps.
           </p>
         </div>
         <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm" aria-label="Footer">
@@ -32,8 +33,8 @@ export function SiteFooter() {
       </div>
       <div className="border-t border-border">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 px-5 py-4 text-xs text-subtle sm:flex-row sm:items-center sm:justify-between">
-          <p>NEAR HACKATHON 2026 · arults</p>
-          <p>MIT · demo free; custody roadmap · money not sent</p>
+          <p>Version 1 · dry quote · submitted false · not a vault</p>
+          <p>MIT · demo free · custody is roadmap · money not sent</p>
         </div>
       </div>
     </footer>

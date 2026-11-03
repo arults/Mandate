@@ -21,9 +21,6 @@ export function SiteNav({ current }: { current: "home" | "use-case" | "docs" | "
               Mandate
             </span>
           </Link>
-          <span className="hidden rounded-control border border-border bg-surface px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted sm:inline">
-            NEAR HACKATHON 2026
-          </span>
         </div>
         <nav
           className="flex min-w-0 items-center gap-3 overflow-x-auto text-xs [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-6 sm:overflow-visible sm:text-sm [&::-webkit-scrollbar]:hidden"
