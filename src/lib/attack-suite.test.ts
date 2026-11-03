@@ -105,11 +105,17 @@ test("a wrong chain is rejected", async () => {
 
 test("the same idempotency key returns the original receipt and spends once", async () => {
   const first = await submitPayment(pay({ idempotencyKey: "same-key" }));
+  const balance = snapshot().balanceUsd;
+  const remaining = snapshot().remainingDailyUsd;
   const again = await submitPayment(pay({ idempotencyKey: "same-key" }));
   assert.equal(again.id, first.id);
   assert.equal(again.status, "allow");
   assert.equal(first.settlement?.submitted, false);
-  assert.equal(snapshot().balanceUsd, 192);
+  assert.equal(again.settlement?.submitted, false);
+  assert.equal("txHash" in (again.settlement ?? {}), false);
+  assert.equal(snapshot().balanceUsd, balance);
+  assert.equal(snapshot().remainingDailyUsd, remaining);
+  assert.equal(snapshot().ledger.filter((item) => item.id === first.id).length, 1);
 });
 
 test("freeze blocks the next ask", async () => {

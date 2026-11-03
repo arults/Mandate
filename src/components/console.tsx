@@ -310,10 +310,12 @@ function DuplicateKey({
   who,
   amount,
   settlement,
+  receiptId,
 }: {
   who: string;
   amount: string;
   settlement: Settlement | null;
+  receiptId: string;
 }) {
   return (
     <div className="mt-3 border-t border-border pt-2">
@@ -321,8 +323,10 @@ function DuplicateKey({
         <span className="mr-2 inline-flex rounded-control border border-border bg-surface px-2 py-0.5 font-medium">
           Duplicate
         </span>
-        {who} {amount}. Same key. A second payment was refused.
+        {who} {amount}. Same key · same receipt{" "}
+        <span className="break-all font-mono">{receiptId}</span>. No second reservation.
       </p>
+      <p className="mt-1 text-sm leading-6 text-subtle">Same-key refuse · not an on-chain refund</p>
       <IntentsHonesty settlement={settlement} />
     </div>
   );
@@ -1123,6 +1127,7 @@ export function Console() {
                           who={who}
                           amount={formatUsd(amountUsd)}
                           settlement={rowSettlement}
+                          receiptId={revealed.replay.receiptId}
                         />
                       )}
                     </div>
