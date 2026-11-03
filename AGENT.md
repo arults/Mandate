@@ -21,7 +21,16 @@ That is the Vercel Preview for branch `cursor/travel-desk-ux-512a`. Do not scree
 4. **NEAR composition**: **Live today** is the off-chain gate plus a NEAR Intents 1-Click dry quote (`submitted false`, no transaction hash). The decision is not a broadcast. **Next** is a Function Call Key that can limit an agent key to a receiver, methods, and allowance. It cannot express USD caps, the allow-list, or a human hold. Not live on this desk. Not a vault.
 5. Chips **Allow $80**, **Hold $250**, **Cap $500**, **Look-alike**, and **Burst** replay one ask. A cold server that forgot the rules: click again.
 
-`POST /api/v1/pay` from another machine to that host often returns `409` `no_policy`. The button above is one server call on one isolate, so it is the public repro. For curl, use local `npm run dev` after Reset/Run (commands in [README.md](README.md)).
+`POST /api/v1/pay` from another machine to that host often returns `409` `no_policy`. The button above is one server call on one isolate, so it is the public repro. For curl, use local `npm run dev` after Run (commands in [README.md](README.md)).
+
+## Local judge path
+
+```bash
+npm install
+npm run dev
+```
+
+Open http://127.0.0.1:8080/console. Leave **Advanced** closed. **Run travel agent**. Same five asks, Allow-list, and dry-quote honesty as the preview (`submitted` false, `tx hash` none, or dry quote not attached). `npm run judge` prints this path and does not start the server. After that Run, `POST http://127.0.0.1:8080/api/v1/pay` and `POST http://127.0.0.1:8080/api/mcp` hit the same process. Before a policy exists they return `no_policy` (409). `npm test` asserts `src/lib/attack-suite.test.ts` and `src/lib/intents-fidelity.test.ts`.
 
 ## MCP (same gate)
 

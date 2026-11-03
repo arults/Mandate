@@ -66,6 +66,43 @@ You should see **The trip asks to pay.** Under it, one line: an agent can ask to
 
 https://mandate-ashy.vercel.app/console is `main`. It does not show this five-ask desk.
 
+## Local judge path
+
+Same five asks as the preview. npm is the stack. There is no Makefile. `npm run judge` prints these steps and does not start the server.
+
+```bash
+npm install
+npm run dev
+```
+
+`npm run dev` listens on port **8080**. No `.env` file is required. Open http://127.0.0.1:8080/console. Leave **Advanced** closed.
+
+You should see **The trip asks to pay**, **Allow-list** chips `hotel.near`, `airline.near`, `rides.near`, and **Run travel agent**. Click it. The five asks match the preview: **Allowed** $80, **On hold** $250, **Over cap** $500, look-alike `hote1.near`, burst **Over day**. Dry quote: `submitted` **false**, `tx hash` **none**, or **dry quote not attached**. The allow receipt says **Intents dry quote · not an FCK vault**.
+
+Optional, on that same process, after **Run travel agent** (a curl before Run returns **409** `no_policy`):
+
+```bash
+curl -sS -X POST 'http://127.0.0.1:8080/api/v1/pay' \
+  -H 'content-type: application/json' \
+  -d '{"amountUsd":80,"asset":"USDC","to":"hotel.near","chain":"base","purpose":"local judge"}'
+```
+
+Expect `allow` and `settlement.submitted` **false**. No transaction hash.
+
+```bash
+curl -sS -X POST 'http://127.0.0.1:8080/api/mcp' \
+  -H 'content-type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mandate_pay","arguments":{"amountUsd":8,"asset":"USDC","to":"vendor.near","chain":"base","purpose":"local judge mcp"}}}'
+```
+
+On the travel policy that second payee is not on the allow-list, so the tool result is `reject` / `allowed_recipients`. A fresh process with no Run yet returns tool error `no_policy` and `httpStatus` 409.
+
+```bash
+npm test
+```
+
+That run includes `src/lib/attack-suite.test.ts` (15 asserted cases) and `src/lib/intents-fidelity.test.ts` (dry quote shape, `submitted` false, no transaction hash).
+
 ### A2 · Travel ops (primary, ≤3 min) — five asks
 
 1. On that preview console, click **Run travel agent**. The label becomes **Running the trip…**. One server call publishes the travel caps and a **$2,000** preview float, then plays five asks. Nothing is broadcast. A cold isolate that forgot the rules: click again. That is not a chain record.

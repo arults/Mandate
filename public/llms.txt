@@ -60,6 +60,10 @@ Tool error no_policy with httpStatus 409: the human has not saved a mandate on t
 
 Policy, fund, and approvals are not tools. Do not call /api/v1/policy, /api/v1/fund, or /api/v1/approvals through MCP.
 
+## Local judge path
+
+npm install, then npm run dev. Open http://127.0.0.1:8080/console. Leave Advanced closed. Run travel agent. Same five asks, Allow-list (hotel.near, airline.near, rides.near), and dry-quote honesty as the preview: submitted false, tx hash none, or dry quote not attached. Intents dry quote is not an FCK vault. npm run judge prints these steps and does not start the server. After Run, POST http://127.0.0.1:8080/api/v1/pay and POST http://127.0.0.1:8080/api/mcp hit that same process. Before a policy exists both return no_policy (409). npm test asserts src/lib/attack-suite.test.ts and src/lib/intents-fidelity.test.ts. There is no Makefile.
+
 ## Judge path (do X → see Y)
 
 1. Open /console → Reset demo → Run the agent → four receipts → Approve $18 → scroll $8 (submitted false).
