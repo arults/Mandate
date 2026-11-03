@@ -4,6 +4,25 @@ The model may propose a payment. It must not sign, and it must not override the 
 
 The **Mandate gate** decides allow / needs_approval / reject on the wire. Do not send `approved` / `policy` / keys — those fields are ignored. Do not claim a TEE.
 
+## Screen the five-ask desk (public preview)
+
+Open https://mandate-git-cursor-travel-desk-ux-512a-eden-0d67.vercel.app/console
+
+That is the Vercel Preview for branch `cursor/travel-desk-ux-512a`. Do not screen https://mandate-ashy.vercel.app/console for this branch. That host is `main` and does not have this desk.
+
+1. Read the caps before you click: **$300.00** per payment, **$800.00** today, **Ask you above $150.00**. Merchants `hotel.near`, `airline.near`, `rides.near`. Preview float **$2,000.00**. Not a wallet.
+2. Click **Run travel agent**. Leave **Advanced** closed.
+3. Under **Allow, hold, or block**, see:
+   - Hotel **$80.00** → **Allowed**. **NEAR Intents · dry quote**: `submitted` **false**, path `near → base`, dry quote id when the server returned one, `tx hash` **none**.
+   - Airline **$250.00** → **On hold**. Approve or Reject on that row. Balance does not move until Approve.
+   - Hotel **$500.00** → **Blocked · over the cap**.
+   - Look-alike **$80.00** to `hote1.near` → **Blocked · not on the list**, plus **Fake approval ignored · approved**.
+   - Burst of **$120.00** rides to `rides.near` → three legs **Allowed**, the fourth **Blocked · over the day**. The burst row chip is **Blocked · over the day**. An allowed ride shows the same receipt: `submitted` **false**, `tx hash` **none**.
+4. **NEAR composition**: **Live today** is the in-app check and the dry quote (`submitted false`, no transaction hash). **Next** names OutLayer Agent Custody and Function Call Keys as roadmap.
+5. Chips **Allow $80**, **Hold $250**, **Cap $500**, **Look-alike**, and **Burst** replay one ask. A cold server that forgot the rules: click again.
+
+`POST /api/v1/pay` from another machine to that host often returns `409` `no_policy`. The button above is one server call on one isolate, so it is the public repro. For curl, use local `npm run dev` after Reset/Run (commands in [README.md](README.md)).
+
 Call **only** this endpoint:
 
 `POST /api/v1/pay`

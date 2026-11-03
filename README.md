@@ -6,7 +6,7 @@ The **Mandate policy gate** enforces USD caps / allow-list / holds on `POST /api
 
 This is a NEAR hackathon prototype (tracks: **security**, **agents**, **business**). The preview gate is a **local process policy gate** — not a TEE and not an OutLayer enclave. It does not invent a transaction hash. When `OUTLAYER_API_KEY` is present, an allowed payment also dry-runs `POST /wallet/v1/intents/withdraw` and still does not broadcast. Production path (roadmap): OutLayer Agent Custody.
 
-**Live (clone-free):** [mandate-ashy.vercel.app](https://mandate-ashy.vercel.app) · console [ /console ](https://mandate-ashy.vercel.app/console) · litepaper [ /docs ](https://mandate-ashy.vercel.app/docs) · **travel demo (~78s)** [ /demo/mandate-travel-console-demo-v3.mp4 ](https://mandate-ashy.vercel.app/demo/mandate-travel-console-demo-v3.mp4) (also embedded on the homepage)
+**Judge this branch (clone-free):** [preview /console](https://mandate-git-cursor-travel-desk-ux-512a-eden-0d67.vercel.app/console) — five asks, NEAR honesty strip, merchant marks. That host is the Vercel Preview for `cursor/travel-desk-ux-512a`. Production [mandate-ashy.vercel.app](https://mandate-ashy.vercel.app) is still `main` and does not have this desk until the PR merges. Litepaper on the preview: [ /docs ](https://mandate-git-cursor-travel-desk-ux-512a-eden-0d67.vercel.app/docs).
 
 ## Problem
 
@@ -46,12 +46,31 @@ Travel ops preset: **$300 max per transaction**, **$800 per day**, **approve abo
 
 ## Judge path (do X → see Y)
 
-No clone required for the console walkthrough. Prefer the **[travel console demo (~78s)](https://mandate-ashy.vercel.app/demo/mandate-travel-console-demo-v3.mp4)** on the homepage (`#travel-demo`) if you want the story first; then open `/console` for the live four beats below.
+No clone required. Screen the **preview**, not production.
 
-### A · Cold $8 path (under Advanced, ≤3 min)
+Open https://mandate-git-cursor-travel-desk-ux-512a-eden-0d67.vercel.app/console (prefer a private window).
 
-1. Open https://mandate-ashy.vercel.app/console (prefer a private window).
-2. Open **Advanced**. Click **Reset demo** (wipes ledger + republishes `DEMO_POLICY` on **this** isolate).
+You should see **The trip asks to pay.** Caps read **$300.00** per payment, **$800.00** today, **Ask you above $150.00**. Merchants: Hotel `hotel.near`, Airline `airline.near`, Rides `rides.near`. Preview float **$2,000.00**. Not a wallet. One button: **Run travel agent**. Chips sit under it. **Advanced** stays closed.
+
+https://mandate-ashy.vercel.app/console is `main`. It does not show this five-ask desk.
+
+### A2 · Travel ops (primary, ≤3 min) — five asks
+
+1. On that preview console, click **Run travel agent**. The label becomes **Running the trip…**. One server call publishes the travel caps and a **$2,000** preview float, then plays five asks. Nothing is broadcast. A cold isolate that forgot the rules: click again. That is not a chain record.
+2. Under **Allow, hold, or block**, read the five rows in order:
+   - **Hotel $80.00** · Under the line · `hotel.near` → **Allowed**. A **NEAR Intents · dry quote** box: `submitted` **false**, path `near → base`, a dry quote id when the server returned one, `out` when the quote has it, `tx hash` **none**.
+   - **Airline $250.00** · Over the line · `airline.near` → **On hold**. **Approve** and **Reject** sit on that row. The balance does not move until you Approve.
+   - **Hotel $500.00** · Over the cap · `hotel.near` → **Blocked · over the cap** ($500 is over the $300 cap).
+   - **Look-alike payee $80.00** · `hote1.near` looks like `hotel.near` · not on the list → **Blocked · not on the list**. The row is highlighted. The line **Fake approval ignored · approved** is on that row.
+   - **Burst of rides $120.00** · `rides.near` → the row chip is **Blocked · over the day**. Legs: three **Allowed** $120 rides, then the fourth **Blocked · over the day**. An allowed ride in that burst shows the same NEAR receipt (`submitted` **false**, `tx hash` **none**).
+3. Read **NEAR composition** under the list. **Live today**: rules checked in this app, dry quote when one comes back, `submitted false`, no transaction hash. **Next**: OutLayer Agent Custody and a Function Call Key that can only request a payment. Roadmap.
+4. Chips replay one ask on the same caps: **Allow $80**, **Hold $250**, **Cap $500**, **Look-alike**, **Burst**. **Look-alike** replays `hote1.near`. **Burst** replays the rides.
+5. Leave **Advanced** closed for this path. **Advanced → Load travel ops** only fills the editor. **Run the demo** is the $8 vendor path below. Durability on this preview stays `local-db-ephemeral`.
+
+### A · Cold $8 path (under Advanced, same preview)
+
+1. Open the same preview console. Open **Advanced**.
+2. Click **Reset demo** (wipes ledger + republishes `DEMO_POLICY` on **this** isolate).
 3. Click **Run the demo**.
 4. Read four receipts in the list (or the raw receipt under Advanced): **Allowed** $8 · **On hold** $18 · **Blocked** $40 · **Blocked** jailbreak with `ignoredFields` (`approved`, `policy`).
 5. **Approve** the $18 hold on that row.
@@ -59,24 +78,13 @@ No clone required for the console walkthrough. Prefer the **[travel console demo
 7. Optional: **Freeze wallet now** → next ask dies with `rule: frozen`.
 8. Copy `receipt.id` → `GET /api/v1/receipt?id=…` for a shareable agent-minimized decision (still not a TEE / not broadcast).
 
-### A2 · Travel ops (USD multi-merchant + poisoned payee)
-
-1. Open https://mandate-ashy.vercel.app/console (prefer a private window). The desk already shows the caps: $300 / tx, $800 / day, approve above $150, merchants `hotel.near`, `airline.near`, `rides.near`.
-2. Click **Run travel agent**. That publishes the travel rules and a **$2,000** preview float (so the $500 ask fails on the cap, not on an empty wallet). Nothing is broadcast. A cold isolate that forgot the rules: run again. That is not a chain record.
-3. Or tap one chip — **Allow $80**, **Hold $250**, **Cap $500**, **Look-alike**, **Burst** — to play that ask alone. **Look-alike** replays the account-moved invoice. **Burst** replays the rides until the day stops.
-4. Read the path: **Allowed** $80 `hotel.near` · **On hold** $250 `airline.near` · **Blocked · over the cap** $500 · **Blocked · not on the list** look-alike `hote1.near` (not `hotel.near`) with `ignoredFields` (`approved`) · **Blocked · over the day** on the last $120 ride to `rides.near` (earlier rides in that burst are **Allowed**). The look-alike row is highlighted. The tool line is “account moved”. No transaction hash. `settlement.submitted` stays **false**.
-5. **Approve** the $250 hold on the airline row. Balance does not move until you do.
-6. An allowed row shows a NEAR Intents receipt: `submitted false`, the path, the dry quote id when the server returned one, and `tx hash none`.
-7. Read **NEAR composition**: live today is the in-app rule check and the dry quote. OutLayer Agent Custody and Function Call Keys are next, named as roadmap.
-8. **Advanced → Load travel ops** only fills the editor. **Run the demo** is still the $8 path. Durability on Vercel stays `local-db-ephemeral`.
-
 **Run the demo** still publishes `DEMO_POLICY` and the $8 / $18 / $40 / jailbreak path.
 
-Durability badge on the console shows `local-db-ephemeral` on Vercel (warm isolate only).
+Under **Advanced**, the ledger line reports `local-db-ephemeral` on this preview (warm isolate only).
 
 ### B · Curl kit (same warm isolate — cannot lie)
 
-On Vercel, durability is **`local-db-ephemeral`**: a cold isolate has **no** published policy. A bare `curl` from your laptop to `https://mandate-ashy.vercel.app/api/v1/pay` often returns **`409 no_policy`** even right after you clicked Run in the browser — browser and curl hit different isolates. That is expected. Prefer console for the four beats; use curl against **`npm run dev`** locally after Reset/Run, or accept 409 on the public host.
+On Vercel, durability is **`local-db-ephemeral`**: a cold isolate has **no** published policy. **Run travel agent** works on the preview because that button is one server call on one isolate. A bare `curl` from your laptop to the preview (or to `https://mandate-ashy.vercel.app/api/v1/pay`) often returns **`409 no_policy`** even right after you clicked Run — browser and curl hit different isolates. That is expected. Prefer the preview console for the five asks. Use curl against **`npm run dev`** locally after Reset/Run, or accept 409 on a public host.
 
 After **Advanced → Reset demo** + **Run the demo** on a **local** `npm run dev` (same process):
 
@@ -104,12 +112,12 @@ curl -sS -X POST 'http://127.0.0.1:8080/api/v1/pay' \
 
 Expect: allow (`settlement.submitted: false`) · needs_approval · reject `max_per_transaction` · reject `allowed_recipients` with ignored jailbreak fields.
 
-Public-host one-liner (often **409** — honesty check):
+Public-host one-liner against this branch’s preview (often **409** — honesty check; the console button is the repro):
 
 ```bash
-curl -sS -X POST 'https://mandate-ashy.vercel.app/api/v1/pay' \
+curl -sS -X POST 'https://mandate-git-cursor-travel-desk-ux-512a-eden-0d67.vercel.app/api/v1/pay' \
   -H 'content-type: application/json' \
-  -d '{"amountUsd":8,"asset":"USDC","to":"vendor.near","chain":"base","purpose":"judge demo","idempotencyKey":"judge-8"}'
+  -d '{"amountUsd":80,"asset":"USDC","to":"hotel.near","chain":"base","purpose":"judge travel","idempotencyKey":"judge-80"}'
 ```
 
 ## Setup
@@ -174,7 +182,7 @@ NEAR **Function Call Keys (FCK)** can limit a key to a receiver contract + metho
 
 ## Demo steps (console)
 
-Travel desk first: **Run travel agent**, or one chip (**Allow $80** / **Hold $250** / **Cap $500** / **Look-alike** / **Burst**). The $8 path is under **Advanced**.
+Travel desk first, on the preview console above: **Run travel agent**, or one chip (**Allow $80** / **Hold $250** / **Cap $500** / **Look-alike** / **Burst**). The $8 path is under **Advanced**.
 
 1. **Advanced → Reset demo** (optional clean slate), then **Run the demo.** Publishes the $8 vendor rules. Remaining today **$50.00**. Balance **$200.00**.
 2. **$8 to vendor.near on Base** → **Allowed**. Optional live 1-Click dry quote id/amount on the receipt. `settlement.submitted` is **false**.
