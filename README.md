@@ -50,7 +50,7 @@ save policy / fund    →      { amountUsd, asset, to, chain, purpose }
 | Agent HTTP API | `POST /api/v1/pay` |
 | Human HTTP API | `POST /api/v1/policy`, `/api/v1/fund`, `/api/v1/approvals` |
 
-Another agent should call only `POST /api/v1/pay`. See [AGENT.md](AGENT.md).
+Agents: HTTP `POST /api/v1/pay` or MCP tools `mandate_pay` and `mandate_receipt` at `POST /api/mcp` (see [AGENT.md](AGENT.md) and [llms.txt](public/llms.txt)). Same gate. Not a second policy. Not custody.
 
 Demo policy: **$25 max per transaction**, **$50 per day**, **approve above $10**, USDC only, recipients `vendor.near`, `studio.near`, and one EVM address. Destination chains in the demo: Base, Ethereum, Arbitrum, Solana, Polygon, NEAR.
 

@@ -43,6 +43,23 @@ Do not send approved, policy, signature, or a private key. Those fields are igno
 409 error conflict: this idempotencyKey was already used for a different payment.
 400: the body itself is invalid.
 
+## MCP tools (same gate)
+
+MCP is another face on this gate. Not a second policy. Not custody. Not a TEE.
+
+GET /api/mcp lists the tools.
+POST /api/mcp is JSON-RPC 2.0 (protocol 2024-11-05). Methods: initialize, tools/list, tools/call, ping.
+Local: npm run dev, then POST http://127.0.0.1:8080/api/mcp.
+Preview: POST https://mandate-git-cursor-travel-desk-ux-512a-eden-0d67.vercel.app/api/mcp.
+
+- mandate_pay: arguments amountUsd, asset, to, chain, purpose, optional idempotencyKey. Same body as POST /api/v1/pay. Returns the decision receipt. settlement.submitted stays false. No transaction hash.
+- mandate_receipt: argument id from mandate_pay. Same as GET /api/v1/receipt?id=. 404 if this isolate forgot it.
+
+Outcomes inside the receipt: allow, needs_approval, reject, cancelled.
+Tool error no_policy with httpStatus 409: the human has not saved a mandate on this process. Do not invent one. conflict is 409. A bad body is 400.
+
+Policy, fund, and approvals are not tools. Do not call /api/v1/policy, /api/v1/fund, or /api/v1/approvals through MCP.
+
 ## Judge path (do X → see Y)
 
 1. Open /console → Reset demo → Run the agent → four receipts → Approve $18 → scroll $8 (submitted false).

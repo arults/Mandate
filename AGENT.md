@@ -23,7 +23,32 @@ That is the Vercel Preview for branch `cursor/travel-desk-ux-512a`. Do not scree
 
 `POST /api/v1/pay` from another machine to that host often returns `409` `no_policy`. The button above is one server call on one isolate, so it is the public repro. For curl, use local `npm run dev` after Reset/Run (commands in [README.md](README.md)).
 
-Call **only** this endpoint:
+## MCP (same gate)
+
+MCP is another face on this gate. It is not a second policy and not custody.
+
+Local: `npm run dev`, then `POST http://127.0.0.1:8080/api/mcp`.
+Preview: `POST https://mandate-git-cursor-travel-desk-ux-512a-eden-0d67.vercel.app/api/mcp`.
+`GET /api/mcp` lists the tool names. JSON-RPC 2.0, protocol `2024-11-05`. Methods: `initialize`, `tools/list`, `tools/call`, `ping`.
+
+| Tool | Arguments | Same wire |
+|---|---|---|
+| `mandate_pay` | `amountUsd`, `asset`, `to`, `chain`, `purpose`, optional `idempotencyKey` | `POST /api/v1/pay` |
+| `mandate_receipt` | `id` (the `receipt.id` from `mandate_pay`) | `GET /api/v1/receipt?id=` |
+
+Outcomes are the receipt `status`: `allow`, `needs_approval`, `reject`, `cancelled`. Read `settlement.submitted` — it stays `false`. There is no transaction hash. A missing policy is a tool error `no_policy` with `httpStatus` 409. Do not invent a policy. `conflict` is 409. A bad body is 400.
+
+`mandate_policy`, fund, and approvals are not tools. `/api/v1/policy`, `/api/v1/fund`, and `/api/v1/approvals` stay human routes.
+
+```bash
+curl -s http://127.0.0.1:8080/api/mcp \
+  -H 'content-type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mandate_pay","arguments":{"amountUsd":8,"asset":"USDC","to":"vendor.near","chain":"base","purpose":"API invoice 14"}}}'
+```
+
+On a cold isolate that curl returns `no_policy` until the human has published a policy on that same process. The console button is still the public repro.
+
+Call **only** this HTTP endpoint, or the two MCP tools above:
 
 `POST /api/v1/pay`
 
