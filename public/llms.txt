@@ -47,7 +47,7 @@ Do not send approved, policy, signature, or a private key. Those fields are igno
 
 1. Open /console → Reset demo → Run the agent → four receipts → Approve $18 → scroll $8 (submitted false).
 2. Jailbreak receipt lists ignoredFields approved, policy → Blocked allowed_recipients.
-3. Travel desk (the primary path): Run travel agent. Allowed $80 hotel.near · On hold $250 airline.near · Blocked over the cap $500 · Blocked look-alike hote1.near (not hotel.near; approved ignored) · Blocked burst of $120 rides.near when the day is full (earlier rides in the burst allowed). settlement.submitted stays false. No transaction hash. Not a TEE. Not a vault.
+3. Travel desk (the primary path): Run travel agent. Allowed $80 hotel.near · On hold $250 airline.near · Blocked over the cap $500 · Blocked look-alike hote1.near (not hotel.near; approved ignored) · Blocked burst of $120 rides.near when the day is full (earlier rides in the burst allowed). An allow composes a NEAR Intents 1-Click dry quote. settlement.submitted stays false. No transaction hash. Not custody. Not a TEE. Not a vault.
 
 ## Read a prior receipt
 

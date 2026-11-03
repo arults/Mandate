@@ -2,7 +2,7 @@
 
 A human sets a spending policy once. An AI agent can ask to pay. The policy is enforced **outside the model**, so a prompt injection cannot raise the cap, swap the recipient, or mark a payment approved.
 
-The **Mandate policy gate** enforces USD caps / allow-list / holds on `POST /api/v1/pay` **outside the model**. Human **Approve / Freeze** is the soft line. Jailbreak fields (`approved`, `policy`) are ignored.
+The **Mandate policy gate** enforces USD caps / allow-list / holds on `POST /api/v1/pay` **outside the model**. Human **Approve / Freeze** is the soft line. Jailbreak fields (`approved`, `policy`) are ignored. An allowed preview ask composes a NEAR Intents 1-Click dry quote. That is not custody and not a TEE.
 
 This is a NEAR hackathon prototype (tracks: **security**, **agents**, **business**). The preview gate is a **local process policy gate** — not a TEE and not an OutLayer enclave. It does not invent a transaction hash. When `OUTLAYER_API_KEY` is present, an allowed payment also dry-runs `POST /wallet/v1/intents/withdraw` and still does not broadcast. Production path (roadmap): OutLayer Agent Custody.
 

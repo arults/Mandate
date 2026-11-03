@@ -94,12 +94,37 @@ const SCENARIOS = [
   merchant: MerchantId;
 }>;
 
+function IntentsHonesty({
+  settlement,
+  tone = "muted",
+}: {
+  settlement: Settlement | null | undefined;
+  tone?: "muted" | "fg";
+}) {
+  const lines = settlement ? intentsOptics(settlement) : null;
+  const attached = Boolean(lines && lines.dryQuote !== "not returned");
+  return (
+    <p className={`mt-1 font-mono text-xs leading-5 ${tone === "fg" ? "text-fg" : "text-muted"}`}>
+      NEAR Intents ·{" "}
+      {attached ? (
+        <>
+          dry quote <span className="break-all">{lines!.dryQuote}</span>
+        </>
+      ) : (
+        "dry quote not attached"
+      )}
+      {" · submitted false · tx hash none"}
+    </p>
+  );
+}
+
 function IntentsReceipt({ settlement }: { settlement: Settlement }) {
   const lines = intentsOptics(settlement);
   if (!lines) return null;
   return (
     <div className="mt-3 border-t border-border pt-2">
       <p className="text-sm font-medium text-fg">NEAR Intents · dry quote</p>
+      <IntentsHonesty settlement={settlement} tone="fg" />
       <dl className="mt-1.5 grid grid-cols-[5.5rem_1fr] gap-x-3 gap-y-0.5 font-mono text-xs leading-4">
         <dt className="text-subtle">submitted</dt>
         <dd className="text-fg">{lines.submitted}</dd>
@@ -186,7 +211,15 @@ function attackMatrix(spoken: SpokenAsk[], frozen: boolean) {
   ];
 }
 
-function DuplicateKey({ who, amount }: { who: string; amount: string }) {
+function DuplicateKey({
+  who,
+  amount,
+  settlement,
+}: {
+  who: string;
+  amount: string;
+  settlement: Settlement | null;
+}) {
   return (
     <div className="mt-3 border-t border-border pt-2">
       <p className="text-sm leading-6 text-fg">
@@ -195,7 +228,7 @@ function DuplicateKey({ who, amount }: { who: string; amount: string }) {
         </span>
         {who} {amount}. Same key. A second payment was refused.
       </p>
-      <p className="mt-1 font-mono text-xs leading-5 text-muted">submitted false · tx hash none</p>
+      <IntentsHonesty settlement={settlement} />
     </div>
   );
 }
@@ -663,6 +696,12 @@ export function Console() {
   const runLabel = busy && script === "travel" ? "Running the trip…" : "Run travel agent";
   const showFreeze = script === "travel" && spoken.length > 0;
   const deskFrozen = Boolean(saved?.frozen);
+  const allowSpoken = spoken.find((item) => item.beat.id === "allow");
+  const allowSettlement =
+    (allowSpoken &&
+      (snap?.ledger.find((item) => item.id === allowSpoken.receipt.id)?.settlement ??
+        allowSpoken.receipt.settlement)) ||
+    null;
 
   return (
     <>
@@ -827,16 +866,16 @@ export function Console() {
         </div>
 
         {showFreeze && (
-          <p
-            className="sticky top-[57px] z-30 -mx-5 mt-8 flex flex-wrap gap-x-3 gap-y-0.5 border-b border-border bg-bg px-5 py-2 text-xs leading-5 sm:top-[69px]"
-            aria-label="Attacks"
-          >
-            {attackMatrix(spoken, deskFrozen).map((mark) => (
-              <span key={mark.text} className={mark.className}>
-                {mark.text}
-              </span>
-            ))}
-          </p>
+          <div className="sticky top-[57px] z-30 -mx-5 mt-8 border-b border-border bg-bg px-5 py-2 sm:top-[69px]">
+            <p className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs leading-5" aria-label="Attacks">
+              {attackMatrix(spoken, deskFrozen).map((mark) => (
+                <span key={mark.text} className={mark.className}>
+                  {mark.text}
+                </span>
+              ))}
+            </p>
+            <IntentsHonesty settlement={allowSettlement} />
+          </div>
         )}
 
         <section ref={asksRef} className="mt-6 scroll-mt-32" aria-labelledby="asks-heading">
@@ -977,7 +1016,11 @@ export function Console() {
                       )}
                       {rowSettlement && <IntentsReceipt settlement={rowSettlement} />}
                       {revealed?.replay?.sameReceipt && (
-                        <DuplicateKey who={who} amount={formatUsd(amountUsd)} />
+                        <DuplicateKey
+                          who={who}
+                          amount={formatUsd(amountUsd)}
+                          settlement={rowSettlement}
+                        />
                       )}
                     </div>
                   </div>
@@ -1370,9 +1413,7 @@ export function Console() {
                 <p className="mt-1 text-sm leading-6 text-muted">
                   {freezeProbe?.detail ?? "New asks are blocked. Waiting holds were dropped."}
                 </p>
-                <p className="mt-1 font-mono text-xs leading-5 text-muted">
-                  submitted false · tx hash none
-                </p>
+                <IntentsHonesty settlement={freezeProbe?.settlement} />
                 <button
                   type="button"
                   disabled={busy}
