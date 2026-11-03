@@ -112,6 +112,41 @@ function IntentsReceipt({ settlement }: { settlement: Settlement }) {
   );
 }
 
+function markedPayee(value: string, other: string, tone: "deny" | "allow") {
+  const twin = [...other];
+  return [...value].map((char, index) => {
+    if (char === twin[index]) return <span key={`${char}-${index}`}>{char}</span>;
+    const mark =
+      tone === "deny"
+        ? "bg-surface px-0.5 font-medium text-deny"
+        : "bg-allow-bg px-0.5 font-medium text-allow";
+    return (
+      <span key={`${char}-${index}`} className={mark}>
+        {char}
+      </span>
+    );
+  });
+}
+
+/** Asked payee against the allow-list name, with the swapped character marked. */
+function WhoAsked({ asked, listed }: { asked: string; listed: string }) {
+  const oneForL = asked.includes("1") && listed.includes("l");
+  return (
+    <dl className="mt-2 grid grid-cols-[5.75rem_1fr] items-baseline gap-x-3 gap-y-1 text-sm">
+      <dt className="text-fg">Who you pay</dt>
+      <dd className="min-w-0 font-mono text-fg">
+        {markedPayee(asked, listed, "deny")}
+        {oneForL && <span className="ml-2 font-sans text-deny">digit 1</span>}
+      </dd>
+      <dt className="text-fg">Allow-list</dt>
+      <dd className="min-w-0 font-mono text-fg">
+        {markedPayee(listed, asked, "allow")}
+        {oneForL && <span className="ml-2 font-sans text-allow">letter l</span>}
+      </dd>
+    </dl>
+  );
+}
+
 function outcomeLine(status: GateReceipt["status"], rule: string | null): string {
   if (status === "allow") return "Allowed";
   if (status === "needs_approval") return "On hold";
@@ -294,6 +329,7 @@ export function Console() {
   const revision = useRef(0);
   const inFlight = useRef(false);
   const matrixRef = useRef<HTMLLIElement | null>(null);
+  const poisonRef = useRef<HTMLLIElement | null>(null);
   const asksRef = useRef<HTMLElement | null>(null);
   const matrixSeen = useRef<string | null>(null);
 
@@ -324,8 +360,16 @@ export function Console() {
     if (matrixSeen.current === String(runSerial)) return;
     matrixSeen.current = String(runSerial);
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const target = spoken.length > 1 ? asksRef.current : matrixRef.current;
-    target?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    const showWho = spoken.some((item) => item.beat.id === "poison");
+    const target = showWho
+      ? poisonRef.current
+      : spoken.length > 1
+        ? asksRef.current
+        : matrixRef.current;
+    target?.scrollIntoView({
+      behavior: reduce ? "auto" : "smooth",
+      block: showWho ? "end" : "start",
+    });
   }, [busy, runSerial, landedBeatId, spoken]);
 
   async function run(task: () => Promise<void>) {
@@ -727,8 +771,11 @@ export function Console() {
               return (
                 <li
                   key={beat.id}
-                  ref={beat.id === anchorId ? matrixRef : undefined}
-                  className={`scroll-mt-24 py-4 ${rowTint ? `-mx-5 px-5 ${rowTint}` : ""}`}
+                  ref={(node) => {
+                    if (beat.id === "poison") poisonRef.current = node;
+                    if (beat.id === anchorId) matrixRef.current = node;
+                  }}
+                  className={`scroll-mt-24 scroll-mb-6 py-4 ${rowTint ? `-mx-5 px-5 ${rowTint}` : ""}`}
                 >
                   <div className="flex items-start gap-3">
                     {merchant ? (
@@ -748,6 +795,9 @@ export function Console() {
                           {formatUsd(amountUsd)}
                         </p>
                       </div>
+                      {beat.id === "poison" && (
+                        <WhoAsked asked={String(beat.body.to)} listed="hotel.near" />
+                      )}
                       {status ? (
                         <p className="mt-2">
                           <span
