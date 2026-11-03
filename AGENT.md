@@ -13,7 +13,7 @@ That is the Vercel Preview for branch `cursor/travel-desk-ux-512a`. Do not scree
 1. Read the caps before you click: **$300.00** per payment, **$800.00** today, **Ask you above $150.00**. Merchants `hotel.near`, `airline.near`, `rides.near`. Preview float **$2,000.00**. Not a wallet.
 2. Click **Run travel agent**. Leave **Advanced** closed.
 3. Under **Allow, hold, or block**, see:
-   - Hotel **$80.00** → **Allowed**. **NEAR Intents · dry quote**: `submitted` **false**, path `near → base`, dry quote id when the server returned one, `tx hash` **none**.
+   - Hotel **$80.00** → **Allowed**. **NEAR Intents · dry quote**: `submitted` **false**, path `near → base`, click or copy the dry quote id when the server returned one (otherwise the line says **dry quote not attached**), `tx hash` **none**.
    - Airline **$250.00** → **On hold**. Approve or Reject on that row. Balance does not move until Approve.
    - Hotel **$500.00** → **Blocked · over the cap**.
    - Look-alike **$80.00** to `hote1.near` → **Blocked · not on the list**, plus **Fake approval ignored · approved**.

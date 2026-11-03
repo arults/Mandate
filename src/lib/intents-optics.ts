@@ -21,3 +21,13 @@ export function intentsOptics(settlement: Settlement | null | undefined): Intent
     txHash: "none",
   };
 }
+
+/**
+ * A real dry-quote id the calm path can copy.
+ * "not returned" is not an id. This never yields a transaction hash.
+ */
+export function copyableDryQuoteId(lines: IntentsOptics | null): string | null {
+  if (!lines || lines.submitted !== "false" || lines.txHash !== "none") return null;
+  if (lines.dryQuote === "not returned" || lines.dryQuote.trim() === "") return null;
+  return lines.dryQuote;
+}

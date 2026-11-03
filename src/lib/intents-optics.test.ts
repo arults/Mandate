@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import type { Settlement } from "./gate-types.ts";
-import { intentsOptics } from "./intents-optics.ts";
+import { copyableDryQuoteId, intentsOptics } from "./intents-optics.ts";
 
 function settlement(quote: Settlement["quote"]): Settlement {
   return {
@@ -39,6 +39,7 @@ test("an allow row states submitted false and never invents a transaction hash",
   assert.equal(lines!.dryQuote, "quote-1");
   assert.equal(lines!.out, "79.99 USDC");
   assert.equal("txHash" in lines! && lines!.txHash === "none", true);
+  assert.equal(copyableDryQuoteId(lines), "quote-1");
 });
 
 test("a missing dry quote stays honest", () => {
@@ -58,4 +59,16 @@ test("a missing dry quote stays honest", () => {
   assert.equal(lines!.out, null);
   assert.equal(lines!.txHash, "none");
   assert.equal(intentsOptics(null), null);
+  assert.equal(copyableDryQuoteId(lines), null);
+  assert.equal(copyableDryQuoteId(null), null);
+  assert.equal(
+    copyableDryQuoteId({
+      submitted: "false",
+      path: "near → base",
+      dryQuote: "not returned",
+      out: null,
+      txHash: "none",
+    }),
+    null,
+  );
 });

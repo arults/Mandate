@@ -17,7 +17,7 @@ import {
   savePolicy,
 } from "@/lib/gate.functions";
 import type { DemoBeatLeg, DemoReplay, GateReceipt, Settlement, Snapshot } from "@/lib/gate-types";
-import { intentsOptics } from "@/lib/intents-optics";
+import { copyableDryQuoteId, intentsOptics } from "@/lib/intents-optics";
 import { merchantOf, merchantTextClass, type MerchantId } from "@/lib/merchants";
 import {
   CHAINS,
@@ -94,6 +94,72 @@ const SCENARIOS = [
   merchant: MerchantId;
 }>;
 
+async function copyProofId(id: string): Promise<void> {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(id);
+      return;
+    } catch {
+      // Fall through to the selection copy when the clipboard is blocked.
+    }
+  }
+  const area = document.createElement("textarea");
+  area.value = id;
+  area.setAttribute("readonly", "");
+  area.style.position = "fixed";
+  area.style.top = "0";
+  area.style.left = "0";
+  area.style.opacity = "0";
+  document.body.append(area);
+  area.focus();
+  area.select();
+  const ok = document.execCommand("copy");
+  area.remove();
+  if (!ok) throw new Error("copy failed");
+}
+
+/** Click or select-copy a real dry-quote id. The href is only that id, not a transaction. */
+function DryQuoteProof({ id }: { id: string }) {
+  const [copied, setCopied] = useState(false);
+  const timer = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timer.current !== null) window.clearTimeout(timer.current);
+    };
+  }, []);
+
+  return (
+    <>
+      <a
+        href={`#${encodeURIComponent(id)}`}
+        className="break-all underline decoration-border underline-offset-2 hover:decoration-current"
+        aria-label={`Copy dry quote id ${id}. Not a transaction.`}
+        title="Copy dry quote id. Not a transaction hash."
+        onClick={(event) => {
+          event.preventDefault();
+          void copyProofId(id)
+            .then(() => {
+              setCopied(true);
+              if (timer.current !== null) window.clearTimeout(timer.current);
+              timer.current = window.setTimeout(() => setCopied(false), 1600);
+            })
+            .catch(() => {
+              setCopied(false);
+            });
+        }}
+      >
+        {id}
+      </a>
+      {copied ? (
+        <span className="ml-1 font-sans text-subtle" aria-live="polite">
+          copied
+        </span>
+      ) : null}
+    </>
+  );
+}
+
 function IntentsHonesty({
   settlement,
   tone = "muted",
@@ -102,13 +168,13 @@ function IntentsHonesty({
   tone?: "muted" | "fg";
 }) {
   const lines = settlement ? intentsOptics(settlement) : null;
-  const attached = Boolean(lines && lines.dryQuote !== "not returned");
+  const quoteId = copyableDryQuoteId(lines);
   return (
     <p className={`mt-1 font-mono text-xs leading-5 ${tone === "fg" ? "text-fg" : "text-muted"}`}>
       NEAR Intents ·{" "}
-      {attached ? (
+      {quoteId ? (
         <>
-          dry quote <span className="break-all">{lines!.dryQuote}</span>
+          dry quote <DryQuoteProof id={quoteId} />
         </>
       ) : (
         "dry quote not attached"
@@ -121,6 +187,7 @@ function IntentsHonesty({
 function IntentsReceipt({ settlement }: { settlement: Settlement }) {
   const lines = intentsOptics(settlement);
   if (!lines) return null;
+  const quoteId = copyableDryQuoteId(lines);
   return (
     <div className="mt-3 border-t border-border pt-2">
       <p className="text-sm font-medium text-fg">NEAR Intents · dry quote</p>
@@ -131,7 +198,9 @@ function IntentsReceipt({ settlement }: { settlement: Settlement }) {
         <dt className="text-subtle">path</dt>
         <dd className="text-fg">{lines.path}</dd>
         <dt className="text-subtle">dry quote</dt>
-        <dd className="break-all text-fg">{lines.dryQuote}</dd>
+        <dd className="min-w-0 break-all text-fg">
+          {quoteId ? <DryQuoteProof id={quoteId} /> : lines.dryQuote}
+        </dd>
         {lines.out && (
           <>
             <dt className="text-subtle">out</dt>
