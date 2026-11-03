@@ -33,7 +33,7 @@ export function SiteFooter() {
       <div className="border-t border-border">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 px-5 py-4 text-xs text-subtle sm:flex-row sm:items-center sm:justify-between">
           <p>NEAR HACKATHON 2026 · arults</p>
-          <p>Preview demo · rules checked · money not sent yet</p>
+          <p>MIT · demo free; custody roadmap · money not sent</p>
         </div>
       </div>
     </footer>

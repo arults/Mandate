@@ -10,6 +10,16 @@ This is a NEAR hackathon prototype (tracks: **security**, **agents**, **business
 
 **Judge this branch (clone-free):** [preview /console](https://mandate-git-cursor-travel-desk-ux-512a-eden-0d67.vercel.app/console) — five asks, NEAR honesty strip, merchant marks. That host is the Vercel Preview for `cursor/travel-desk-ux-512a`. Production [mandate-ashy.vercel.app](https://mandate-ashy.vercel.app) is still `main` and does not have this desk until the PR merges. Litepaper on the preview: [ /docs ](https://mandate-git-cursor-travel-desk-ux-512a-eden-0d67.vercel.app/docs).
 
+## Sustainability
+
+Source is MIT ([LICENSE](LICENSE)). Free to clone, run, and fork.
+
+What stays free: the open-source policy gate, the `/console` travel desk demo, the HTTP `POST /api/v1/pay` agent surface, and the docs and `llms.txt` shipped in this repo. There is no paid wall on the judge path.
+
+What may be paid later is roadmap, not live: a hosted or managed policy gate, the OutLayer Agent Custody production path, and optional commercial support. None of that is required to judge this branch. The preview desk does not charge.
+
+This preview is a hackathon desk. It does not offer a service level, and it does not name customers.
+
 ## Problem
 
 Agents that hold a raw key can be talked out of it. A system prompt is not a lock. Mandate keeps signing away from the agent (preview: local gate; production roadmap: OutLayer Agent Custody). The agent submits `pay X of Y to Z`. Something that is not the LLM answers allow, block, or needs-approval.
