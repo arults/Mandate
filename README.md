@@ -75,7 +75,7 @@ https://mandate-ashy.vercel.app/console is `main`. It does not show this five-as
    - **Hotel $500.00** · Over the cap · `hotel.near` → **Blocked · over the cap** ($500 is over the $300 cap).
    - **Look-alike payee $80.00** · Who you pay `hote1.near` (**digit 1**) beside Allow-list `hotel.near` (**letter l**) → **Look-alike · not on allow-list**, then **Blocked · not on the list**. The line says it is not among the allow-list above: allow-list and look-alike spelling, not a scam registry. The row is highlighted. **Fake approval ignored · approved** is on that row.
    - **Burst of rides $120.00** · `rides.near` → the row chip is **Blocked · over the day**. Legs: three **Allowed** $120 rides, then the fourth **Blocked · over the day**. An allowed ride in that burst shows the same NEAR receipt (`submitted` **false**, `tx hash` **none**).
-3. Read **NEAR composition** under the list. **Live today**: rules checked in this app, dry quote when one comes back, `submitted false`, no transaction hash. **Next**: OutLayer Agent Custody and a Function Call Key that can only request a payment. Roadmap.
+3. Read **NEAR composition** under the list. **Live today**: off-chain Mandate gate plus a NEAR Intents 1-Click dry quote. The decision is not a broadcast. `submitted false`. No transaction hash. **Next** (roadmap, not live): a Function Call Key can limit an agent key to a receiver, methods, and allowance. It still cannot express USD daily caps, an allow-list, or a human hold. Mandate stays the policy. Not a vault, and no testnet explorer proof.
 4. Chips replay one ask on the same caps: **Allow $80**, **Hold $250**, **Cap $500**, **Look-alike**, **Burst**. **Look-alike** replays `hote1.near`. **Burst** replays the rides.
 5. **Freeze desk** sits on the screen after the run. It does not require **Advanced**. Click it. The airline hold is dropped. A hotel **$80.00** asked again is **Blocked · frozen**. The line says the wallet is frozen and no payment can be signed. `submitted` **false** · `tx hash` **none**. **Unfreeze** clears the stop. **Advanced** still has the same freeze for the editor. Leave **Advanced** closed for the five asks. **Advanced → Load travel ops** only fills the editor. **Run the demo** is the $8 vendor path below. Durability on this preview stays `local-db-ephemeral`.
 
@@ -181,7 +181,7 @@ This is **receipt minimization**, not a TEE and not encryption-at-rest for the l
 
 ## Security track: Function Call Keys (composition)
 
-NEAR **Function Call Keys (FCK)** can limit a key to a receiver contract + methods + allowance. They cannot express USD daily caps, human approval thresholds, or allow-lists the way Mandate does.
+NEAR **Function Call Keys (FCK)** can limit a key to a receiver contract + methods + allowance. They cannot express USD daily caps, human approval thresholds, or allow-lists the way Mandate does. This preview does not deploy an FCK, pin wasm, or cite a testnet explorer transaction. Live today is the off-chain gate plus a 1-Click dry quote (`settlement.submitted` stays `false`).
 
 **Composition (docs now; thin wiring later):**
 

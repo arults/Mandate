@@ -18,7 +18,7 @@ That is the Vercel Preview for branch `cursor/travel-desk-ux-512a`. Do not scree
    - Hotel **$500.00** → **Blocked · over the cap**.
    - Look-alike **$80.00** to `hote1.near` → Who you pay beside Allow-list `hotel.near` (**digit 1** vs **letter l**), **Look-alike · not on allow-list**, then **Blocked · not on the list**. Not among the allow-list above. Allow-list and look-alike spelling, not a scam registry. **Fake approval ignored · approved**.
    - Burst of **$120.00** rides to `rides.near` → three legs **Allowed**, the fourth **Blocked · over the day**. The burst row chip is **Blocked · over the day**. An allowed ride shows the same receipt: `submitted` **false**, `tx hash` **none**.
-4. **NEAR composition**: **Live today** is the in-app check and the dry quote (`submitted false`, no transaction hash). **Next** names OutLayer Agent Custody and Function Call Keys as roadmap.
+4. **NEAR composition**: **Live today** is the off-chain gate plus a NEAR Intents 1-Click dry quote (`submitted false`, no transaction hash). The decision is not a broadcast. **Next** is a Function Call Key that can limit an agent key to a receiver, methods, and allowance. It cannot express USD caps, the allow-list, or a human hold. Not live on this desk. Not a vault.
 5. Chips **Allow $80**, **Hold $250**, **Cap $500**, **Look-alike**, and **Burst** replay one ask. A cold server that forgot the rules: click again.
 
 `POST /api/v1/pay` from another machine to that host often returns `409` `no_policy`. The button above is one server call on one isolate, so it is the public repro. For curl, use local `npm run dev` after Reset/Run (commands in [README.md](README.md)).

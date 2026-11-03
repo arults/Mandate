@@ -86,14 +86,15 @@ export function Home() {
               <div>
                 <dt className="text-sm font-medium text-fg">Live today</dt>
                 <dd className="mt-1 text-sm leading-6 text-muted">
-                  Rules checked in this app. NEAR Intents dry quote when one comes back. submitted false. No
-                  transaction hash.
+                  Off-chain Mandate gate plus a NEAR Intents 1-Click dry quote. The decision is not a
+                  broadcast. submitted false. No transaction hash.
                 </dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-fg">Next</dt>
                 <dd className="mt-1 text-sm leading-6 text-muted">
-                  OutLayer Agent Custody holds the keys. A Function Call Key can only request. Roadmap.
+                  A Function Call Key can later limit an agent key to a receiver, methods, and allowance.
+                  It cannot replace these USD caps. Not live. Not a vault.
                 </dd>
               </div>
             </dl>

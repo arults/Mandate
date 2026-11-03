@@ -321,7 +321,8 @@ Agent → POST /api/v1/pay only
             <p className="mt-4">
               NEAR Function Call Keys (FCK) limit a key to a receiver, methods, and allowance. They are not a USD
               policy engine: they cannot encode daily caps, human approval thresholds, or recipient allow-lists the
-              way Mandate does.
+              way Mandate does. Live today is the off-chain gate plus a 1-Click dry quote. This page does not
+              deploy an FCK and does not show a testnet transaction.
             </p>
             <p className="mt-4 font-medium text-fg">Composition (now documented; not a fake attestation):</p>
             <ul className="mt-4 list-disc space-y-3 pl-5">

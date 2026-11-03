@@ -192,6 +192,7 @@ function IntentsReceipt({ settlement }: { settlement: Settlement }) {
   return (
     <div className="mt-3 border-t border-border pt-2">
       <p className="text-sm font-medium text-fg">NEAR Intents · dry quote</p>
+      <p className="mt-1 text-xs leading-5 text-subtle">Intents dry quote · not an FCK vault</p>
       <IntentsHonesty settlement={settlement} tone="fg" />
       <dl className="mt-1.5 grid grid-cols-[5.5rem_1fr] gap-x-3 gap-y-0.5 font-mono text-xs leading-4">
         <dt className="text-subtle">submitted</dt>
@@ -1147,16 +1148,18 @@ export function Console() {
             <div>
               <dt className="text-sm font-medium text-fg">Live today</dt>
               <dd className="mt-1 text-sm leading-6 text-muted">
-                Rules checked in this app. NEAR Intents dry quote when the server returns one.{" "}
-                <span className="font-mono text-fg">submitted false</span>. No transaction hash. A
-                sleeping server can forget the desk. Run again.
+                Off-chain Mandate gate plus a NEAR Intents 1-Click dry quote. The decision is not a
+                broadcast. <span className="font-mono text-fg">submitted false</span>. No transaction
+                hash. A sleeping server can forget the desk. Run again.
               </dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-fg">Next</dt>
               <dd className="mt-1 text-sm leading-6 text-muted">
-                OutLayer Agent Custody holds the keys. A Function Call Key can only request a
-                payment. Roadmap. This desk stays the travel-ops rules in front of that.
+                Roadmap, not live on this desk: a Function Call Key can limit an agent key to a
+                receiver, methods, and allowance. It still cannot express USD daily caps, an
+                allow-list, or a human hold. Mandate stays the policy. The key would only mean the
+                agent can request pay. Not a vault.
               </dd>
             </div>
           </dl>
