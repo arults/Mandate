@@ -9,6 +9,7 @@ import { agentBeats, travelAgentBeats, type AgentBeat, type AgentScript } from "
 import {
   addFunds,
   decideApproval,
+  freezeDesk,
   getGate,
   prepareDemoGate,
   requestPayment,
@@ -171,6 +172,7 @@ function DuplicateKey({ who, amount }: { who: string; amount: string }) {
 function outcomeLine(status: GateReceipt["status"], rule: string | null): string {
   if (status === "allow") return "Allowed";
   if (status === "needs_approval") return "On hold";
+  if (status === "cancelled" && rule === "frozen") return "Dropped · frozen";
   if (status === "cancelled") return "Cancelled";
   if (rule === "max_per_transaction") return "Blocked · over the cap";
   if (rule === "allowed_recipients") return "Blocked · not on the list";
@@ -345,6 +347,7 @@ export function Console() {
   const [activeBeat, setActiveBeat] = useState<string | null>(null);
   const [script, setScript] = useState<AgentScript>("travel");
   const [runSerial, setRunSerial] = useState(0);
+  const [freezeProbe, setFreezeProbe] = useState<GateReceipt | null>(null);
   const revision = useRef(0);
   const inFlight = useRef(false);
   const matrixRef = useRef<HTMLLIElement | null>(null);
@@ -441,11 +444,30 @@ export function Console() {
   }
 
   async function setFrozen(frozen: boolean) {
-    const next = { ...draftFromText(), frozen };
-    const gate = await savePolicy({ data: next });
-    setDraft(gate.policy ?? next);
-    setRecipientsText((gate.policy ?? next).allowedRecipients.join("\n"));
+    const base = snap?.policy ?? draftFromText();
+    const result = await freezeDesk({ data: { policy: base, frozen } });
+    const gate = result.gate;
+    const next = gate.policy ?? { ...base, frozen };
+    setDraft(next);
+    setRecipientsText(next.allowedRecipients.join("\n"));
     setSnap(gate);
+    if (!frozen || !result.receipt) {
+      setFreezeProbe(null);
+      return;
+    }
+    setSpoken((current) =>
+      current.map((item) => {
+        if (item.receipt.status !== "needs_approval") return item;
+        const dropped = gate.ledger.find(
+          (entry) =>
+            entry.status === "cancelled" &&
+            entry.rule === "frozen" &&
+            entry.request.amountUsd === item.receipt.request.amountUsd,
+        );
+        return dropped ? { ...item, receipt: dropped } : item;
+      }),
+    );
+    setFreezeProbe(result.receipt);
   }
 
   async function pay(body: Record<string, unknown>) {
@@ -468,6 +490,7 @@ export function Console() {
 
   async function playBeats(policy: HumanPolicy, nextScript: AgentScript) {
     setRunSerial((value) => value + 1);
+    setFreezeProbe(null);
     setScript(nextScript);
     setSpoken([]);
     setActiveBeat(null);
@@ -518,6 +541,7 @@ export function Console() {
 
   async function runScenario(only: (typeof SCENARIOS)[number]["id"]) {
     setRunSerial((value) => value + 1);
+    setFreezeProbe(null);
     setScript("travel");
     setSpoken([]);
     setActiveBeat(only);
@@ -606,11 +630,15 @@ export function Console() {
   const extraPending = (snap?.pending ?? []).filter((item) => !spokenIds.has(item.id));
   const holdNeedsYou = (snap?.pending.length ?? 0) > 0;
   const runLabel = busy && script === "travel" ? "Running the trip…" : "Run travel agent";
+  const showFreeze = script === "travel" && spoken.length > 0;
+  const deskFrozen = Boolean(saved?.frozen);
 
   return (
     <>
       <SiteNav current="console" />
-      <main className="mx-auto w-full max-w-xl px-5 py-6 sm:py-10">
+      <main
+        className={`mx-auto w-full max-w-xl px-5 py-6 sm:py-10 ${showFreeze ? (deskFrozen ? "pb-44" : "pb-24") : ""}`}
+      >
         <h1 className="font-display text-3xl leading-tight tracking-tight text-fg sm:text-5xl">
           The trip asks to pay.
         </h1>
@@ -1283,6 +1311,46 @@ export function Console() {
           </div>
         </details>
       </main>
+      {showFreeze && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-bg">
+          <div className="mx-auto w-full max-w-xl px-5 py-3">
+            {deskFrozen ? (
+              <div>
+                <p className="text-sm font-medium text-deny">Desk frozen</p>
+                {freezeProbe && (
+                  <p className="mt-1 text-sm text-fg">
+                    Hotel {formatUsd(freezeProbe.request.amountUsd)} ·{" "}
+                    {outcomeLine(freezeProbe.status, freezeProbe.rule)}
+                  </p>
+                )}
+                <p className="mt-1 text-sm leading-6 text-muted">
+                  {freezeProbe?.detail ?? "New asks are blocked. Waiting holds were dropped."}
+                </p>
+                <p className="mt-1 font-mono text-xs leading-5 text-muted">
+                  submitted false · tx hash none
+                </p>
+                <button
+                  type="button"
+                  disabled={busy}
+                  className={`${quietBtn} mt-3 w-full`}
+                  onClick={() => run(() => setFrozen(false))}
+                >
+                  Unfreeze
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                disabled={busy || !saved}
+                className="h-11 w-full rounded-control bg-deny-bg px-4 text-sm font-medium text-deny transition-colors duration-150 hover:opacity-90 disabled:opacity-50"
+                onClick={() => run(() => setFrozen(true))}
+              >
+                Freeze desk
+              </button>
+            )}
+          </div>
+        </div>
+      )}
       <SiteFooter />
     </>
   );

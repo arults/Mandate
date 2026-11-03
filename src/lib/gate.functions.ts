@@ -26,6 +26,30 @@ export const savePolicy = createServerFn({ method: "POST" })
     return publishPolicy(data);
   });
 
+/** Freeze or unfreeze, and when freezing, ask hotel $80 once on the same isolate. */
+export const freezeDesk = createServerFn({ method: "POST" })
+  .validator((data: { policy?: unknown; frozen?: boolean }) => {
+    if (!data || typeof data !== "object" || data.policy == null) {
+      throw new Error("Freeze needs the current caps.");
+    }
+    const frozen = data.frozen === true;
+    return { policy: parsePolicy({ ...(data.policy as object), frozen }), frozen };
+  })
+  .handler(async ({ data }) => {
+    assertHumanServerFn();
+    await publishPolicy(data.policy);
+    if (!data.frozen) return { gate: snapshot(), receipt: null };
+    const receipt = await submitPayment({
+      amountUsd: 80,
+      asset: "USDC",
+      to: "hotel.near",
+      chain: "base",
+      purpose: "After freeze",
+      idempotencyKey: `freeze-${crypto.randomUUID().slice(0, 8)}`,
+    });
+    return { gate: snapshot(), receipt };
+  });
+
 export const prepareDemoGate = createServerFn({ method: "POST" })
   .validator((data: unknown) => parsePolicy(data))
   .handler(async ({ data }) => {

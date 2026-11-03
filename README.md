@@ -65,7 +65,7 @@ https://mandate-ashy.vercel.app/console is `main`. It does not show this five-as
    - **Burst of rides $120.00** · `rides.near` → the row chip is **Blocked · over the day**. Legs: three **Allowed** $120 rides, then the fourth **Blocked · over the day**. An allowed ride in that burst shows the same NEAR receipt (`submitted` **false**, `tx hash` **none**).
 3. Read **NEAR composition** under the list. **Live today**: rules checked in this app, dry quote when one comes back, `submitted false`, no transaction hash. **Next**: OutLayer Agent Custody and a Function Call Key that can only request a payment. Roadmap.
 4. Chips replay one ask on the same caps: **Allow $80**, **Hold $250**, **Cap $500**, **Look-alike**, **Burst**. **Look-alike** replays `hote1.near`. **Burst** replays the rides.
-5. Leave **Advanced** closed for this path. **Advanced → Load travel ops** only fills the editor. **Run the demo** is the $8 vendor path below. Durability on this preview stays `local-db-ephemeral`.
+5. **Freeze desk** sits on the screen after the run. It does not require **Advanced**. Click it. The airline hold is dropped. A hotel **$80.00** asked again is **Blocked · frozen**. The line says the wallet is frozen and no payment can be signed. `submitted` **false** · `tx hash` **none**. **Unfreeze** clears the stop. **Advanced** still has the same freeze for the editor. Leave **Advanced** closed for the five asks. **Advanced → Load travel ops** only fills the editor. **Run the demo** is the $8 vendor path below. Durability on this preview stays `local-db-ephemeral`.
 
 ### A · Cold $8 path (under Advanced, same preview)
 
