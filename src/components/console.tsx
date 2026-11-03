@@ -782,8 +782,8 @@ export function Console() {
           The trip asks to pay.
         </h1>
         <p className="mt-2 max-w-[40rem] text-sm leading-6 text-muted sm:mt-3 sm:text-base sm:leading-7">
-          A travel-ops spending desk. Hotel, airline, and rides ask. The rules sit outside the
-          model. Money is not sent.
+          An agent can ask to pay hotels, airlines, and rides; Mandate enforces the human's caps,
+          allow-list, hold, and freeze — the agent cannot sign.
         </p>
 
         {loadError && (

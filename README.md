@@ -1,6 +1,8 @@
 # Mandate
 
-A human sets a spending policy once. An AI agent can ask to pay. The policy is enforced **outside the model**, so a prompt injection cannot raise the cap, swap the recipient, or mark a payment approved.
+An agent can ask to pay hotels, airlines, and rides; Mandate enforces the human's caps, allow-list, hold, and freeze — the agent cannot sign.
+
+A human sets a spending policy once. The policy is enforced **outside the model**, so a prompt injection cannot raise the cap, swap the recipient, or mark a payment approved.
 
 The **Mandate policy gate** enforces USD caps / allow-list / holds on `POST /api/v1/pay` **outside the model**. Human **Approve / Freeze** is the soft line. Jailbreak fields (`approved`, `policy`) are ignored. An allowed preview ask composes a NEAR Intents 1-Click dry quote. That is not custody and not a TEE.
 
@@ -50,7 +52,7 @@ No clone required. Screen the **preview**, not production.
 
 Open https://mandate-git-cursor-travel-desk-ux-512a-eden-0d67.vercel.app/console (prefer a private window).
 
-You should see **The trip asks to pay.** Caps read **$300.00** per payment, **$800.00** today, **Ask you above $150.00**. Merchants: Hotel `hotel.near`, Airline `airline.near`, Rides `rides.near`. Preview float **$2,000.00**. Not a wallet. One button: **Run travel agent**. Chips sit under it. **Advanced** stays closed.
+You should see **The trip asks to pay.** Under it, one line: an agent can ask to pay hotels, airlines, and rides; Mandate enforces the human's caps, allow-list, hold, and freeze — the agent cannot sign. Caps read **$300.00** per payment, **$800.00** today, **Ask you above $150.00**. Merchants: Hotel `hotel.near`, Airline `airline.near`, Rides `rides.near`. Preview float **$2,000.00**. Not a wallet. One button: **Run travel agent**. Chips sit under it. **Advanced** stays closed.
 
 https://mandate-ashy.vercel.app/console is `main`. It does not show this five-ask desk.
 

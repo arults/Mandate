@@ -1,6 +1,6 @@
 # Mandate
 
-> The agent can ask. It cannot sign. A human sets the spending mandate once. The policy is enforced outside the model.
+> An agent can ask to pay hotels, airlines, and rides; Mandate enforces the human's caps, allow-list, hold, and freeze — the agent cannot sign.
 
 This file is the agent contract. Humans can read the same rules at /docs.
 

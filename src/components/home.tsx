@@ -31,11 +31,11 @@ export function Home() {
               You set the caps.
             </h1>
             <p className="mt-5 text-lg leading-8 text-muted">
-              A travel-ops spending desk. Hotel, airline, and rides can ask. The rules sit outside the model. A
-              swapped payee is blocked. They never hold the keys.
+              An agent can ask to pay hotels, airlines, and rides; Mandate enforces the human's caps, allow-list,
+              hold, and freeze — the agent cannot sign.
             </p>
             <p className="mt-4 text-sm leading-6 text-fg">
-              $300 per payment, $800 a day, you approve above $150. This is not a vault and not a chain broadcast.
+              $300 per payment, $800 a day, you approve above $150.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
               <Link
