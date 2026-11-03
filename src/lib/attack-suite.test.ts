@@ -125,6 +125,7 @@ test("freeze blocks the next ask", async () => {
   assert.equal(receipt.rule, "frozen");
   assert.equal(snapshot().balanceUsd, 200);
   assert.equal(receipt.settlement, null);
+  assert.equal("txHash" in receipt, false);
 });
 
 test("a human reject cancels the hold", async () => {

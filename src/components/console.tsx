@@ -1516,6 +1516,7 @@ export function Console() {
                 <p className="mt-1 text-sm leading-6 text-muted">
                   {freezeProbe?.detail ?? "New asks are blocked. Waiting holds were dropped."}
                 </p>
+                <p className="mt-1 text-sm leading-6 text-subtle">Desk freeze · not an on-chain pause</p>
                 <IntentsHonesty settlement={freezeProbe?.settlement} />
                 <button
                   type="button"
