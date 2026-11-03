@@ -58,7 +58,7 @@ https://mandate-ashy.vercel.app/console is `main`. It does not show this five-as
 
 1. On that preview console, click **Run travel agent**. The label becomes **Running the trip…**. One server call publishes the travel caps and a **$2,000** preview float, then plays five asks. Nothing is broadcast. A cold isolate that forgot the rules: click again. That is not a chain record.
 2. Under **Allow, hold, or block**, read the five rows in order:
-   - **Hotel $80.00** · Under the line · `hotel.near` → **Allowed**. A **NEAR Intents · dry quote** box: `submitted` **false**, path `near → base`, a dry quote id when the server returned one, `out` when the quote has it, `tx hash` **none**.
+   - **Hotel $80.00** · Under the line · `hotel.near` → **Allowed**. A **NEAR Intents · dry quote** box: `submitted` **false**, path `near → base`, a dry quote id when the server returned one, `out` when the quote has it, `tx hash` **none**. The same payment key is asked again on that row: **Duplicate** · Hotel $80.00. Same key. A second payment was refused. `submitted` **false** · `tx hash` **none**. Nothing new is reserved.
    - **Airline $250.00** · Over the line · `airline.near` → **On hold**. **Approve** and **Reject** sit on that row. The balance does not move until you Approve.
    - **Hotel $500.00** · Over the cap · `hotel.near` → **Blocked · over the cap** ($500 is over the $300 cap).
    - **Look-alike payee $80.00** · `hote1.near` looks like `hotel.near` · not on the list → **Blocked · not on the list**. The row is highlighted. The line **Fake approval ignored · approved** is on that row.

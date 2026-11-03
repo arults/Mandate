@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 
-import type { DemoBeatLeg, GateReceipt, Settlement, Snapshot } from "@/lib/gate-types";
+import type { DemoBeatLeg, DemoReplay, GateReceipt, Settlement, Snapshot } from "@/lib/gate-types";
 import {
   clearPersistedState,
   durabilityMode,
@@ -13,7 +13,12 @@ import {
   type PersistedState,
 } from "@/lib/gate-persist.server";
 import { fetchOneClickQuote, ONECLICK_QUOTE_URL } from "@/lib/oneclick-quote.server";
-import { TRAVEL_BURST_MAX_LEGS, beatsForScript, type AgentBeat, type AgentScript } from "@/lib/agent-script";
+import {
+  TRAVEL_BURST_MAX_LEGS,
+  beatsForScript,
+  type AgentBeat,
+  type AgentScript,
+} from "@/lib/agent-script";
 import {
   cents,
   evaluatePolicy,
@@ -276,7 +281,10 @@ export async function awaitGateReady(): Promise<Snapshot> {
 }
 
 function pushLedger(current: State, receipt: GateReceipt) {
-  current.ledger = [receipt, ...current.ledger.filter((item) => item.id !== receipt.id)].slice(0, 40);
+  current.ledger = [receipt, ...current.ledger.filter((item) => item.id !== receipt.id)].slice(
+    0,
+    40,
+  );
 }
 
 function usage(current: State) {
@@ -314,7 +322,10 @@ function settlementFor(
     token: "nep141:usdc.near",
     amountUnits: usdToUsdcUnits(request.amountUsd),
     recipient: request.to,
-    calls: [`POST ${ONECLICK_QUOTE_URL}`, "POST https://api.outlayer.ai/wallet/v1/intents/withdraw"],
+    calls: [
+      `POST ${ONECLICK_QUOTE_URL}`,
+      "POST https://api.outlayer.ai/wallet/v1/intents/withdraw",
+    ],
     live,
     quote,
   };
@@ -354,8 +365,10 @@ async function liveDryRun(
     const message = typeof record?.message === "string" ? record.message : text;
     let verdict: "ok" | "refused" | "retry";
     if (res.status === 429 || res.status >= 500) verdict = "retry";
-    else if (res.status >= 200 && res.status < 300 && record?.would_succeed === true) verdict = "ok";
-    else if (res.status >= 200 && res.status < 300 && record?.would_succeed !== false) verdict = "retry";
+    else if (res.status >= 200 && res.status < 300 && record?.would_succeed === true)
+      verdict = "ok";
+    else if (res.status >= 200 && res.status < 300 && record?.would_succeed !== false)
+      verdict = "retry";
     else verdict = "refused";
     const note =
       verdict === "ok"
@@ -366,7 +379,11 @@ async function liveDryRun(
     return { httpStatus: res.status, note, verdict };
   } catch (error) {
     const message = error instanceof Error ? error.message : "dry-run failed";
-    return { httpStatus: 0, note: `OutLayer dry-run did not complete. ${message}`, verdict: "retry" };
+    return {
+      httpStatus: 0,
+      note: `OutLayer dry-run did not complete. ${message}`,
+      verdict: "retry",
+    };
   } finally {
     clearTimeout(timer);
   }
@@ -411,7 +428,12 @@ export function publishPolicy(input: unknown): Promise<Snapshot> {
     const current = state();
     const next = parsePolicy(input);
     current.policy = next;
-    if (next.frozen) cancelPending(current, "frozen", "The wallet was frozen. Waiting payments were dropped and nothing was signed.");
+    if (next.frozen)
+      cancelPending(
+        current,
+        "frozen",
+        "The wallet was frozen. Waiting payments were dropped and nothing was signed.",
+      );
     await persist(current);
     return snapshotOf(current);
   });
@@ -533,7 +555,8 @@ async function decide(
       {
         status: "reject",
         rule: "pending_full",
-        detail: "Too many payments are waiting for a human. This one was not queued and nothing was reserved.",
+        detail:
+          "Too many payments are waiting for a human. This one was not queued and nothing was reserved.",
       },
       id,
     );
@@ -611,11 +634,20 @@ export function resolveApproval(id: string, action: "approve" | "reject"): Promi
       return receipt;
     }
     dropLedgerRow(current, pending.receipt.id);
-    const outcome = await decide(pending.request, pending.receipt.ignoredFields, false, randomUUID(), null);
+    const outcome = await decide(
+      pending.request,
+      pending.receipt.ignoredFields,
+      false,
+      randomUUID(),
+      null,
+    );
     if (outcome.receipt.rule === "settlement_unconfirmed") {
       dropLedgerRow(current, outcome.receipt.id);
       current.spentCents += pending.reservedCents;
-      current.pending = [pending, ...current.pending.filter((item) => item.receipt.id !== pending.receipt.id)];
+      current.pending = [
+        pending,
+        ...current.pending.filter((item) => item.receipt.id !== pending.receipt.id),
+      ];
       pushLedger(current, pending.receipt);
       await persist(current);
       return outcome.receipt;
@@ -631,6 +663,8 @@ export type DemoAgentResult = {
   /** Decisive receipt. For a burst, this is the leg the day (or another rule) stopped. */
   receipt: PublicGateReceipt;
   legs: DemoBeatLeg[];
+  /** Present when this ask was submitted twice with the same payment key. */
+  replay: DemoReplay | null;
 };
 
 function toLeg(full: GateReceipt): DemoBeatLeg {
@@ -677,10 +711,16 @@ export async function runDemoAgentFlow(
   if (beats.length === 0) throw new Error("That ask is not in this trip.");
   const results: DemoAgentResult[] = [];
   for (const beat of beats) {
-    const fullLegs = beat.id === "burst" ? await submitBurst(beat) : [await submitPayment(beat.body)];
+    const fullLegs =
+      beat.id === "burst" ? await submitBurst(beat) : [await submitPayment(beat.body)];
     const decisive = fullLegs[fullLegs.length - 1]!;
+    let replay: DemoReplay | null = null;
+    if (script === "travel" && beat.id === "allow") {
+      const again = await submitPayment(beat.body);
+      if (again.id === decisive.id) replay = { sameReceipt: true, receiptId: again.id };
+    }
     const receipt = projectReceipt(decisive, snapshot().policy, "agent");
-    results.push({ beat, receipt, legs: fullLegs.map(toLeg) });
+    results.push({ beat, receipt, legs: fullLegs.map(toLeg), replay });
   }
   return {
     gate: snapshot(),
@@ -688,4 +728,3 @@ export async function runDemoAgentFlow(
     results,
   };
 }
-

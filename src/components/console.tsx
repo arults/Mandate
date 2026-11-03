@@ -15,7 +15,7 @@ import {
   runDemoAgent,
   savePolicy,
 } from "@/lib/gate.functions";
-import type { DemoBeatLeg, GateReceipt, Settlement, Snapshot } from "@/lib/gate-types";
+import type { DemoBeatLeg, DemoReplay, GateReceipt, Settlement, Snapshot } from "@/lib/gate-types";
 import { intentsOptics } from "@/lib/intents-optics";
 import { merchantOf, merchantTextClass, type MerchantId } from "@/lib/merchants";
 import {
@@ -31,6 +31,13 @@ import type { PublicGateReceipt } from "@/lib/privacy";
 
 /** Server-fn safe beat view (body omitted — not TanStack-serializable as Record<string, unknown>). */
 type DemoBeatView = Pick<AgentBeat, "id" | "title" | "says">;
+
+type SpokenAsk = {
+  beat: DemoBeatView;
+  receipt: PublicGateReceipt | GateReceipt;
+  legs: DemoBeatLeg[];
+  replay: DemoReplay | null;
+};
 
 const fieldClass =
   "h-11 w-full rounded-control border border-border bg-bg px-3 text-fg outline-none placeholder:text-subtle";
@@ -144,6 +151,20 @@ function WhoAsked({ asked, listed }: { asked: string; listed: string }) {
         {oneForL && <span className="ml-2 font-sans text-allow">letter l</span>}
       </dd>
     </dl>
+  );
+}
+
+function DuplicateKey({ who, amount }: { who: string; amount: string }) {
+  return (
+    <div className="mt-3 border-t border-border pt-2">
+      <p className="text-sm leading-6 text-fg">
+        <span className="mr-2 inline-flex rounded-control border border-border bg-surface px-2 py-0.5 font-medium">
+          Duplicate
+        </span>
+        {who} {amount}. Same key. A second payment was refused.
+      </p>
+      <p className="mt-1 font-mono text-xs leading-5 text-muted">submitted false · tx hash none</p>
+    </div>
   );
 }
 
@@ -319,9 +340,7 @@ export function Console() {
   const [purpose, setPurpose] = useState("API invoice 14");
   const [fundAmount, setFundAmount] = useState("50");
   const [focusId, setFocusId] = useState<string | null>(null);
-  const [spoken, setSpoken] = useState<
-    Array<{ beat: DemoBeatView; receipt: PublicGateReceipt | GateReceipt; legs: DemoBeatLeg[] }>
-  >([]);
+  const [spoken, setSpoken] = useState<SpokenAsk[]>([]);
   const [speaking, setSpeaking] = useState<string | null>(null);
   const [activeBeat, setActiveBeat] = useState<string | null>(null);
   const [script, setScript] = useState<AgentScript>("travel");
@@ -459,7 +478,12 @@ export function Console() {
     // races cold isolates on Vercel and returns 409 no_policy.
     const result = (await runDemoAgent({ data: { policy, runId, script: nextScript } })) as {
       gate: Snapshot;
-      results: Array<{ beat: DemoBeatView; receipt: PublicGateReceipt; legs?: DemoBeatLeg[] }>;
+      results: Array<{
+        beat: DemoBeatView;
+        receipt: PublicGateReceipt;
+        legs?: DemoBeatLeg[];
+        replay?: DemoReplay | null;
+      }>;
     };
     setSnap(result.gate);
     setDraft(policy);
@@ -470,7 +494,12 @@ export function Console() {
       await new Promise((resolve) => setTimeout(resolve, 280));
       setSpoken((current) => [
         ...current,
-        { beat: item.beat, receipt: item.receipt, legs: item.legs ?? [] },
+        {
+          beat: item.beat,
+          receipt: item.receipt,
+          legs: item.legs ?? [],
+          replay: item.replay ?? null,
+        },
       ]);
       setFocusId(item.receipt.id);
       setActiveBeat(null);
@@ -506,7 +535,12 @@ export function Console() {
       data: { policy: TRAVEL_POLICY, runId, script: "travel", only },
     })) as {
       gate: Snapshot;
-      results: Array<{ beat: DemoBeatView; receipt: PublicGateReceipt; legs?: DemoBeatLeg[] }>;
+      results: Array<{
+        beat: DemoBeatView;
+        receipt: PublicGateReceipt;
+        legs?: DemoBeatLeg[];
+        replay?: DemoReplay | null;
+      }>;
     };
     setSnap(result.gate);
     setDraft(TRAVEL_POLICY);
@@ -516,7 +550,14 @@ export function Console() {
     setActiveBeat(item.beat.id);
     setSpeaking(item.beat.says);
     await new Promise((resolve) => setTimeout(resolve, 280));
-    setSpoken([{ beat: item.beat, receipt: item.receipt, legs: item.legs ?? [] }]);
+    setSpoken([
+      {
+        beat: item.beat,
+        receipt: item.receipt,
+        legs: item.legs ?? [],
+        replay: item.replay ?? null,
+      },
+    ]);
     setFocusId(item.receipt.id);
     setActiveBeat(null);
     setSpeaking(null);
@@ -863,6 +904,9 @@ export function Console() {
                         <p className="mt-2 text-sm leading-6 text-muted">{full.detail}</p>
                       )}
                       {rowSettlement && <IntentsReceipt settlement={rowSettlement} />}
+                      {revealed?.replay?.sameReceipt && (
+                        <DuplicateKey who={who} amount={formatUsd(amountUsd)} />
+                      )}
                     </div>
                   </div>
                 </li>

@@ -1,6 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 
-import { awaitGateReady, fundWallet, prepareDemo, publishPolicy, resolveApproval, runDemoAgentFlow, snapshot, submitPayment } from "@/lib/gate.server";
+import {
+  awaitGateReady,
+  fundWallet,
+  prepareDemo,
+  publishPolicy,
+  resolveApproval,
+  runDemoAgentFlow,
+  snapshot,
+  submitPayment,
+} from "@/lib/gate.server";
 import { assertHumanServerFn } from "@/lib/human-route.server";
 import type { AgentBeat, AgentScript } from "@/lib/agent-script";
 import { DEMO_POLICY, parsePolicy, TRAVEL_POLICY } from "@/lib/policy";
@@ -27,7 +36,12 @@ export const prepareDemoGate = createServerFn({ method: "POST" })
 export const addFunds = createServerFn({ method: "POST" })
   .validator((data: { amountUsd?: number; mode?: "add" | "set" }) => {
     const amount = data?.amountUsd;
-    if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0 || amount > 1_000_000) {
+    if (
+      typeof amount !== "number" ||
+      !Number.isFinite(amount) ||
+      amount <= 0 ||
+      amount > 1_000_000
+    ) {
       throw new Error("Enter a funding amount between 0 and 1,000,000");
     }
     return {
@@ -70,22 +84,28 @@ export const decideApproval = createServerFn({ method: "POST" })
   });
 
 export const runDemoAgent = createServerFn({ method: "POST" })
-  .validator((data: { policy?: unknown; runId?: string; script?: string; only?: string } | unknown) => {
-    const raw =
-      data && typeof data === "object"
-        ? (data as { policy?: unknown; runId?: string; script?: unknown; only?: unknown })
-        : {};
-    const script: AgentScript = raw.script === "travel" ? "travel" : "demo";
-    const policy =
-      raw.policy === undefined ? (script === "travel" ? TRAVEL_POLICY : DEMO_POLICY) : parsePolicy(raw.policy);
-    const runId =
-      typeof raw.runId === "string" && raw.runId.trim()
-        ? raw.runId.trim().slice(0, 32)
-        : crypto.randomUUID().slice(0, 8);
-    const onlyIds: AgentBeat["id"][] = ["allow", "hold", "block", "jailbreak", "poison", "burst"];
-    const only = onlyIds.find((id) => id === raw.only);
-    return { policy, runId, script, only };
-  })
+  .validator(
+    (data: { policy?: unknown; runId?: string; script?: string; only?: string } | unknown) => {
+      const raw =
+        data && typeof data === "object"
+          ? (data as { policy?: unknown; runId?: string; script?: unknown; only?: unknown })
+          : {};
+      const script: AgentScript = raw.script === "travel" ? "travel" : "demo";
+      const policy =
+        raw.policy === undefined
+          ? script === "travel"
+            ? TRAVEL_POLICY
+            : DEMO_POLICY
+          : parsePolicy(raw.policy);
+      const runId =
+        typeof raw.runId === "string" && raw.runId.trim()
+          ? raw.runId.trim().slice(0, 32)
+          : crypto.randomUUID().slice(0, 8);
+      const onlyIds: AgentBeat["id"][] = ["allow", "hold", "block", "jailbreak", "poison", "burst"];
+      const only = onlyIds.find((id) => id === raw.only);
+      return { policy, runId, script, only };
+    },
+  )
   .handler(async ({ data }) => {
     assertHumanServerFn();
     // Strip beat.body: Record<string, unknown> is not TanStack-serializable.
@@ -94,11 +114,11 @@ export const runDemoAgent = createServerFn({ method: "POST" })
     return {
       gate: out.gate,
       receipts: out.receipts,
-      results: out.results.map(({ beat, receipt, legs }) => ({
+      results: out.results.map(({ beat, receipt, legs, replay }) => ({
         beat: { id: beat.id, title: beat.title, says: beat.says },
         receipt,
         legs,
+        replay,
       })),
     };
   });
-

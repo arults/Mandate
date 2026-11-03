@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { TRAVEL_BURST_LEG_USD, TRAVEL_BURST_MAX_LEGS, agentBeats, travelAgentBeats } from "./agent-script.ts";
+import {
+  TRAVEL_BURST_LEG_USD,
+  TRAVEL_BURST_MAX_LEGS,
+  agentBeats,
+  travelAgentBeats,
+} from "./agent-script.ts";
 import { resetGateForTests, runDemoAgentFlow, snapshot } from "./gate.server.ts";
 import { DEMO_POLICY, TRAVEL_DEMO_BALANCE_USD, TRAVEL_POLICY } from "./policy.ts";
 import { hashPurpose, hashRecipient, truncateRecipient } from "./privacy.ts";
@@ -41,7 +46,10 @@ test("runDemoAgentFlow returns 4 privacy-minimized receipts in one pass", async 
     const rawTo = String(agentBeats(runId)[i]!.body.to);
     assert.equal(receipt.request.to.includes(rawTo) && rawTo.length > 10, false);
     assert.equal(receipt.request.recipientHash, hashRecipient(rawTo));
-    assert.equal(receipt.request.purposeHash, hashPurpose(String(agentBeats(runId)[i]!.body.purpose)));
+    assert.equal(
+      receipt.request.purposeHash,
+      hashPurpose(String(agentBeats(runId)[i]!.body.purpose)),
+    );
   }
 
   // allow beat: truncated vendor.near
@@ -70,7 +78,13 @@ test("travel beats allow, hold, cap-block, look-alike poison, and a day-capped b
   );
 
   const expectedStatuses = ["allow", "needs_approval", "reject", "reject", "reject"] as const;
-  const expectedRules = [null, "approval_threshold", "max_per_transaction", "allowed_recipients", "daily_limit"] as const;
+  const expectedRules = [
+    null,
+    "approval_threshold",
+    "max_per_transaction",
+    "allowed_recipients",
+    "daily_limit",
+  ] as const;
   for (let i = 0; i < 5; i++) {
     const { beat, receipt } = results[i]!;
     assert.equal(beat.id, beats[i]!.id);
@@ -87,6 +101,14 @@ test("travel beats allow, hold, cap-block, look-alike poison, and a day-capped b
 
   assert.equal(results[0]!.receipt.request.to, truncateRecipient("hotel.near"));
   assert.equal(results[0]!.receipt.settlement?.submitted, false);
+  assert.equal(results[0]!.replay?.sameReceipt, true);
+  assert.equal(results[0]!.replay?.receiptId, results[0]!.receipt.id);
+  assert.equal(results[1]!.replay, null);
+  assert.equal(results[3]!.replay, null);
+  assert.equal(
+    gate.ledger.filter((item) => item.request.purpose === "Airport hotel night").length,
+    1,
+  );
   assert.equal(results[1]!.receipt.request.amountUsd, 250);
   assert.equal(results[2]!.receipt.rule, "max_per_transaction");
   assert.equal(results[2]!.legs[0]!.status, "reject");
