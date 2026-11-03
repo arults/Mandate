@@ -230,22 +230,46 @@ function markedPayee(value: string, other: string, tone: "deny" | "allow") {
   });
 }
 
-/** Asked payee against the allow-list name, with the swapped character marked. */
-function WhoAsked({ asked, listed }: { asked: string; listed: string }) {
+/** Asked payee beside the allow-list name, with the swapped character marked. */
+function WhoAsked({
+  asked,
+  listed,
+  blocked,
+}: {
+  asked: string;
+  listed: string;
+  blocked: boolean;
+}) {
   const oneForL = asked.includes("1") && listed.includes("l");
   return (
-    <dl className="mt-2 grid grid-cols-[5.75rem_1fr] items-baseline gap-x-3 gap-y-1 text-sm">
-      <dt className="text-fg">Who you pay</dt>
-      <dd className="min-w-0 font-mono text-fg">
-        {markedPayee(asked, listed, "deny")}
-        {oneForL && <span className="ml-2 font-sans text-deny">digit 1</span>}
-      </dd>
-      <dt className="text-fg">Allow-list</dt>
-      <dd className="min-w-0 font-mono text-fg">
-        {markedPayee(listed, asked, "allow")}
-        {oneForL && <span className="ml-2 font-sans text-allow">letter l</span>}
-      </dd>
-    </dl>
+    <div className="mt-2">
+      {blocked && (
+        <p>
+          <span className="inline-flex rounded-control bg-surface px-2 py-0.5 text-sm font-medium text-deny">
+            Look-alike · not on allow-list
+          </span>
+        </p>
+      )}
+      <div
+        className="mt-2 grid grid-cols-2 gap-x-4 text-sm"
+        role="group"
+        aria-label="Who you pay against the allow-list"
+      >
+        <div className="min-w-0">
+          <p className="text-fg">Who you pay</p>
+          <p className="mt-1 break-all font-mono text-fg">{markedPayee(asked, listed, "deny")}</p>
+          {oneForL && <p className="mt-1 text-deny">digit 1</p>}
+        </div>
+        <div className="min-w-0">
+          <p className="text-fg">Allow-list</p>
+          <p className="mt-1 break-all font-mono text-fg">{markedPayee(listed, asked, "allow")}</p>
+          {oneForL && <p className="mt-1 text-allow">letter l</p>}
+        </div>
+      </div>
+      <p className="mt-2 text-sm leading-5 text-subtle">
+        Allow-list and look-alike spelling. Not a scam registry.
+      </p>
+    </div>
   );
 }
 
@@ -1017,7 +1041,11 @@ export function Console() {
                         </p>
                       </div>
                       {beat.id === "poison" && (
-                        <WhoAsked asked={String(beat.body.to)} listed="hotel.near" />
+                        <WhoAsked
+                          asked={String(beat.body.to)}
+                          listed="hotel.near"
+                          blocked={status === "reject"}
+                        />
                       )}
                       {status ? (
                         <p className="mt-2">
@@ -1032,7 +1060,9 @@ export function Console() {
                       ) : activeBeat === beat.id ? (
                         <p className="mt-2 text-sm font-medium text-fg">Asking…</p>
                       ) : null}
-                      <p className="mt-1 text-sm leading-6 text-muted">{cue}</p>
+                      {!(beat.id === "poison" && status) && (
+                        <p className="mt-1 text-sm leading-6 text-muted">{cue}</p>
+                      )}
                       {pending && revealed && (
                         <div className="mt-3 flex items-center gap-2">
                           <button

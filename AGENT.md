@@ -16,7 +16,7 @@ That is the Vercel Preview for branch `cursor/travel-desk-ux-512a`. Do not scree
    - Hotel **$80.00** → **Allowed**. **NEAR Intents · dry quote**: `submitted` **false**, path `near → base`, click or copy the dry quote id when the server returned one (otherwise the line says **dry quote not attached**), `tx hash` **none**.
    - Airline **$250.00** → **On hold**. Approve or Reject on that row. Balance does not move until Approve.
    - Hotel **$500.00** → **Blocked · over the cap**.
-   - Look-alike **$80.00** to `hote1.near` → **Blocked · not on the list**, plus **Fake approval ignored · approved**.
+   - Look-alike **$80.00** to `hote1.near` → Who you pay beside Allow-list `hotel.near` (**digit 1** vs **letter l**), **Look-alike · not on allow-list**, then **Blocked · not on the list**. Allow-list and look-alike spelling, not a scam registry. **Fake approval ignored · approved**.
    - Burst of **$120.00** rides to `rides.near` → three legs **Allowed**, the fourth **Blocked · over the day**. The burst row chip is **Blocked · over the day**. An allowed ride shows the same receipt: `submitted` **false**, `tx hash` **none**.
 4. **NEAR composition**: **Live today** is the in-app check and the dry quote (`submitted false`, no transaction hash). **Next** names OutLayer Agent Custody and Function Call Keys as roadmap.
 5. Chips **Allow $80**, **Hold $250**, **Cap $500**, **Look-alike**, and **Burst** replay one ask. A cold server that forgot the rules: click again.
