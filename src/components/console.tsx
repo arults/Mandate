@@ -17,6 +17,7 @@ import {
   savePolicy,
 } from "@/lib/gate.functions";
 import type { DemoBeatLeg, DemoReplay, GateReceipt, Settlement, Snapshot } from "@/lib/gate-types";
+import { ATTACK_SUITE, ATTACK_SUITE_NOTE } from "@/lib/attack-suite";
 import { copyableDryQuoteId, intentsOptics } from "@/lib/intents-optics";
 import { merchantOf, merchantTextClass, type MerchantId } from "@/lib/merchants";
 import {
@@ -968,6 +969,7 @@ export function Console() {
                 </span>
               ))}
             </p>
+            <p className="mt-0.5 text-xs leading-5 text-subtle">{ATTACK_SUITE_NOTE}</p>
             <IntentsHonesty settlement={allowSettlement} />
           </div>
         )}
@@ -1195,6 +1197,15 @@ export function Console() {
             Editor, the $8 vendor demo, ledger, and the raw receipt. Run travel agent still
             publishes the travel caps, not unsaved edits.
           </p>
+          <p className="mt-3 text-sm leading-6 text-muted">
+            Attack suite: {ATTACK_SUITE.length} cases with asserted verdicts. The line under the
+            legend names the ones this screen does not play.
+          </p>
+          <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-subtle" aria-label="Attack suite">
+            {ATTACK_SUITE.map((item) => (
+              <li key={item.id}>{item.label}</li>
+            ))}
+          </ul>
 
           <div className="mt-8">
             <h2 className="text-sm font-medium">Your caps</h2>

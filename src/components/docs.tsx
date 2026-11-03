@@ -461,6 +461,7 @@ Agent → POST /api/v1/pay only
               one came back (otherwise the line says dry quote not attached), and tx hash none.{" "}
               <strong className="font-medium text-fg">Load travel ops</strong> only fills the editor under Advanced.
               The $8 path stays on <strong className="font-medium text-fg">Run the demo</strong> there too.
+              Adversarial suite: 15 cases with asserted verdicts, named under Advanced and on the line under the attack legend.
             </p>
             <ol className="mt-4 list-decimal space-y-3 pl-5">
               <li>

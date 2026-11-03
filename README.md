@@ -54,7 +54,7 @@ Agents: HTTP `POST /api/v1/pay` or MCP tools `mandate_pay` and `mandate_receipt`
 
 Demo policy: **$25 max per transaction**, **$50 per day**, **approve above $10**, USDC only, recipients `vendor.near`, `studio.near`, and one EVM address. Destination chains in the demo: Base, Ethereum, Arbitrum, Solana, Polygon, NEAR.
 
-Travel ops preset: **$300 max per transaction**, **$800 per day**, **approve above $150**, USDC, privacy minimize, recipients `hotel.near`, `airline.near`, `rides.near`. The desk at `/console` is a travel-ops spending desk (rules outside the model — not a vault). **Run travel agent** plays five asks. Chips **Allow $80**, **Hold $250**, **Cap $500**, **Look-alike**, and **Burst** each play one ask in the same gate. **Load travel ops** and **Run the demo** ($8 path) are under **Advanced**.
+Travel ops preset: **$300 max per transaction**, **$800 per day**, **approve above $150**, USDC, privacy minimize, recipients `hotel.near`, `airline.near`, `rides.near`. The desk at `/console` is a travel-ops spending desk (rules outside the model — not a vault). **Run travel agent** plays five asks. Chips **Allow $80**, **Hold $250**, **Cap $500**, **Look-alike**, and **Burst** each play one ask in the same gate. **Load travel ops** and **Run the demo** ($8 path) are under **Advanced**. Adversarial suite: 15 cases with asserted verdicts (`src/lib/attack-suite.test.ts`, and the line under the attack legend).
 
 ## Judge path (do X → see Y)
 
