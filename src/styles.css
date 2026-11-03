@@ -73,6 +73,7 @@
 
   button:focus-visible,
   a:focus-visible,
+  summary:focus-visible,
   input:focus-visible,
   textarea:focus-visible,
   select:focus-visible {
@@ -95,8 +96,16 @@
 /* Subtle hero grid — CSS only, no paid assets */
 .hero-grid {
   background-image:
-    linear-gradient(to right, color-mix(in srgb, var(--color-border) 70%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in srgb, var(--color-border) 70%, transparent) 1px, transparent 1px);
+    linear-gradient(
+      to right,
+      color-mix(in srgb, var(--color-border) 70%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--color-border) 70%, transparent) 1px,
+      transparent 1px
+    );
   background-size: 48px 48px;
   mask-image: radial-gradient(ellipse 70% 60% at 30% 20%, #000 20%, transparent 75%);
 }
@@ -127,6 +136,23 @@
   .mandate-rule {
     animation: none;
   }
+}
+
+/* Closed by default. The chevron is the only motion, and it marks open state. */
+.desk-disclosure > summary {
+  list-style: none;
+}
+
+.desk-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.desk-chevron {
+  transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.desk-disclosure[open] .desk-chevron {
+  transform: rotate(180deg);
 }
 
 /* Litepaper print */

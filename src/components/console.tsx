@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { MerchantMark } from "@/components/merchant-mark";
@@ -5,7 +6,15 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteNav } from "@/components/site-nav";
 
 import { agentBeats, travelAgentBeats, type AgentBeat, type AgentScript } from "@/lib/agent-script";
-import { addFunds, decideApproval, getGate, prepareDemoGate, requestPayment, runDemoAgent, savePolicy } from "@/lib/gate.functions";
+import {
+  addFunds,
+  decideApproval,
+  getGate,
+  prepareDemoGate,
+  requestPayment,
+  runDemoAgent,
+  savePolicy,
+} from "@/lib/gate.functions";
 import type { DemoBeatLeg, GateReceipt, Settlement, Snapshot } from "@/lib/gate-types";
 import { intentsOptics } from "@/lib/intents-optics";
 import { merchantOf, merchantTextClass, type MerchantId } from "@/lib/merchants";
@@ -36,6 +45,22 @@ const primaryBtn =
 const quietBtn =
   "h-11 rounded-control border border-border bg-surface px-4 text-sm font-medium transition-colors duration-150 hover:border-fg disabled:opacity-50";
 
+function scrollBeatId(
+  items: Array<{ beat: { id: string }; receipt: { id: string } }>,
+  pending: Array<{ id: string }> | undefined,
+  isBusy: boolean,
+): string | null {
+  if (isBusy || items.length === 0) return null;
+  const waiting = items.find((item) => pending?.some((entry) => entry.id === item.receipt.id));
+  return (
+    waiting?.beat.id ??
+    items.find((item) => item.beat.id === "burst")?.beat.id ??
+    items.find((item) => item.beat.id === "poison")?.beat.id ??
+    items[items.length - 1]?.beat.id ??
+    null
+  );
+}
+
 function messageOf(error: unknown): string {
   if (error instanceof Error && error.message) return error.message;
   return "The gate could not complete that request.";
@@ -54,13 +79,18 @@ const SCENARIOS = [
   { id: "block", label: "Cap", hint: "$500", merchant: "hotel" },
   { id: "poison", label: "Look-alike", hint: "", merchant: "hotel" },
   { id: "burst", label: "Burst", hint: "", merchant: "rides" },
-] as const satisfies ReadonlyArray<{ id: string; label: string; hint: string; merchant: MerchantId }>;
+] as const satisfies ReadonlyArray<{
+  id: string;
+  label: string;
+  hint: string;
+  merchant: MerchantId;
+}>;
 
 function IntentsReceipt({ settlement }: { settlement: Settlement }) {
   const lines = intentsOptics(settlement);
   if (!lines) return null;
   return (
-    <div className="mt-3 border border-border bg-surface px-3 py-3">
+    <div className="mt-3 border-t border-border pt-3">
       <p className="text-sm font-medium text-fg">NEAR Intents · dry quote</p>
       <dl className="mt-2 grid grid-cols-[5.5rem_1fr] gap-x-3 gap-y-1 font-mono text-xs leading-5">
         <dt className="text-subtle">submitted</dt>
@@ -95,18 +125,23 @@ function outcomeLine(status: GateReceipt["status"], rule: string | null): string
 
 function statusClass(status: GateReceipt["status"]): string {
   if (status === "allow") return "bg-allow-bg text-allow";
-  if (status === "needs_approval") return "bg-hold-bg text-hold";
+  if (status === "needs_approval") return "border border-border bg-surface text-fg";
   if (status === "cancelled") return "bg-elevated text-muted";
-  return "bg-deny-bg text-deny";
+  return "bg-surface text-deny";
 }
 
 function askCue(beat: AgentBeat): { who: string; cue: string } {
   const to = String(beat.body.to);
-  if (beat.id === "poison") return { who: "Look-alike payee", cue: `${to} looks like hotel.near · not on the list` };
+  if (beat.id === "poison")
+    return { who: "Look-alike payee", cue: `${to} looks like hotel.near · not on the list` };
   if (beat.id === "burst") {
-    return { who: "Burst of rides", cue: `${to} · ${formatUsd(Number(beat.body.amountUsd))} each · the day stops the last` };
+    return {
+      who: "Burst of rides",
+      cue: `${to} · ${formatUsd(Number(beat.body.amountUsd))} each · the day stops the last`,
+    };
   }
-  if (beat.id === "jailbreak") return { who: "Not on the list", cue: `${to} · a fake approval is ignored` };
+  if (beat.id === "jailbreak")
+    return { who: "Not on the list", cue: `${to} · a fake approval is ignored` };
   const who = to.startsWith("hotel")
     ? "Hotel"
     : to.startsWith("airline")
@@ -122,9 +157,10 @@ function askCue(beat: AgentBeat): { who: string; cue: string } {
 function PolicySummary({ policy }: { policy: HumanPolicy }) {
   return (
     <p className="text-sm text-muted">
-      ≤ {formatUsd(policy.maxPerTransactionUsd)} / tx · {formatUsd(policy.dailyLimitUsd)} / day · approve
-      above {formatUsd(policy.approvalThresholdUsd)} · {policy.allowedRecipients.length} recipients ·{" "}
-      {policy.frozen ? "frozen" : "active"} · privacy {policy.privacyMode ?? "minimize"}
+      ≤ {formatUsd(policy.maxPerTransactionUsd)} / tx · {formatUsd(policy.dailyLimitUsd)} / day ·
+      approve above {formatUsd(policy.approvalThresholdUsd)} · {policy.allowedRecipients.length}{" "}
+      recipients · {policy.frozen ? "frozen" : "active"} · privacy{" "}
+      {policy.privacyMode ?? "minimize"}
     </p>
   );
 }
@@ -151,7 +187,9 @@ function ReceiptSlip({ receipt }: { receipt: GateReceipt | PublicGateReceipt }) 
                 : ""}
           </p>
         </div>
-        <span className={`rounded-control px-2.5 py-1 text-sm font-medium ${statusClass(receipt.status)}`}>
+        <span
+          className={`rounded-control px-2.5 py-1 text-sm font-medium ${statusClass(receipt.status)}`}
+        >
           {statusLabel(receipt.status)}
           {receipt.rule ? ` · ${receipt.rule}` : ""}
         </span>
@@ -162,8 +200,8 @@ function ReceiptSlip({ receipt }: { receipt: GateReceipt | PublicGateReceipt }) 
           <p className="text-sm font-medium text-hold">Fake approval ignored</p>
           <p className="mt-1 font-mono text-xs text-fg">{receipt.ignoredFields.join(", ")}</p>
           <p className="mt-1 text-sm text-muted">
-            The checker decided again from your saved rules. The AI cannot raise caps, change who gets paid, or
-            mark a payment approved by itself.
+            The checker decided again from your saved rules. The AI cannot raise caps, change who
+            gets paid, or mark a payment approved by itself.
           </p>
         </div>
       )}
@@ -172,7 +210,9 @@ function ReceiptSlip({ receipt }: { receipt: GateReceipt | PublicGateReceipt }) 
         <div className="mt-4 border-t border-border pt-4">
           <p
             className={`px-3 py-2 text-sm font-medium ${
-              receipt.attestation.kind === "outlayer-dry-run" ? "bg-allow-bg text-allow" : "bg-elevated text-fg"
+              receipt.attestation.kind === "outlayer-dry-run"
+                ? "bg-allow-bg text-allow"
+                : "bg-elevated text-fg"
             }`}
           >
             {receipt.attestation.kind === "outlayer-dry-run"
@@ -182,7 +222,8 @@ function ReceiptSlip({ receipt }: { receipt: GateReceipt | PublicGateReceipt }) 
           <p className="mt-3 font-mono text-xs leading-5 text-muted">
             NEAR intents · {receipt.settlement.amountUnits} units of {receipt.settlement.token}
             <br />
-            {receipt.settlement.sourceChain} → {receipt.settlement.destinationChain} · {receipt.settlement.recipient}
+            {receipt.settlement.sourceChain} → {receipt.settlement.destinationChain} ·{" "}
+            {receipt.settlement.recipient}
             <br />
             submitted {String(receipt.settlement.submitted)}
           </p>
@@ -191,7 +232,9 @@ function ReceiptSlip({ receipt }: { receipt: GateReceipt | PublicGateReceipt }) 
               <li key={call}>{call}</li>
             ))}
           </ul>
-          {receipt.settlement.live && <p className="mt-2 text-sm text-muted">{receipt.settlement.live.note}</p>}
+          {receipt.settlement.live && (
+            <p className="mt-2 text-sm text-muted">{receipt.settlement.live.note}</p>
+          )}
           {receipt.settlement.quote && (
             <div className="mt-3 border border-border bg-bg px-3 py-3">
               <p className="text-sm font-medium text-fg">NEAR Intents · 1-Click dry quote</p>
@@ -201,9 +244,12 @@ function ReceiptSlip({ receipt }: { receipt: GateReceipt | PublicGateReceipt }) 
                   {receipt.settlement.quote.amountOutFormatted
                     ? ` · out ${receipt.settlement.quote.amountOutFormatted} USDC`
                     : ""}
-                  {receipt.settlement.quote.amountOutUsd ? ` · ≈ $${receipt.settlement.quote.amountOutUsd}` : ""}
+                  {receipt.settlement.quote.amountOutUsd
+                    ? ` · ≈ $${receipt.settlement.quote.amountOutUsd}`
+                    : ""}
                   <br />
-                  path {receipt.settlement.sourceChain} → {receipt.settlement.destinationChain} · dry only
+                  path {receipt.settlement.sourceChain} → {receipt.settlement.destinationChain} ·
+                  dry only
                   <br />
                   submitted {String(receipt.settlement.submitted)} · not a broadcast · not a fill
                 </p>
@@ -215,9 +261,12 @@ function ReceiptSlip({ receipt }: { receipt: GateReceipt | PublicGateReceipt }) 
         </div>
       )}
       <p className="mt-4 font-mono text-xs text-subtle">
-        {time} · remaining {formatUsd(receipt.remainingDailyUsd)} · fingerprint {receipt.attestation.policyFingerprint}
+        {time} · remaining {formatUsd(receipt.remainingDailyUsd)} · fingerprint{" "}
+        {receipt.attestation.policyFingerprint}
       </p>
-      <p className="mt-2 font-mono text-xs text-subtle break-all">Share (agent-minimized): /api/v1/receipt?id={receipt.id}</p>
+      <p className="mt-2 font-mono text-xs text-subtle break-all">
+        Share (agent-minimized): /api/v1/receipt?id={receipt.id}
+      </p>
     </article>
   );
 }
@@ -241,6 +290,7 @@ export function Console() {
   const [speaking, setSpeaking] = useState<string | null>(null);
   const [activeBeat, setActiveBeat] = useState<string | null>(null);
   const [script, setScript] = useState<AgentScript>("travel");
+  const [runSerial, setRunSerial] = useState(0);
   const revision = useRef(0);
   const inFlight = useRef(false);
   const matrixRef = useRef<HTMLLIElement | null>(null);
@@ -266,13 +316,15 @@ export function Console() {
     };
   }, []);
 
+  const landedBeatId = scrollBeatId(spoken, snap?.pending, busy);
+
   useEffect(() => {
-    const anchor = spoken.find((item) => item.beat.id === "burst") ?? spoken.find((item) => item.beat.id === "poison");
-    if (!anchor || matrixSeen.current === anchor.receipt.id) return;
-    matrixSeen.current = anchor.receipt.id;
+    if (busy || runSerial === 0 || !landedBeatId) return;
+    if (matrixSeen.current === String(runSerial)) return;
+    matrixSeen.current = String(runSerial);
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     matrixRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
-  }, [spoken]);
+  }, [busy, runSerial, landedBeatId]);
 
   async function run(task: () => Promise<void>) {
     if (inFlight.current) return;
@@ -350,6 +402,7 @@ export function Console() {
   }
 
   async function playBeats(policy: HumanPolicy, nextScript: AgentScript) {
+    setRunSerial((value) => value + 1);
     setScript(nextScript);
     setSpoken([]);
     setActiveBeat(null);
@@ -369,7 +422,10 @@ export function Console() {
       setActiveBeat(item.beat.id);
       setSpeaking(item.beat.says);
       await new Promise((resolve) => setTimeout(resolve, 280));
-      setSpoken((current) => [...current, { beat: item.beat, receipt: item.receipt, legs: item.legs ?? [] }]);
+      setSpoken((current) => [
+        ...current,
+        { beat: item.beat, receipt: item.receipt, legs: item.legs ?? [] },
+      ]);
       setFocusId(item.receipt.id);
       setActiveBeat(null);
       setSpeaking(null);
@@ -386,6 +442,7 @@ export function Console() {
   }
 
   async function runScenario(only: (typeof SCENARIOS)[number]["id"]) {
+    setRunSerial((value) => value + 1);
     setScript("travel");
     setSpoken([]);
     setActiveBeat(only);
@@ -435,6 +492,24 @@ export function Console() {
     const result = await decideApproval({ data: { id, action } });
     setSnap(result.gate);
     setFocusId(result.receipt.id);
+    // Approve mints a new receipt id. Point the row at it, or the list keeps the old "On hold".
+    if (result.gate.pending.some((item) => item.id === id)) return;
+    const next = result.receipt;
+    setSpoken((current) =>
+      current.map((item) => {
+        const touches = item.receipt.id === id || item.legs.some((leg) => leg.id === id);
+        if (!touches) return item;
+        return {
+          ...item,
+          receipt: item.receipt.id === id ? next : item.receipt,
+          legs: item.legs.map((leg) =>
+            leg.id === id
+              ? { ...leg, id: next.id, status: next.status, rule: next.rule, detail: next.detail }
+              : leg,
+          ),
+        };
+      }),
+    );
   }
 
   const focused = snap?.ledger.find((item) => item.id === focusId) ?? snap?.ledger[0] ?? null;
@@ -448,11 +523,13 @@ export function Console() {
   return (
     <>
       <SiteNav current="console" />
-      <main className="mx-auto w-full max-w-lg px-5 py-8 sm:py-12">
-        <h1 className="font-display text-4xl tracking-tight text-fg sm:text-5xl">The trip asks to pay.</h1>
+      <main className="mx-auto w-full max-w-xl px-5 py-8 sm:py-12">
+        <h1 className="font-display text-4xl tracking-tight text-fg sm:text-5xl">
+          The trip asks to pay.
+        </h1>
         <p className="mt-3 max-w-[40rem] text-base leading-7 text-muted">
-          A travel-ops spending desk. Hotel, airline, and rides ask. The rules sit outside the model. Money is not
-          sent.
+          A travel-ops spending desk. Hotel, airline, and rides ask. The rules sit outside the
+          model. Money is not sent.
         </p>
 
         {loadError && (
@@ -462,54 +539,69 @@ export function Console() {
         )}
 
         <section className="mt-10" aria-labelledby="caps-heading">
-          <h2 id="caps-heading" className="text-sm font-medium text-fg">
+          <h2 id="caps-heading" className="text-base font-medium text-fg">
             Caps
           </h2>
-          <p className="mt-1 text-sm leading-6 text-muted">Run travel agent uses these caps. Edits live under Advanced.</p>
-          <dl className="mt-4 grid grid-cols-3 gap-3 border-y border-border py-4">
-            <div>
-              <dt className="text-xs text-muted">Per payment</dt>
-              <dd className="mt-1 font-mono text-lg tabular-nums">{formatUsd(TRAVEL_POLICY.maxPerTransactionUsd)}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted">Today</dt>
-              <dd className="mt-1 font-mono text-lg tabular-nums">{formatUsd(TRAVEL_POLICY.dailyLimitUsd)}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted">Ask you above</dt>
-              <dd className="mt-1 font-mono text-lg tabular-nums">{formatUsd(TRAVEL_POLICY.approvalThresholdUsd)}</dd>
-            </div>
-          </dl>
-          <ul className="mt-4 space-y-2 text-sm">
-            {(
-              [
-                ["hotel", "Hotel", "hotel.near"],
-                ["airline", "Airline", "airline.near"],
-                ["rides", "Rides", "rides.near"],
-              ] as const
-            ).map(([id, label, account]) => (
-              <li key={id} className="flex items-center justify-between gap-4">
-                <span className={`flex items-center gap-2 font-medium ${merchantTextClass(id)}`}>
-                  <MerchantMark id={id} decorative />
-                  {label}
-                </span>
-                <span className="font-mono text-muted">{account}</span>
-              </li>
-            ))}
-          </ul>
+          <p className="mt-1 text-sm leading-6 text-muted">
+            Run travel agent uses these caps. Edits live under Advanced.
+          </p>
+          <div className="mt-4 border-y border-border">
+            <dl className="grid grid-cols-3 gap-3 py-4">
+              <div>
+                <dt className="text-xs text-muted">Per payment</dt>
+                <dd className="mt-1 font-mono text-lg leading-none tabular-nums">
+                  {formatUsd(TRAVEL_POLICY.maxPerTransactionUsd)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted">Today</dt>
+                <dd className="mt-1 font-mono text-lg leading-none tabular-nums">
+                  {formatUsd(TRAVEL_POLICY.dailyLimitUsd)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted">Ask you above</dt>
+                <dd className="mt-1 font-mono text-lg leading-none tabular-nums">
+                  {formatUsd(TRAVEL_POLICY.approvalThresholdUsd)}
+                </dd>
+              </div>
+            </dl>
+            <ul className="space-y-3 border-t border-border py-4 text-sm">
+              {(
+                [
+                  ["hotel", "Hotel", "hotel.near"],
+                  ["airline", "Airline", "airline.near"],
+                  ["rides", "Rides", "rides.near"],
+                ] as const
+              ).map(([id, label, account]) => (
+                <li key={id} className="flex items-center justify-between gap-4">
+                  <span
+                    className={`flex items-center gap-2.5 font-medium ${merchantTextClass(id)}`}
+                  >
+                    <MerchantMark id={id} decorative framed />
+                    {label}
+                  </span>
+                  <span className="font-mono text-sm text-muted">{account}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
           <p className="mt-3 text-sm leading-6 text-subtle">
             Preview float {formatUsd(TRAVEL_DEMO_BALANCE_USD)}. Not a wallet. Money is not sent.
           </p>
         </section>
 
         {extraPending.length > 0 && (
-          <section className="mt-8" aria-labelledby="hold-heading">
-            <h2 id="hold-heading" className="text-sm font-medium">
+          <section className="mt-8 bg-hold-bg px-4 py-4" aria-labelledby="hold-heading">
+            <h2 id="hold-heading" className="text-base font-medium">
               On hold
             </h2>
-            <ul className="mt-3 divide-y divide-border border-y border-border">
+            <ul className="mt-3 divide-y divide-border">
               {extraPending.map((item) => (
-                <li key={item.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <li
+                  key={item.id}
+                  className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+                >
                   <div>
                     <p className="font-mono text-sm tabular-nums">
                       {formatUsd(item.request.amountUsd)} · {item.request.to}
@@ -520,7 +612,7 @@ export function Console() {
                     <button
                       type="button"
                       disabled={busy}
-                      className={primaryBtn}
+                      className={`${primaryBtn} min-w-28`}
                       onClick={() => run(() => decide(item.id, "approve"))}
                     >
                       Approve
@@ -528,7 +620,7 @@ export function Console() {
                     <button
                       type="button"
                       disabled={busy}
-                      className={quietBtn}
+                      className={`${quietBtn} min-w-28`}
                       onClick={() => run(() => decide(item.id, "reject"))}
                     >
                       Reject
@@ -544,64 +636,68 @@ export function Console() {
           <button
             type="button"
             disabled={busy}
+            aria-busy={busy}
             className={holdNeedsYou ? `${quietBtn} w-full` : `${primaryBtn} w-full`}
             onClick={() => run(runTravelAgent)}
           >
             {runLabel}
           </button>
-          <p className="mt-2 text-sm leading-6 text-muted">
-            Publishes the travel caps and plays five asks. The look-alike payee blocks. The ride burst stops when the
-            day is full.
-          </p>
-          <ul className="mt-4 flex flex-wrap gap-2" aria-label="One ask">
-            {SCENARIOS.map((item) => {
-              const revealed = spoken.find((entry) => entry.beat.id === item.id);
-              const full = revealed ? snap?.ledger.find((entry) => entry.id === revealed.receipt.id) : undefined;
-              const status = full?.status ?? revealed?.receipt.status;
-              return (
-                <li key={item.id}>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-control border border-border bg-surface px-3 text-sm font-medium text-fg transition-colors duration-150 hover:border-fg disabled:opacity-50"
-                    onClick={() => run(() => runScenario(item.id))}
-                  >
-                    <MerchantMark id={item.merchant} />
-                    {item.label}
-                    {item.hint ? ` ${item.hint}` : ""}
-                    {status ? ` · ${statusLabel(status)}` : ""}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-          <p className="mt-2 text-sm leading-6 text-subtle">
-            One ask, same caps. Look-alike replays hote1.near. Burst replays the rides. If a cold server forgot the
-            rules, run again.
-          </p>
           {speaking && (
-            <p className="mt-2 text-sm text-fg" aria-live="polite">
+            <p className="mt-3 text-sm text-fg" aria-live="polite">
               {speaking}
             </p>
           )}
+          <p className="mt-2 text-sm leading-6 text-muted">
+            Publishes the travel caps and plays five asks. The look-alike payee blocks. The ride
+            burst stops when the day is full.
+          </p>
+          <ul
+            className="mt-3 grid grid-cols-2 gap-x-2 gap-y-1 min-[480px]:grid-cols-3"
+            aria-label="One ask"
+          >
+            {SCENARIOS.map((item) => (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  disabled={busy}
+                  className={`inline-flex h-10 w-full items-center gap-1.5 rounded-control px-1.5 text-left text-sm font-medium transition-colors duration-150 hover:bg-elevated disabled:opacity-50 ${
+                    activeBeat === item.id ? "bg-elevated text-fg" : "text-fg"
+                  }`}
+                  onClick={() => run(() => runScenario(item.id))}
+                >
+                  <MerchantMark id={item.merchant} />
+                  {item.label}
+                  {item.hint ? ` ${item.hint}` : ""}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-1 text-sm leading-6 text-subtle">
+            One ask, same caps. Look-alike replays hote1.near. Burst replays the rides. If a cold
+            server forgot the rules, run again.
+          </p>
           {formError && (
-            <p className="mt-3 text-sm text-deny" role="alert">
+            <p className="mt-3 bg-deny-bg px-3 py-2 text-sm text-deny" role="alert">
               {formError}
             </p>
           )}
         </div>
 
-        <section className="mt-10" aria-labelledby="asks-heading">
-          <h2 id="asks-heading" className="text-sm font-medium text-fg">
+        <section className="mt-12" aria-labelledby="asks-heading">
+          <h2 id="asks-heading" className="text-base font-medium text-fg">
             Allow, hold, or block
           </h2>
           <ol className="mt-3 divide-y divide-border border-y border-border" aria-live="polite">
             {plan.map((beat) => {
               const revealed = spoken.find((item) => item.beat.id === beat.id);
-              const full = revealed ? snap?.ledger.find((item) => item.id === revealed.receipt.id) : undefined;
+              const full = revealed
+                ? snap?.ledger.find((item) => item.id === revealed.receipt.id)
+                : undefined;
               const status = full?.status ?? revealed?.receipt.status;
               const rule = full?.rule ?? revealed?.receipt.rule ?? null;
-              const pending = revealed ? snap?.pending.some((item) => item.id === revealed.receipt.id) : false;
+              const pending = revealed
+                ? snap?.pending.some((item) => item.id === revealed.receipt.id)
+                : false;
               const { who, cue } = askCue(beat);
               const merchant = merchantOf(String(beat.body.to));
               const amountUsd = Number(beat.body.amountUsd);
@@ -613,105 +709,142 @@ export function Console() {
                 .map((leg) => snap?.ledger.find((item) => item.id === leg.id)?.settlement)
                 .filter((item): item is Settlement => Boolean(item));
               const rowSettlement = showLegs
-                ? (allowSettlements.find((item) => item.quote?.status === "ok") ?? allowSettlements[0] ?? null)
+                ? (allowSettlements.find((item) => item.quote?.status === "ok") ??
+                  allowSettlements[0] ??
+                  null)
                 : status === "allow"
                   ? (full?.settlement ?? revealed?.receipt.settlement ?? null)
                   : null;
-              const anchorId = spoken.some((item) => item.beat.id === "burst") ? "burst" : "poison";
+              const anchorId = landedBeatId;
+              const rowTint = poisoned
+                ? "bg-deny-bg"
+                : pending
+                  ? "bg-hold-bg"
+                  : activeBeat === beat.id
+                    ? "bg-elevated"
+                    : "";
+              const nameClass =
+                merchant && beat.id !== "poison" ? merchantTextClass(merchant) : "text-fg";
               return (
                 <li
                   key={beat.id}
                   ref={beat.id === anchorId ? matrixRef : undefined}
-                  className={poisoned ? "bg-deny-bg px-3 py-4" : "py-4"}
+                  className={`scroll-mt-24 py-4 ${rowTint ? `-mx-5 px-5 ${rowTint}` : ""}`}
                 >
-                  <div className="flex items-center justify-between gap-4">
-                    <p className={`flex items-center gap-2 font-medium ${merchant ? merchantTextClass(merchant) : ""}`}>
-                      {merchant && <MerchantMark id={merchant} decorative />}
-                      {who}
-                    </p>
-                    <p className="font-mono text-sm tabular-nums text-fg">{formatUsd(amountUsd)}</p>
-                  </div>
-                  <p className="mt-1 text-sm leading-6 text-muted">{cue}</p>
-                  {status ? (
-                    <p className="mt-3">
-                      <span className={`rounded-control px-2 py-0.5 text-sm font-medium ${statusClass(status)}`}>
-                        {outcomeLine(status, rule)}
+                  <div className="flex items-start gap-3">
+                    {merchant ? (
+                      <span className="mt-0.5">
+                        <MerchantMark
+                          id={merchant}
+                          decorative
+                          framed
+                          suspect={beat.id === "poison"}
+                        />
                       </span>
-                    </p>
-                  ) : activeBeat === beat.id ? (
-                    <p className="mt-3 text-sm text-fg">Asking…</p>
-                  ) : null}
-                  {full && !showLegs && <p className="mt-2 text-sm leading-6 text-muted">{full.detail}</p>}
-                  {full && full.ignoredFields.length > 0 && (
-                    <p className="mt-2 text-sm leading-6 text-deny">
-                      Fake approval ignored · {full.ignoredFields.join(", ")}
-                    </p>
-                  )}
-                  {showLegs && (
-                    <ol className="mt-3 space-y-2">
-                      {legs.map((leg, index) => (
-                        <li key={leg.id} className="flex items-baseline justify-between gap-3 text-sm">
-                          <span className="text-muted">
-                            {index + 1}. {formatUsd(leg.amountUsd)}
-                          </span>
+                    ) : null}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <p className={`font-medium ${nameClass}`}>{who}</p>
+                        <p className="shrink-0 font-mono text-sm tabular-nums text-fg">
+                          {formatUsd(amountUsd)}
+                        </p>
+                      </div>
+                      <div className="mt-1 flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+                        <p className="min-w-[12rem] flex-1 text-sm leading-6 text-muted">{cue}</p>
+                        {status ? (
                           <span
-                            className={`shrink-0 rounded-control px-2 py-0.5 font-medium ${statusClass(leg.status)}`}
+                            className={`shrink-0 rounded-control px-2 py-0.5 text-sm font-medium ${statusClass(status)}`}
                           >
-                            {outcomeLine(leg.status, leg.rule)}
+                            {outcomeLine(status, rule)}
                           </span>
-                        </li>
-                      ))}
-                    </ol>
-                  )}
-                  {full && showLegs && <p className="mt-2 text-sm leading-6 text-muted">{full.detail}</p>}
-                  {rowSettlement && <IntentsReceipt settlement={rowSettlement} />}
-                  {pending && revealed && (
-                    <div className="mt-3 flex gap-2">
-                      <button
-                        type="button"
-                        disabled={busy}
-                        className={primaryBtn}
-                        onClick={() => run(() => decide(revealed.receipt.id, "approve"))}
-                      >
-                        Approve
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busy}
-                        className={quietBtn}
-                        onClick={() => run(() => decide(revealed.receipt.id, "reject"))}
-                      >
-                        Reject
-                      </button>
+                        ) : activeBeat === beat.id ? (
+                          <span className="shrink-0 text-sm font-medium text-fg">Asking…</span>
+                        ) : null}
+                      </div>
+                      {full && !showLegs && (
+                        <p className="mt-2 text-sm leading-6 text-muted">{full.detail}</p>
+                      )}
+                      {full && full.ignoredFields.length > 0 && (
+                        <p className="mt-2 text-sm leading-6 text-deny">
+                          Fake approval ignored · {full.ignoredFields.join(", ")}
+                        </p>
+                      )}
+                      {showLegs && (
+                        <ol className="mt-3 space-y-2">
+                          {legs.map((leg, index) => (
+                            <li
+                              key={leg.id}
+                              className="flex items-baseline justify-between gap-3 text-sm"
+                            >
+                              <span className="text-muted">
+                                {index + 1}. {formatUsd(leg.amountUsd)}
+                              </span>
+                              <span
+                                className={`shrink-0 rounded-control px-2 py-0.5 font-medium ${statusClass(leg.status)}`}
+                              >
+                                {outcomeLine(leg.status, leg.rule)}
+                              </span>
+                            </li>
+                          ))}
+                        </ol>
+                      )}
+                      {full && showLegs && (
+                        <p className="mt-2 text-sm leading-6 text-muted">{full.detail}</p>
+                      )}
+                      {rowSettlement && <IntentsReceipt settlement={rowSettlement} />}
+                      {pending && revealed && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            disabled={busy}
+                            className={`${primaryBtn} min-w-28`}
+                            onClick={() => run(() => decide(revealed.receipt.id, "approve"))}
+                          >
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            className={`${quietBtn} min-w-28`}
+                            onClick={() => run(() => decide(revealed.receipt.id, "reject"))}
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </li>
               );
             })}
           </ol>
           <p className="mt-3 text-sm leading-6 text-subtle">
-            A blocked ask does not spend the day. The burst spends only the rides that fit. Nothing is broadcast.
+            A blocked ask does not spend the day. The burst spends only the rides that fit. Nothing
+            is broadcast.
           </p>
         </section>
 
-        <section className="mt-12 border-t border-border pt-6" aria-labelledby="composition-heading">
-          <h2 id="composition-heading" className="text-sm font-medium text-fg">
+        <section
+          className="mt-14 border-t border-border pt-8"
+          aria-labelledby="composition-heading"
+        >
+          <h2 id="composition-heading" className="text-base font-medium text-fg">
             NEAR composition
           </h2>
-          <dl className="mt-3 grid gap-4 border-y border-border py-4 sm:grid-cols-2">
+          <dl className="mt-4 grid gap-6 sm:grid-cols-2">
             <div>
               <dt className="text-sm font-medium text-fg">Live today</dt>
               <dd className="mt-1 text-sm leading-6 text-muted">
                 Rules checked in this app. NEAR Intents dry quote when the server returns one.{" "}
-                <span className="font-mono text-fg">submitted false</span>. No transaction hash. A sleeping server can
-                forget the desk. Run again.
+                <span className="font-mono text-fg">submitted false</span>. No transaction hash. A
+                sleeping server can forget the desk. Run again.
               </dd>
             </div>
             <div>
               <dt className="text-sm font-medium text-fg">Next</dt>
               <dd className="mt-1 text-sm leading-6 text-muted">
-                OutLayer Agent Custody holds the keys. A Function Call Key can only request a payment. Roadmap. This
-                desk stays the travel-ops rules in front of that.
+                OutLayer Agent Custody holds the keys. A Function Call Key can only request a
+                payment. Roadmap. This desk stays the travel-ops rules in front of that.
               </dd>
             </div>
           </dl>
@@ -724,7 +857,10 @@ export function Console() {
             >
               OutLayer Agent Custody
             </a>
-            <a href="/docs#fck" className="text-fg underline decoration-border underline-offset-4 hover:decoration-fg">
+            <a
+              href="/docs#fck"
+              className="text-fg underline decoration-border underline-offset-4 hover:decoration-fg"
+            >
               Function Call Keys
             </a>
             <a
@@ -736,11 +872,18 @@ export function Console() {
           </p>
         </section>
 
-        <details className="mt-12 border-t border-border pt-6">
-          <summary className="cursor-pointer text-sm font-medium">Advanced</summary>
+        <details className="desk-disclosure mt-10 border-t border-border">
+          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 py-3 text-sm font-medium text-muted [&::-webkit-details-marker]:hidden">
+            <span className="text-fg">Advanced</span>
+            <ChevronDown
+              aria-hidden="true"
+              className="desk-chevron size-4 shrink-0"
+              strokeWidth={1.75}
+            />
+          </summary>
           <p className="mt-2 text-sm leading-6 text-muted">
-            Editor, the $8 vendor demo, ledger, and the raw receipt. Run travel agent still publishes the travel
-            caps, not unsaved edits.
+            Editor, the $8 vendor demo, ledger, and the raw receipt. Run travel agent still
+            publishes the travel caps, not unsaved edits.
           </p>
 
           <div className="mt-8">
@@ -750,7 +893,9 @@ export function Console() {
                 <PolicySummary policy={saved} />
               </div>
             ) : (
-              <p className="mt-3 text-sm text-hold">No rules saved yet. A single ask is refused until you save.</p>
+              <p className="mt-3 text-sm text-hold">
+                No rules saved yet. A single ask is refused until you save.
+              </p>
             )}
             <div className="mt-5 grid grid-cols-2 gap-3">
               <label>
@@ -759,7 +904,9 @@ export function Console() {
                   className={fieldClass}
                   inputMode="decimal"
                   value={draft.maxPerTransactionUsd}
-                  onChange={(event) => setDraft({ ...draft, maxPerTransactionUsd: Number(event.target.value) })}
+                  onChange={(event) =>
+                    setDraft({ ...draft, maxPerTransactionUsd: Number(event.target.value) })
+                  }
                 />
               </label>
               <label>
@@ -768,7 +915,9 @@ export function Console() {
                   className={fieldClass}
                   inputMode="decimal"
                   value={draft.dailyLimitUsd}
-                  onChange={(event) => setDraft({ ...draft, dailyLimitUsd: Number(event.target.value) })}
+                  onChange={(event) =>
+                    setDraft({ ...draft, dailyLimitUsd: Number(event.target.value) })
+                  }
                 />
               </label>
               <label className="col-span-2">
@@ -777,7 +926,9 @@ export function Console() {
                   className={fieldClass}
                   inputMode="decimal"
                   value={draft.approvalThresholdUsd}
-                  onChange={(event) => setDraft({ ...draft, approvalThresholdUsd: Number(event.target.value) })}
+                  onChange={(event) =>
+                    setDraft({ ...draft, approvalThresholdUsd: Number(event.target.value) })
+                  }
                 />
               </label>
               <label className="col-span-2">
@@ -790,7 +941,12 @@ export function Console() {
                 <span className={helpClass}>One recipient per line (.near or 0x…).</span>
               </label>
             </div>
-            <button type="button" disabled={busy} className={`${primaryBtn} mt-4 w-full`} onClick={() => run(() => save())}>
+            <button
+              type="button"
+              disabled={busy}
+              className={`${primaryBtn} mt-4 w-full`}
+              onClick={() => run(() => save())}
+            >
               Save rules
             </button>
             <label className="mt-4 flex min-h-11 items-center gap-2 text-sm">
@@ -810,13 +966,16 @@ export function Console() {
             <div className="mt-6 border-t border-border pt-4">
               <p className="text-sm font-medium">Panic freeze</p>
               <p className="mt-1 text-sm leading-6 text-subtle">
-                Waiting holds cancel. New asks are blocked until you unfreeze. The AI cannot unfreeze this.
+                Waiting holds cancel. New asks are blocked until you unfreeze. The AI cannot
+                unfreeze this.
               </p>
               <button
                 type="button"
                 disabled={busy || !saved}
                 className={`mt-3 h-11 w-full rounded-control px-4 text-sm font-medium transition-colors duration-150 disabled:opacity-50 ${
-                  saved?.frozen ? "border border-border hover:border-fg" : "bg-deny-bg text-deny hover:opacity-90"
+                  saved?.frozen
+                    ? "border border-border hover:border-fg"
+                    : "bg-deny-bg text-deny hover:opacity-90"
                 }`}
                 onClick={() => run(() => setFrozen(!(saved?.frozen ?? draft.frozen)))}
               >
@@ -827,22 +986,45 @@ export function Console() {
 
           <div className="mt-8 flex flex-col gap-2 border-t border-border pt-6">
             <h2 className="text-sm font-medium">Other demos</h2>
-            <button type="button" disabled={busy} className={`${quietBtn} w-full`} onClick={loadTravelOps}>
+            <button
+              type="button"
+              disabled={busy}
+              className={`${quietBtn} w-full`}
+              onClick={loadTravelOps}
+            >
               Load travel ops
             </button>
             <p className={helpClass}>
               Fills this editor: {formatUsd(TRAVEL_POLICY.maxPerTransactionUsd)} / tx,{" "}
               {formatUsd(TRAVEL_POLICY.dailyLimitUsd)} / day, approve above{" "}
-              {formatUsd(TRAVEL_POLICY.approvalThresholdUsd)}, {TRAVEL_POLICY.allowedRecipients.join(", ")}.
+              {formatUsd(TRAVEL_POLICY.approvalThresholdUsd)},{" "}
+              {TRAVEL_POLICY.allowedRecipients.join(", ")}.
             </p>
-            <button type="button" disabled={busy} className={`${quietBtn} w-full`} onClick={() => run(prepare)}>
+            <button
+              type="button"
+              disabled={busy}
+              className={`${quietBtn} w-full`}
+              onClick={() => run(prepare)}
+            >
               Prepare demo · $50/day · $200 USDC
             </button>
-            <button type="button" disabled={busy} className={`${quietBtn} w-full`} onClick={() => run(runAgent)}>
+            <button
+              type="button"
+              disabled={busy}
+              className={`${quietBtn} w-full`}
+              onClick={() => run(runAgent)}
+            >
               {busy && speaking && script === "demo" ? "Running the vendor demo…" : "Run the demo"}
             </button>
-            <p className={helpClass}>$8 vendor path: allow, hold, over the cap, and a fake approval that is ignored.</p>
-            <button type="button" disabled={busy} className={`${quietBtn} w-full`} onClick={() => run(resetDemo)}>
+            <p className={helpClass}>
+              $8 vendor path: allow, hold, over the cap, and a fake approval that is ignored.
+            </p>
+            <button
+              type="button"
+              disabled={busy}
+              className={`${quietBtn} w-full`}
+              onClick={() => run(resetDemo)}
+            >
               Reset demo · wipe ledger + republish
             </button>
             <div className="mt-3">
@@ -861,7 +1043,9 @@ export function Console() {
                   className={quietBtn}
                   onClick={() =>
                     run(async () => {
-                      const gate = await addFunds({ data: { amountUsd: Number(fundAmount), mode: "add" } });
+                      const gate = await addFunds({
+                        data: { amountUsd: Number(fundAmount), mode: "add" },
+                      });
                       setSnap(gate);
                     })
                   }
@@ -874,11 +1058,18 @@ export function Console() {
 
           <div className="mt-8 border-t border-border pt-6">
             <h2 className="text-sm font-medium">Ask once</h2>
-            <p className="mt-1 text-sm text-muted">A single payment through the same gate. Extra fields are discarded.</p>
+            <p className="mt-1 text-sm text-muted">
+              A single payment through the same gate. Extra fields are discarded.
+            </p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <label>
                 <span className={labelClass}>Amount (USDC)</span>
-                <input className={fieldClass} inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
+                <input
+                  className={fieldClass}
+                  inputMode="decimal"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                />
               </label>
               <label>
                 <span className={labelClass}>Destination chain</span>
@@ -896,11 +1087,19 @@ export function Console() {
               </label>
               <label className="sm:col-span-2">
                 <span className={labelClass}>Recipient</span>
-                <input className={`${fieldClass} font-mono`} value={to} onChange={(e) => setTo(e.target.value)} />
+                <input
+                  className={`${fieldClass} font-mono`}
+                  value={to}
+                  onChange={(e) => setTo(e.target.value)}
+                />
               </label>
               <label className="sm:col-span-2">
                 <span className={labelClass}>Purpose</span>
-                <input className={fieldClass} value={purpose} onChange={(e) => setPurpose(e.target.value)} />
+                <input
+                  className={fieldClass}
+                  value={purpose}
+                  onChange={(e) => setPurpose(e.target.value)}
+                />
               </label>
             </div>
             <button
@@ -919,13 +1118,17 @@ export function Console() {
               <pre className="mt-3 max-w-full overflow-x-auto whitespace-pre-wrap break-all bg-bg p-3 font-mono text-xs leading-5 text-muted">
                 {JSON.stringify(enclaveDocument(saved), null, 2)}
               </pre>
-              <p className="mt-2 text-sm text-muted">Same caps. Evaluated in process memory. This block is not an attestation.</p>
+              <p className="mt-2 text-sm text-muted">
+                Same caps. Evaluated in process memory. This block is not an attestation.
+              </p>
             </div>
           )}
 
           <div className="mt-8 border-t border-border pt-6">
             <h2 className="text-sm font-medium">Ledger</h2>
-            <p className="mt-1 text-sm text-muted">Newest first. Blocks do not spend the daily limit.</p>
+            <p className="mt-1 text-sm text-muted">
+              Newest first. Blocks do not spend the daily limit.
+            </p>
             {snap && snap.ledger.length > 0 ? (
               <ul className="mt-3 divide-y divide-border border-y border-border">
                 {snap.ledger.map((item) => (
@@ -979,7 +1182,9 @@ export function Console() {
                 <source src="/demo/console-walkthrough.mp4" type="video/mp4" />
               </video>
             </div>
-            {!HAS_CONSOLE_DEMO_VIDEO && <p className="mt-3 text-sm text-subtle">Demo video uploading.</p>}
+            {!HAS_CONSOLE_DEMO_VIDEO && (
+              <p className="mt-3 text-sm text-subtle">Demo video uploading.</p>
+            )}
           </div>
         </details>
       </main>
