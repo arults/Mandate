@@ -3,12 +3,12 @@ import { Link } from "@tanstack/react-router";
 export function SiteFooter() {
   return (
     <footer className="border-t border-border">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-5 py-10 sm:flex-row sm:items-start sm:justify-between">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-5 py-14 sm:flex-row sm:items-start sm:justify-between sm:py-16">
         <div className="max-w-sm">
           <p className="font-display text-xl tracking-tight text-fg">Mandate</p>
           <p className="mt-2 text-sm leading-6 text-muted">
-            Version 1. A one-person travel desk. A helper can ask to pay a hotel, an airline, or a ride. You keep
-            the spending limits.
+            Version 1. A one-person travel desk. A helper can ask to pay a hotel, an airline, or a
+            ride. You keep the spending limits.
           </p>
         </div>
         <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm" aria-label="Footer">
