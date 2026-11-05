@@ -100,10 +100,11 @@ export function Home() {
                 Watch the travel console demo
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-base leading-7 text-muted">
-                Travel ops: multi-merchant USD rules; poisoned payee blocked. About 80 seconds on the reel
+                Travel ops: multi-merchant USD rules; poisoned payee blocked. About 98 seconds on the reel
                 below: load travel spending rules, run the agent, allow under the line, approve one hold, and
-                block a poisoned payee. In the control panel, Load travel ops and Run travel agent block a
-                payee the tool tries to swap.
+                block a poisoned payee, then a burst of rides until the day stops and Freeze so the next ask
+                is blocked. The agent cannot sign. Not a TEE. Nothing is broadcast. In the control panel,
+                Load travel ops and Run travel agent block a payee the tool tries to swap.
               </p>
             </div>
             <div className="mt-8 overflow-hidden rounded-card border border-border bg-bg">
@@ -111,42 +112,73 @@ export function Home() {
                 controls
                 playsInline
                 preload="metadata"
-                poster="/demo/mandate-travel-console-demo-v4-poster.jpg"
+                poster="/demo/mandate-travel-console-demo-v5-poster.jpg"
                 className="aspect-video w-full bg-bg"
               >
-                <source src="/demo/mandate-travel-console-demo-v4.mp4" type="video/mp4" />
+                <source src="/demo/mandate-travel-console-demo-v5.mp4" type="video/mp4" />
               </video>
             </div>
             <p className="mt-4 text-center text-sm text-subtle">
               Prefer a direct link?{" "}
               <a
-                href="/demo/mandate-travel-console-demo-v4.mp4"
+                href="/demo/mandate-travel-console-demo-v5.mp4"
                 className="font-medium text-fg underline decoration-border underline-offset-4 transition-colors hover:decoration-fg"
               >
-                Open travel demo v4
+                Open travel demo v5
               </a>
             </p>
           </div>
         </section>
 
         <section className="border-b border-border" aria-labelledby="who-heading">
-          <div className="mx-auto grid w-full max-w-5xl gap-8 px-5 py-14 sm:grid-cols-2 sm:py-16">
-            <div>
-              <h2 id="who-heading" className="font-display text-3xl tracking-tight text-fg sm:text-4xl">
-                Who it is for
-              </h2>
-              <p className="mt-4 text-base leading-7 text-muted">
-                Founders and operators running a lean business — a “company of one” — where an AI handles
-                busywork and sometimes needs to pay a vendor. You want speed under the line you draw. You keep
-                the keys.
-              </p>
+          <div className="mx-auto w-full max-w-5xl px-5 py-14 sm:py-16">
+            <div className="grid gap-8 sm:grid-cols-2">
+              <div>
+                <h2 id="who-heading" className="font-display text-3xl tracking-tight text-fg sm:text-4xl">
+                  Who it is for
+                </h2>
+                <p className="mt-4 text-base leading-7 text-muted">
+                  Founders and operators running a lean business — a “company of one” — where an AI handles
+                  busywork and sometimes needs to pay a vendor. You want speed under the line you draw. You keep
+                  the keys.
+                </p>
+              </div>
+              <div>
+                <h2 className="font-display text-3xl tracking-tight text-fg sm:text-4xl">The problem</h2>
+                <p className="mt-4 text-base leading-7 text-muted">
+                  If the AI holds your wallet keys, a clever message can talk it into sending money. Rules typed
+                  into a chat are requests, not locks — they can be ignored under pressure. Mandate puts the lock
+                  outside the AI.
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="font-display text-3xl tracking-tight text-fg sm:text-4xl">The problem</h2>
-              <p className="mt-4 text-base leading-7 text-muted">
-                If the AI holds your wallet keys, a clever message can talk it into sending money. Rules typed
-                into a chat are requests, not locks — they can be ignored under pressure. Mandate puts the lock
-                outside the AI.
+            <div className="mx-auto mt-10 max-w-3xl">
+              <h3 className="text-center font-display text-2xl tracking-tight text-fg sm:text-3xl">
+                Who, the problem, and the lock
+              </h3>
+              <p className="mx-auto mt-3 max-w-xl text-center text-base leading-7 text-muted">
+                About 59 seconds: who it is for, why a chat rule is not a lock, then caps and an allow-list
+                outside the model. The agent can ask. It cannot sign. Not a TEE. Nothing is broadcast.
+              </p>
+              <div className="mt-6 overflow-hidden rounded-card border border-border bg-bg">
+                <video
+                  controls
+                  playsInline
+                  preload="metadata"
+                  poster="/demo/homepage-who-poster.jpg"
+                  className="aspect-video w-full bg-bg"
+                >
+                  <source src="/demo/homepage-who.mp4" type="video/mp4" />
+                </video>
+              </div>
+              <p className="mt-4 text-center text-sm text-subtle">
+                Prefer a direct link?{" "}
+                <a
+                  href="/demo/homepage-who.mp4"
+                  className="font-medium text-fg underline decoration-border underline-offset-4 transition-colors hover:decoration-fg"
+                >
+                  Open the who / problem reel
+                </a>
               </p>
             </div>
           </div>
