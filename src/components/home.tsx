@@ -4,33 +4,22 @@ import { ArrowRight } from "lucide-react";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteNav } from "@/components/site-nav";
 
-const steps = [
+const answers = [
   {
-    n: "1",
-    title: "You write the rules once",
-    body: "How much can go out per payment and per day. Who can be paid. When you must approve first.",
+    label: "Yes",
+    tone: "text-allow",
+    body: "Inside your spending limit, and the name is someone you can pay. Not sent yet.",
   },
   {
-    n: "2",
-    title: "Your AI asks to pay",
-    body: "It can request a payment to a vendor. It never holds your wallet keys.",
+    label: "Ask you",
+    tone: "text-fg",
+    body: "Over the line you set. Nothing moves until you say yes.",
   },
   {
-    n: "3",
-    title: "A separate checker decides",
-    body: "Not the AI. It says yes, ask you first, or no — using only the rules you set.",
+    label: "No",
+    tone: "text-deny",
+    body: "Over the limit, or a name you did not allow. A fake look-alike is a no.",
   },
-  {
-    n: "4",
-    title: "You stay in control",
-    body: "Approve what is on hold. Freeze anytime. Every ask leaves a receipt you can read.",
-  },
-];
-
-const outcomes = [
-  { label: "Yes", hint: "under your limits", tone: "text-allow" },
-  { label: "Ask you", hint: "above your line", tone: "text-hold" },
-  { label: "No", hint: "over the cap or wrong payee", tone: "text-deny" },
 ];
 
 export function Home() {
@@ -38,51 +27,53 @@ export function Home() {
     <>
       <SiteNav current="home" />
       <main>
-        <section className="relative overflow-hidden border-b border-border">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 hero-grid opacity-[0.4]"
-          />
-          <div className="relative mx-auto flex w-full max-w-3xl flex-col items-center px-5 py-20 text-center sm:py-28">
-            <p className="inline-flex items-center gap-2 rounded-control border border-border bg-surface px-2.5 py-1 text-[11px] uppercase tracking-[0.14em] text-muted">
-              <span className="size-1.5 rounded-full bg-accent" aria-hidden="true" />
-              Spending rules for AI that pay
-            </p>
-            <h1 className="mt-7 font-display text-[2.75rem] leading-[1.02] tracking-tight text-fg sm:text-6xl lg:text-7xl">
-              You set the rules.
-              <span className="mt-1 block text-muted">Your AI asks to pay — without your keys.</span>
+        <section>
+          <div className="mx-auto w-full max-w-xl px-5 py-16 sm:py-28">
+            <p className="text-sm font-medium text-muted">NEAR hackathon demo</p>
+            <h1 className="mt-3 font-display text-5xl leading-[1.05] tracking-tight text-fg sm:text-6xl">
+              You set the spending limits.
             </h1>
-            <p className="mt-6 max-w-lg text-lg leading-relaxed text-muted">
-              Mandate lets founders give an AI permission to pay vendors without handing it the wallet.
-              Clever prompts cannot raise the cap, change who gets paid, or approve themselves.
+            <p className="mt-6 text-lg leading-8 text-muted">
+              You run a one-person travel business. A helper can ask to pay a hotel, an airline, or a ride. You
+              choose the spending limit, who can be paid, and when it must ask you first. The helper can ask. It
+              cannot send the money.
             </p>
-            <p className="mt-4 max-w-lg text-sm font-medium leading-6 text-fg">
-              Travel ops: multi-merchant USD rules; poisoned payee blocked.
+            <p className="mt-4 text-sm leading-6 text-fg">
+              In this demo, who can be paid: hotel.near, airline.near, rides.near.
             </p>
-            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+            <p className="mt-4 text-sm leading-6 text-muted">
+              Open the desk and press Run. In under a minute you will see yes, ask you, and no — including a fake
+              look-alike name, and too many rides in one day.
+            </p>
+            <div className="mt-8">
               <Link
                 to="/console"
                 className="inline-flex h-11 items-center gap-2 bg-fg px-5 text-sm font-medium text-bg transition-colors duration-150 hover:bg-fg/90"
               >
-                Open the control panel
+                Open the travel desk
                 <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
               </Link>
-              <a
-                href="#travel-demo"
-                className="inline-flex h-11 items-center border border-border bg-surface px-5 text-sm font-medium transition-colors duration-150 hover:border-fg"
-              >
-                Watch travel demo
-              </a>
-              <a
-                href="#how"
-                className="inline-flex h-11 items-center border border-border bg-surface px-5 text-sm font-medium transition-colors duration-150 hover:border-fg"
-              >
-                See how it works
-              </a>
             </div>
-            <p className="mt-5 max-w-md text-sm text-subtle">
-              Preview demo — payments are checked, not sent on-chain yet. No fake transaction hashes.
+            <p className="mt-6 text-sm leading-6 text-muted">
+              This demo checks the rules and does not send money. There is no fake payment record. Freeze stops
+              the desk in the demo. It does not pause the blockchain.
             </p>
+          </div>
+        </section>
+
+        <section className="border-y border-border" aria-labelledby="answers-heading">
+          <div className="mx-auto w-full max-w-3xl px-5 py-10">
+            <h2 id="answers-heading" className="font-display text-2xl tracking-tight text-fg sm:text-3xl">
+              Three answers
+            </h2>
+            <ul className="mt-6 grid gap-4 sm:grid-cols-3">
+              {answers.map((item) => (
+                <li key={item.label} className="border border-border bg-surface p-5">
+                  <p className={`text-lg font-medium ${item.tone}`}>{item.label}</p>
+                  <p className="mt-2 text-sm leading-6 text-muted">{item.body}</p>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 
@@ -97,14 +88,13 @@ export function Home() {
                 id="travel-demo-heading"
                 className="font-display text-3xl tracking-tight text-fg sm:text-4xl"
               >
-                Watch the travel console demo
+                Watch the travel desk
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-base leading-7 text-muted">
-                Travel ops: multi-merchant USD rules; poisoned payee blocked. About 98 seconds on the reel
-                below: load travel spending rules, run the agent, allow under the line, approve one hold, and
-                block a poisoned payee, then a burst of rides until the day stops and Freeze so the next ask
-                is blocked. The agent cannot sign. Not a TEE. Nothing is broadcast. In the control panel,
-                Load travel ops and Run travel agent block a payee the tool tries to swap.
+                About a minute and a half. Spending limits for a hotel, an airline, and rides. The demo says
+                yes under your limit, asks you once, and says no to a fake look-alike name and to too many
+                rides. Then Freeze stops the desk. The helper can ask. It cannot send the money. This recording
+                does not send money.
               </p>
             </div>
             <div className="mt-8 overflow-hidden rounded-card border border-border bg-bg">
@@ -124,7 +114,7 @@ export function Home() {
                 href="/demo/mandate-travel-console-demo-v5.mp4"
                 className="font-medium text-fg underline decoration-border underline-offset-4 transition-colors hover:decoration-fg"
               >
-                Open travel demo v5
+                Open the travel demo
               </a>
             </p>
           </div>
@@ -138,17 +128,16 @@ export function Home() {
                   Who it is for
                 </h2>
                 <p className="mt-4 text-base leading-7 text-muted">
-                  Founders and operators running a lean business — a “company of one” — where an AI handles
-                  busywork and sometimes needs to pay a vendor. You want speed under the line you draw. You keep
-                  the keys.
+                  People running a small business on their own. A helper does the busywork and sometimes needs
+                  to pay someone. You want that to move quickly, under the limit you set. You keep the say-so.
                 </p>
               </div>
               <div>
                 <h2 className="font-display text-3xl tracking-tight text-fg sm:text-4xl">The problem</h2>
                 <p className="mt-4 text-base leading-7 text-muted">
-                  If the AI holds your wallet keys, a clever message can talk it into sending money. Rules typed
-                  into a chat are requests, not locks — they can be ignored under pressure. Mandate puts the lock
-                  outside the AI.
+                  If the helper can send your money, a clever message can talk it into paying the wrong person.
+                  A rule typed into a chat is only a request. It can be ignored. Mandate keeps the lock outside
+                  the helper.
                 </p>
               </div>
             </div>
@@ -157,8 +146,9 @@ export function Home() {
                 Who, the problem, and the lock
               </h3>
               <p className="mx-auto mt-3 max-w-xl text-center text-base leading-7 text-muted">
-                About 59 seconds: who it is for, why a chat rule is not a lock, then caps and an allow-list
-                outside the model. The agent can ask. It cannot sign. Not a TEE. Nothing is broadcast.
+                About a minute. Who it is for, why a chat rule is not a lock, then spending limits and who can
+                be paid — kept outside the helper. The helper can ask. It cannot send the money. This recording
+                does not send money.
               </p>
               <div className="mt-6 overflow-hidden rounded-card border border-border bg-bg">
                 <video
@@ -177,114 +167,9 @@ export function Home() {
                   href="/demo/homepage-who.mp4"
                   className="font-medium text-fg underline decoration-border underline-offset-4 transition-colors hover:decoration-fg"
                 >
-                  Open the who / problem reel
+                  Open the who and problem video
                 </a>
               </p>
-            </div>
-          </div>
-        </section>
-
-        <section id="how" className="border-b border-border scroll-mt-24" aria-labelledby="how-heading">
-          <div className="mx-auto w-full max-w-5xl px-5 py-14 sm:py-16">
-            <div className="max-w-2xl">
-              <h2 id="how-heading" className="font-display text-3xl tracking-tight text-fg sm:text-4xl">
-                How it works
-              </h2>
-              <p className="mt-3 text-base leading-7 text-muted">
-                Four steps. Same idea a judge or a non-technical founder can follow in a few minutes.
-              </p>
-            </div>
-            <ol className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {steps.map((step) => (
-                <li key={step.n} className="border border-border bg-surface p-6 text-left">
-                  <p className="text-xs font-medium uppercase tracking-[0.14em] text-accent">{step.n}</p>
-                  <h3 className="mt-3 text-lg font-medium text-fg">{step.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-muted">{step.body}</p>
-                </li>
-              ))}
-            </ol>
-            <p className="mt-8 max-w-2xl text-sm leading-6 text-muted">
-              If the AI tries to claim “already approved” or rewrite your limits, those claims are ignored. Only
-              your saved rules count.
-            </p>
-          </div>
-        </section>
-
-        <section className="border-b border-border" aria-labelledby="get-heading">
-          <div className="mx-auto w-full max-w-5xl px-5 py-14 sm:py-16">
-            <h2 id="get-heading" className="font-display text-3xl tracking-tight text-fg sm:text-4xl">
-              What you get
-            </h2>
-            <ul className="mt-8 grid gap-4 sm:grid-cols-3">
-              <li className="border border-border bg-surface p-6">
-                <h3 className="text-lg font-medium text-fg">A control panel</h3>
-                <p className="mt-2 text-sm leading-6 text-muted">
-                  Set caps, who can be paid, and when you must approve. Freeze everything in one click if you
-                  need to.
-                </p>
-              </li>
-              <li className="border border-border bg-surface p-6">
-                <h3 className="text-lg font-medium text-fg">Clear outcomes</h3>
-                <p className="mt-2 text-sm leading-6 text-muted">
-                  Every ask ends as yes, ask you, or no — with a plain-language receipt you can share.
-                </p>
-              </li>
-              <li className="border border-border bg-surface p-6">
-                <h3 className="text-lg font-medium text-fg">Honest preview</h3>
-                <p className="mt-2 text-sm leading-6 text-muted">
-                  This demo checks payments against your rules. It does not broadcast money on-chain yet. Demo
-                  data can reset when the server sleeps.
-                </p>
-              </li>
-            </ul>
-            <ul className="mt-10 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted">
-              {outcomes.map((item, index) => (
-                <li key={item.label} className="flex items-center gap-4">
-                  {index > 0 && (
-                    <span className="text-subtle" aria-hidden="true">
-                      ·
-                    </span>
-                  )}
-                  <span>
-                    <span className={`font-medium ${item.tone}`}>{item.label}</span>
-                    <span className="text-subtle"> — {item.hint}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        <section className="bg-fg text-bg" aria-labelledby="cta-heading">
-          <div className="mx-auto flex w-full max-w-5xl flex-col items-start gap-6 px-5 py-12 sm:flex-row sm:items-center sm:justify-between sm:py-14">
-            <div className="max-w-lg">
-              <h2 id="cta-heading" className="font-display text-3xl tracking-tight sm:text-4xl">
-                Try it in a few minutes.
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-bg/70">
-                Open the control panel, run the demo, approve one hold, and read the receipt. Built toward NEAR
-                settlement — this preview stops before sending.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <Link
-                to="/console"
-                className="inline-flex h-11 shrink-0 items-center bg-accent px-5 text-sm font-medium text-accent-fg transition-colors duration-150 hover:bg-accent-hover"
-              >
-                Control panel
-              </Link>
-              <a
-                href="#travel-demo"
-                className="inline-flex h-11 shrink-0 items-center border border-bg/30 px-5 text-sm font-medium text-bg/80 transition-colors duration-150 hover:border-bg hover:text-bg"
-              >
-                Watch travel demo
-              </a>
-              <Link
-                to="/docs"
-                className="inline-flex h-11 shrink-0 items-center border border-bg/30 px-5 text-sm font-medium text-bg/80 transition-colors duration-150 hover:border-bg hover:text-bg"
-              >
-                Docs for builders
-              </Link>
             </div>
           </div>
         </section>

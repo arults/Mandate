@@ -68,7 +68,10 @@ test("the same idempotency key does not pay twice, even after the ledger forgets
 
 test("a reused idempotency key with a different payment is refused", async () => {
   await submitPayment(pay({ idempotencyKey: "once" }));
-  await assert.rejects(() => submitPayment(pay({ idempotencyKey: "once", amountUsd: 9 })), /Conflict:/);
+  await assert.rejects(
+    () => submitPayment(pay({ idempotencyKey: "once", amountUsd: 9 })),
+    /already used for a different payment/,
+  );
   assert.equal(snapshot().balanceUsd, 192);
 });
 
@@ -217,7 +220,7 @@ test("a UTC day rollover releases holds instead of spending them tomorrow", asyn
   assert.equal(gate.pending.length, 0);
   assert.equal(gate.spentUsd, 0);
   assert.equal(gate.balanceUsd, 200);
-  await assert.rejects(() => resolveApproval(pending.id, "approve"), /no longer pending/);
+  await assert.rejects(() => resolveApproval(pending.id, "approve"), /no longer waiting/);
   const replay = await submitPayment(pay({ amountUsd: 18, idempotencyKey: "overnight" }));
   assert.equal(replay.rule, "day_rolled");
   assert.equal(snapshot().balanceUsd, 200);
@@ -255,7 +258,7 @@ test("dust rounds are refused and a held balance is described as available, not 
   assert.equal(hold.settlement, null);
   const rejected = await submitPayment(pay({ amountUsd: 30 }));
   assert.equal(rejected.rule, "balance");
-  assert.match(rejected.detail, /Available after holds is \$20\.00/);
+  assert.match(rejected.detail, /Demo dollars left after asks waiting on you: \$20\.00/);
   assert.equal(rejected.balanceUsd, 200);
   assert.equal(snapshot().balanceUsd, 200);
 });
@@ -457,7 +460,7 @@ test("settlement.submitted stays false on allow", async () => {
   assert.equal(receipt.status, "allow");
   assert.equal(receipt.settlement?.submitted, false);
   assert.equal(receipt.attestation.kind === "local-policy-gate" || receipt.attestation.kind === "outlayer-dry-run", true);
-  assert.match(receipt.attestation.statement, /not a TEE|Nothing was broadcast|outside the model/i);
+  assert.match(receipt.attestation.statement, /Money was not sent/i);
 });
 
 test("privacyMode body flag cannot force full agent disclosure at the gate", async () => {

@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ConsoleRouteImport } from './routes/console'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as UseCaseRouteImport } from './routes/use-case'
+import { Route as ApiMcpRouteImport } from './routes/api/mcp'
 import { Route as ApiV1ApprovalsRouteImport } from './routes/api/v1/approvals'
 import { Route as ApiV1FundRouteImport } from './routes/api/v1/fund'
 import { Route as ApiV1PayRouteImport } from './routes/api/v1/pay'
@@ -37,6 +38,11 @@ const DocsRoute = DocsRouteImport.update({
 const UseCaseRoute = UseCaseRouteImport.update({
   id: '/use-case',
   path: '/use-case',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMcpRoute = ApiMcpRouteImport.update({
+  id: '/api/mcp',
+  path: '/api/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1ApprovalsRoute = ApiV1ApprovalsRouteImport.update({
@@ -70,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/console': typeof ConsoleRoute
   '/docs': typeof DocsRoute
   '/use-case': typeof UseCaseRoute
+  '/api/mcp': typeof ApiMcpRoute
   '/api/v1/approvals': typeof ApiV1ApprovalsRoute
   '/api/v1/fund': typeof ApiV1FundRoute
   '/api/v1/pay': typeof ApiV1PayRoute
@@ -81,6 +88,7 @@ export interface FileRoutesByTo {
   '/console': typeof ConsoleRoute
   '/docs': typeof DocsRoute
   '/use-case': typeof UseCaseRoute
+  '/api/mcp': typeof ApiMcpRoute
   '/api/v1/approvals': typeof ApiV1ApprovalsRoute
   '/api/v1/fund': typeof ApiV1FundRoute
   '/api/v1/pay': typeof ApiV1PayRoute
@@ -93,6 +101,7 @@ export interface FileRoutesById {
   '/console': typeof ConsoleRoute
   '/docs': typeof DocsRoute
   '/use-case': typeof UseCaseRoute
+  '/api/mcp': typeof ApiMcpRoute
   '/api/v1/approvals': typeof ApiV1ApprovalsRoute
   '/api/v1/fund': typeof ApiV1FundRoute
   '/api/v1/pay': typeof ApiV1PayRoute
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/console'
     | '/docs'
     | '/use-case'
+    | '/api/mcp'
     | '/api/v1/approvals'
     | '/api/v1/fund'
     | '/api/v1/pay'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/console'
     | '/docs'
     | '/use-case'
+    | '/api/mcp'
     | '/api/v1/approvals'
     | '/api/v1/fund'
     | '/api/v1/pay'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/console'
     | '/docs'
     | '/use-case'
+    | '/api/mcp'
     | '/api/v1/approvals'
     | '/api/v1/fund'
     | '/api/v1/pay'
@@ -140,6 +152,7 @@ export interface RootRouteChildren {
   ConsoleRoute: typeof ConsoleRoute
   DocsRoute: typeof DocsRoute
   UseCaseRoute: typeof UseCaseRoute
+  ApiMcpRoute: typeof ApiMcpRoute
   ApiV1ApprovalsRoute: typeof ApiV1ApprovalsRoute
   ApiV1FundRoute: typeof ApiV1FundRoute
   ApiV1PayRoute: typeof ApiV1PayRoute
@@ -175,6 +188,13 @@ declare module '@tanstack/react-router' {
       path: '/use-case'
       fullPath: '/use-case'
       preLoaderRoute: typeof UseCaseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/mcp': {
+      id: '/api/mcp'
+      path: '/api/mcp'
+      fullPath: '/api/mcp'
+      preLoaderRoute: typeof ApiMcpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/approvals': {
@@ -220,6 +240,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConsoleRoute: ConsoleRoute,
   DocsRoute: DocsRoute,
   UseCaseRoute: UseCaseRoute,
+  ApiMcpRoute: ApiMcpRoute,
   ApiV1ApprovalsRoute: ApiV1ApprovalsRoute,
   ApiV1FundRoute: ApiV1FundRoute,
   ApiV1PayRoute: ApiV1PayRoute,
@@ -229,3 +250,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

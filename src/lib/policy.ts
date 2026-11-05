@@ -260,21 +260,25 @@ export function evaluatePolicy(
 ): Decision {
   const honorApproval = opts?.honorApproval !== false;
   if (policy.frozen) {
-    return { status: "reject", rule: "frozen", detail: "The wallet is frozen. No payment can be signed." };
+    return {
+      status: "reject",
+      rule: "frozen",
+      detail: "The desk is frozen in this demo. New asks are blocked. Money is not sent.",
+    };
   }
   const asset = request.asset.trim().toUpperCase();
   if (!policy.allowedAssets.includes(asset as "USDC")) {
     return {
       status: "reject",
       rule: "allowed_assets",
-      detail: `${request.asset} is not an allowed asset. This policy settles USDC only.`,
+      detail: `${request.asset} is not allowed. This demo only uses USDC, which means dollars in the demo.`,
     };
   }
   if (!CHAINS.includes(request.chain as Chain)) {
     return {
       status: "reject",
       rule: "chain",
-      detail: `${request.chain} is not a destination this demo will quote.`,
+      detail: `${request.chain} is not a place this demo will quote. Money is not sent.`,
     };
   }
   const recipient = normalizeRecipient(request.to);
@@ -283,21 +287,21 @@ export function evaluatePolicy(
     return {
       status: "reject",
       rule: "allowed_recipients",
-      detail: `${request.to} is not on the allow-list.`,
+      detail: `${request.to} is not someone you can pay.`,
     };
   }
   if (cents(request.amountUsd) > cents(usage.balanceUsd)) {
     return {
       status: "reject",
       rule: "balance",
-      detail: `Available after holds is ${formatUsd(usage.balanceUsd)}. The wallet balance was not debited.`,
+      detail: `Demo dollars left after asks waiting on you: ${formatUsd(usage.balanceUsd)}. Nothing was taken.`,
     };
   }
   if (cents(request.amountUsd) > cents(policy.maxPerTransactionUsd)) {
     return {
       status: "reject",
       rule: "max_per_transaction",
-      detail: `${formatUsd(request.amountUsd)} is over the ${formatUsd(policy.maxPerTransactionUsd)} per-transaction cap.`,
+      detail: `${formatUsd(request.amountUsd)} is over the ${formatUsd(policy.maxPerTransactionUsd)} spending limit for one payment.`,
     };
   }
   const nextSpent = cents(usage.spentUsd) + cents(request.amountUsd);
@@ -306,19 +310,19 @@ export function evaluatePolicy(
     return {
       status: "reject",
       rule: "daily_limit",
-      detail: `${formatUsd(request.amountUsd)} would pass the daily cap. ${formatUsd(fromCents(remaining))} remains today.`,
+      detail: `${formatUsd(request.amountUsd)} would go over today's spending limit. ${formatUsd(fromCents(remaining))} is left today.`,
     };
   }
   if (honorApproval && cents(request.amountUsd) > cents(policy.approvalThresholdUsd)) {
     return {
       status: "needs_approval",
       rule: "approval_threshold",
-      detail: `${formatUsd(request.amountUsd)} is over the ${formatUsd(policy.approvalThresholdUsd)} approval line. A human has to approve before anything is signed.`,
+      detail: `${formatUsd(request.amountUsd)} is over ${formatUsd(policy.approvalThresholdUsd)}. It will ask you first. Nothing is sent until you say yes.`,
     };
   }
   return {
     status: "allow",
     rule: null,
-    detail: `${formatUsd(request.amountUsd)} USDC to ${request.to} on ${request.chain} is inside the policy.`,
+    detail: `${formatUsd(request.amountUsd)} in demo dollars (USDC) to ${request.to} fits your rules. Not sent yet.`,
   };
 }

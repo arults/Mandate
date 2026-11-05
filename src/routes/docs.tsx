@@ -10,7 +10,7 @@ export const Route = createFileRoute("/docs")({
       {
         name: "description",
         content:
-          "Mandate litepaper: policy-protected agent wallet for NEAR — architecture, threat model, agent contract, and preview limits.",
+          "How the travel desk works: spending limits, who can be paid, ask you first, and Freeze. The helper can ask. This demo does not send money.",
       },
     ],
   }),

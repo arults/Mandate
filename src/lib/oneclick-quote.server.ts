@@ -48,7 +48,7 @@ export async function fetchOneClickQuote(request: PaymentRequest): Promise<OneCl
       amountOutFormatted: null,
       amountOutUsd: null,
       destinationAsset: null,
-      note: "1-Click quote skipped (MANDATE_1CLICK_QUOTE off).",
+      note: "Demo quote skipped.",
     };
   }
 
@@ -61,7 +61,7 @@ export async function fetchOneClickQuote(request: PaymentRequest): Promise<OneCl
       amountOutFormatted: null,
       amountOutUsd: null,
       destinationAsset: null,
-      note: `No 1-Click USDC asset mapping for chain ${request.chain}.`,
+      note: `No demo-dollar quote for ${request.chain}.`,
     };
   }
 
@@ -110,7 +110,7 @@ export async function fetchOneClickQuote(request: PaymentRequest): Promise<OneCl
         amountOutFormatted: null,
         amountOutUsd: null,
         destinationAsset,
-        note: `1-Click quote unavailable (${res.status}). ${message}`,
+        note: `Demo quote unavailable (${res.status}). ${message}`,
       };
     }
 
@@ -128,7 +128,7 @@ export async function fetchOneClickQuote(request: PaymentRequest): Promise<OneCl
         amountOutFormatted,
         amountOutUsd,
         destinationAsset,
-        note: "1-Click quote response missing correlationId or amountOut.",
+        note: "Demo quote came back incomplete.",
       };
     }
 
@@ -139,7 +139,7 @@ export async function fetchOneClickQuote(request: PaymentRequest): Promise<OneCl
       amountOutFormatted,
       amountOutUsd,
       destinationAsset,
-      note: `1-Click dry quote ${correlationId}: out ${amountOutFormatted ?? amountOut} USDC (≈ $${amountOutUsd ?? "?"}). Not submitted.`,
+      note: `Demo quote ${correlationId}: would be ${amountOutFormatted ?? amountOut} demo dollars (≈ $${amountOutUsd ?? "?"}). Not sent.`,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "quote failed";
@@ -150,7 +150,7 @@ export async function fetchOneClickQuote(request: PaymentRequest): Promise<OneCl
       amountOutFormatted: null,
       amountOutUsd: null,
       destinationAsset,
-      note: `1-Click quote did not complete. ${message}`,
+      note: `Demo quote did not complete. ${message}`,
     };
   } finally {
     clearTimeout(timer);
