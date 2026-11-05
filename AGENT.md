@@ -1,10 +1,65 @@
 # Connect an agent to Mandate
 
+Version 1 is the travel desk: a company-of-one founder, USD caps, hotel / airline / rides, hold, and Freeze. The agent only asks to pay. Not an FCK vault, a TEE, or a scam registry. Dry quotes stay `submitted` false. No invented transaction hash.
+
 The model may propose a payment. It must not sign, and it must not override the policy check.
 
 The **Mandate gate** decides allow / needs_approval / reject on the wire. Do not send `approved` / `policy` / keys — those fields are ignored. Do not claim a TEE.
 
-Call **only** this endpoint:
+## Screen the five-ask desk
+
+Open this pull request’s Vercel preview at `/console`, or http://127.0.0.1:8080/console after `npm run dev`.
+
+Do not screen https://mandate-ashy.vercel.app/console until this pull request is merged. That host is current `main` and does not have this desk yet. Do not screen the old `cursor/travel-desk-ux-512a` preview.
+
+1. Read the limits before you click: **$300.00** per payment, **$800.00** today, **Ask you above $150.00**. **Who can be paid:** `hotel.near`, `airline.near`, `rides.near`. A look-alike is a spelling check against that list. Demo balance **$2,000.00**. Not a real wallet.
+2. Click **Run travel agent**. Leave **Advanced** closed.
+3. Under **Yes, ask you, or no**, see:
+   - Hotel **$80.00** → **Yes**. **Demo quote · not sent yet**: **Sent?** no, route `near → base`, click or copy the demo quote id when the server returned one (otherwise the line says **demo quote not attached**), **Payment record** none. The JSON field `settlement.submitted` stays false. There is no transaction hash.
+   - Airline **$250.00** → **Ask you**. **Yes** or **No** on that row. The balance does not move until Yes.
+   - Hotel **$500.00** → **No · over the spending limit**.
+   - Fake look-alike **$80.00** to `hote1.near` → Who gets paid beside Who can be paid `hotel.near` (**digit 1** vs **letter l**), **Fake look-alike · not someone you can pay**, then **No · not someone you can pay**. **Fake approval ignored · approved**.
+   - Too many rides of **$120.00** to `rides.near` → three legs **Yes**, the fourth **No · over today's limit**. The row chip is **No · over today's limit**. A yes ride shows the same demo quote: not sent yet, no payment record.
+4. **What this demo does**: **Today** the desk checks your rules here. A NEAR demo quote may appear. Money is not sent. **Later**, not in this demo, a tighter key could limit what the helper may ask. It still would not replace the spending limit, who can be paid, or ask-you-first.
+5. Chips **Yes $80**, **Ask you $250**, **Over limit $500**, **Look-alike**, and **Too many rides** replay one ask. If the page forgot the rules, click again.
+
+`POST /api/v1/pay` from another machine to that host often returns `409` `no_policy`. The button above is one server call on one isolate, so it is the public repro. For curl, use local `npm run dev` after Run (commands in [README.md](README.md)).
+
+## Local judge path
+
+```bash
+npm install
+npm run dev
+```
+
+Open http://127.0.0.1:8080/console. Leave **Advanced** closed. **Run travel agent**. Same five asks, who-can-be-paid chips, and demo-quote honesty as the preview (not sent yet, no payment record, or demo quote not attached). `settlement.submitted` stays false. `npm run judge` prints this path and does not start the server. After that Run, `POST http://127.0.0.1:8080/api/v1/pay` and `POST http://127.0.0.1:8080/api/mcp` hit the same process. Before rules are saved they return `no_policy` (409). `npm test` asserts `src/lib/attack-suite.test.ts` and `src/lib/intents-fidelity.test.ts`.
+
+## MCP (same gate)
+
+MCP is another face on this gate. It is not a second policy and not custody.
+
+Local: `npm run dev`, then `POST http://127.0.0.1:8080/api/mcp`.
+Preview: `POST https://<this-pull-request-preview>/api/mcp`. Do not use the old `cursor/travel-desk-ux-512a` host.
+`GET /api/mcp` lists the tool names. JSON-RPC 2.0, protocol `2024-11-05`. Methods: `initialize`, `tools/list`, `tools/call`, `ping`.
+
+| Tool | Arguments | Same wire |
+|---|---|---|
+| `mandate_pay` | `amountUsd`, `asset`, `to`, `chain`, `purpose`, optional `idempotencyKey` | `POST /api/v1/pay` |
+| `mandate_receipt` | `id` (the `receipt.id` from `mandate_pay`) | `GET /api/v1/receipt?id=` |
+
+Outcomes are the receipt `status`: `allow`, `needs_approval`, `reject`, `cancelled`. Read `settlement.submitted` — it stays `false`. There is no transaction hash. A missing policy is a tool error `no_policy` with `httpStatus` 409. Do not invent a policy. `conflict` is 409. A bad body is 400.
+
+`mandate_policy`, fund, and approvals are not tools. `/api/v1/policy`, `/api/v1/fund`, and `/api/v1/approvals` stay human routes.
+
+```bash
+curl -s http://127.0.0.1:8080/api/mcp \
+  -H 'content-type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mandate_pay","arguments":{"amountUsd":8,"asset":"USDC","to":"vendor.near","chain":"base","purpose":"API invoice 14"}}}'
+```
+
+On a cold isolate that curl returns `no_policy` until the human has published a policy on that same process. The console button is still the public repro.
+
+Call **only** this HTTP endpoint, or the two MCP tools above:
 
 `POST /api/v1/pay`
 
@@ -59,4 +114,4 @@ Use the `receipt.id` from a prior `POST /api/v1/pay`. Returns the same agent-min
 
 ## Human controls you cannot call
 
-Freeze / Unfreeze and Reset demo live on the human console. When frozen, your next `POST /api/v1/pay` returns `reject` with `rule: "frozen"`. You cannot unfreeze via `/pay`. After Reset demo the ledger is empty and `DEMO_POLICY` is republished — get a fresh allow before relying on an old receipt id.
+Freeze / Unfreeze and Reset demo live on the human console. When frozen, your next `POST /api/v1/pay` returns `reject` with `rule: "frozen"`. That is a gate kill switch on this desk, not a chain pause. You cannot unfreeze via `/pay`. After Reset demo the ledger is empty and `DEMO_POLICY` is republished — get a fresh allow before relying on an old receipt id.

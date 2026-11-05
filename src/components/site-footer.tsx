@@ -7,12 +7,13 @@ export function SiteFooter() {
         <div className="max-w-sm">
           <p className="font-display text-xl tracking-tight text-fg">Mandate</p>
           <p className="mt-2 text-sm leading-6 text-muted">
-            You set the rules. Your AI asks to pay — without your keys.
+            Version 1. A one-person travel desk. A helper can ask to pay a hotel, an airline, or a ride. You keep
+            the spending limits.
           </p>
         </div>
         <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm" aria-label="Footer">
           <Link to="/console" className="text-muted hover:text-fg">
-            Control panel
+            Travel desk
           </Link>
           <Link to="/docs" className="text-muted hover:text-fg">
             Docs
@@ -32,8 +33,8 @@ export function SiteFooter() {
       </div>
       <div className="border-t border-border">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 px-5 py-4 text-xs text-subtle sm:flex-row sm:items-center sm:justify-between">
-          <p>NEAR HACKATHON 2026 · arults</p>
-          <p>Preview demo · rules checked · money not sent yet</p>
+          <p>Version 1 · demo quote · not sent yet · money is not sent</p>
+          <p>Free to copy · the demo is free · sending real money comes later</p>
         </div>
       </div>
     </footer>

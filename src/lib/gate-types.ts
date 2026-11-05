@@ -49,6 +49,26 @@ export type GateReceipt = {
   settlement: Settlement | null;
 };
 
+/**
+ * A second submit of an ask that already has a payment key.
+ * The gate returns the original receipt and does not reserve again.
+ * submitted stays false; there is no transaction hash.
+ */
+export type DemoReplay = {
+  sameReceipt: true;
+  receiptId: string;
+};
+
+/** One payment inside a scripted ask. A burst is several of these. */
+export type DemoBeatLeg = {
+  id: string;
+  amountUsd: number;
+  to: string;
+  status: GateReceipt["status"];
+  rule: string | null;
+  detail: string;
+};
+
 export type Snapshot = {
   policy: HumanPolicy | null;
   fingerprint: string | null;

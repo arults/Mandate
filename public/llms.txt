@@ -1,6 +1,6 @@
 # Mandate
 
-> The agent can ask. It cannot sign. A human sets the spending mandate once. The policy is enforced outside the model.
+> Version 1. A company-of-one travel founder lets an agent ask to pay hotels, airlines, and rides in USD. Mandate enforces caps, allow-list, hold, and Freeze. The agent cannot sign. Not an FCK vault, a TEE, or a scam registry. Dry quotes. submitted false. No invented transaction.
 
 This file is the agent contract. Humans can read the same rules at /docs.
 
@@ -8,9 +8,10 @@ The Mandate gate on POST /api/v1/pay is the hard lock (caps, allow-list, holds).
 
 ## Pages
 
-- [Home](/): the problem, how a payment is decided, why the refusal is structural, and what fail-closed means.
+- [Home](/): Version 1. Company-of-one travel desk. One path to the console.
+- [Use case](/use-case): who it is for. The same job, not a second product.
 - [Docs](/docs): the same rules, written for a person.
-- [Console](/console): the human sets the mandate and approves holds. Not an agent endpoint.
+- [Console](/console): Run travel agent. Allow, hold, or block. Not an agent endpoint.
 
 ## Call only this
 
@@ -43,10 +44,32 @@ Do not send approved, policy, signature, or a private key. Those fields are igno
 409 error conflict: this idempotencyKey was already used for a different payment.
 400: the body itself is invalid.
 
+## MCP tools (same gate)
+
+MCP is another face on this gate. Not a second policy. Not custody. Not a TEE.
+
+GET /api/mcp lists the tools.
+POST /api/mcp is JSON-RPC 2.0 (protocol 2024-11-05). Methods: initialize, tools/list, tools/call, ping.
+Local: npm run dev, then POST http://127.0.0.1:8080/api/mcp.
+Preview: POST https://<this-pull-request-preview>/api/mcp. Do not use the old cursor/travel-desk-ux-512a host.
+
+- mandate_pay: arguments amountUsd, asset, to, chain, purpose, optional idempotencyKey. Same body as POST /api/v1/pay. Returns the decision receipt. settlement.submitted stays false. No transaction hash.
+- mandate_receipt: argument id from mandate_pay. Same as GET /api/v1/receipt?id=. 404 if this isolate forgot it.
+
+Outcomes inside the receipt: allow, needs_approval, reject, cancelled.
+Tool error no_policy with httpStatus 409: the human has not saved a mandate on this process. Do not invent one. conflict is 409. A bad body is 400.
+
+Policy, fund, and approvals are not tools. Do not call /api/v1/policy, /api/v1/fund, or /api/v1/approvals through MCP.
+
+## Local judge path
+
+npm install, then npm run dev. Open http://127.0.0.1:8080/console. Leave Advanced closed. Run travel agent. Same five asks, Who can be paid (hotel.near, airline.near, rides.near), and demo-quote honesty as the preview: not sent yet, no payment record, or demo quote not attached. The screen says Demo quote · not sent yet. settlement.submitted stays false. npm run judge prints these steps and does not start the server. After Run, POST http://127.0.0.1:8080/api/v1/pay and POST http://127.0.0.1:8080/api/mcp hit that same process. Before rules are saved both return no_policy (409). npm test asserts src/lib/attack-suite.test.ts and src/lib/intents-fidelity.test.ts. There is no Makefile.
+
 ## Judge path (do X → see Y)
 
 1. Open /console → Reset demo → Run the agent → four receipts → Approve $18 → scroll $8 (submitted false).
 2. Jailbreak receipt lists ignoredFields approved, policy → Blocked allowed_recipients.
+3. Travel desk (the primary path): idle desk shows Who can be paid chips hotel.near, airline.near, rides.near. A look-alike is a spelling check against that list, not a scam lookup. Run travel agent. Yes $80 hotel.near · Ask you $250 airline.near · No over the spending limit $500 · No fake look-alike hote1.near beside hotel.near (digit 1 vs letter l; Fake look-alike · not someone you can pay; approved ignored) · No for too many $120 rides.near when the day is full (earlier rides in that burst are Yes). A yes may show a NEAR demo quote. When that demo quote id is present, click or copy it. If the server returned none, the line says demo quote not attached. The screen says not sent yet and no payment record. settlement.submitted stays false. No transaction hash. Money is not sent. A tighter key is later, not in this demo: it cannot replace the spending limit, who can be paid, or ask-you-first. 15 cases with asserted verdicts (src/lib/attack-suite.test.ts and the line under the legend). Same request on the hotel row returns the same receipt and does not count twice. Money was not sent back, because nothing was sent. Freeze desk stops the desk in the demo. It does not pause the blockchain. Unfreeze is on that same bar.
 
 ## Read a prior receipt
 

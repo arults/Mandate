@@ -4,125 +4,52 @@ import { ArrowRight } from "lucide-react";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteNav } from "@/components/site-nav";
 
-const cases = [
-  {
-    n: "1",
-    title: "SaaS tool invoice",
-    who: "A solo founder whose AI handles busywork",
-    situation:
-      "The AI finds a software tool the business needs and gets an invoice for a few hundred dollars.",
-    help: "You already set how much can go out per payment and per day, and who can be paid. The AI asks to pay. A checker outside the AI says yes if it fits your rules, or holds it for your OK.",
-    outcome:
-      "The tool can be paid under your rules. Clever prompts cannot raise the cap or change who gets paid. You keep the keys.",
-  },
-  {
-    n: "2",
-    title: "Hotel and flight booking",
-    who: "A lean travel partner, or a founder whose AI books trips",
-    situation:
-      "The AI finds a hotel, a flight, or a ride and needs to pay a deposit or fare under caps you set — across more than one merchant.",
-    help: "Your rules name a USD max per booking, a daily spend limit, an approval line, and the merchants who can be paid (hotel, airline, rides). Asks under the line can move. Asks above it wait for your OK. If a tool says the account moved, the new payee is still checked against that list.",
-    outcome:
-      "Travel ops: multi-merchant USD rules; poisoned payee blocked. Bookings stay fast when they fit. You only approve what is on hold. In today’s preview, Mandate checks the rules; money is not sent on-chain yet.",
-  },
-  {
-    n: "3",
-    title: "Freelancer after deliverable",
-    who: "A company-of-one shipping with freelancers",
-    situation:
-      "A deliverable lands. The agent wants to pay the freelancer so work does not stall.",
-    help: "Policy can allow small routine pays automatically, and require your approval above a threshold you choose.",
-    outcome:
-      "Freelancers get paid when your rules say yes. A jailbreak cannot empty the wallet. You can freeze anytime.",
-  },
-  {
-    n: "4",
-    title: "Domain or API renewal",
-    who: "A founder whose agent handles renewals",
-    situation:
-      "A domain or API subscription is due. The agent wants to pay before service lapses.",
-    help: "A daily limit and an allowlist keep renewals inside a safe band — without handing the agent your wallet keys.",
-    outcome:
-      "Renewals go through when they fit. You stay in control. In today’s preview, Mandate checks the rules; money is not sent on-chain yet.",
-  },
-  {
-    n: "5",
-    title: "Insurance premium and claims payout",
-    who: "A small agency, MGA, or claims lead whose AI helps with routine payouts",
-    situation:
-      "The AI needs to pay a premium installment, renew a binder fee, or release a small claim vendor payment or temporary living expense under policy rules.",
-    help: "You set caps, who can be paid, and when asks must wait for you. The AI asks to pay; a checker outside the AI allows what fits, holds what is over the line, and leaves a receipt. Keys stay with you.",
-    outcome:
-      "Routine insurance payouts move under your rules. Unusual amounts wait for your OK. Every ask leaves an audit trail. In today’s preview, Mandate checks the rules; money is not sent on-chain yet.",
-  },
-];
-
 export function UseCase() {
   return (
     <>
       <SiteNav current="use-case" />
       <main>
-        <section className="border-b border-border">
-          <div className="mx-auto w-full max-w-3xl px-5 py-16 text-center sm:py-20">
-            <p className="inline-flex items-center gap-2 rounded-control border border-border bg-surface px-2.5 py-1 text-[11px] uppercase tracking-[0.14em] text-muted">
-              <span className="size-1.5 rounded-full bg-accent" aria-hidden="true" />
-              Real-life examples
-            </p>
-            <h1 className="mt-7 font-display text-[2.5rem] leading-[1.05] tracking-tight text-fg sm:text-5xl lg:text-6xl">
-              Where Mandate helps
+        <section>
+          <div className="mx-auto w-full max-w-xl px-5 py-16 sm:py-24">
+            <h1 className="font-display text-5xl leading-[1.05] tracking-tight text-fg sm:text-6xl">
+              Who this is for
             </h1>
-            <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-muted">
-              You set spending rules once. Your AI asks to pay. A checker outside the AI decides —
-              yes, ask you first, or no — so the agent never holds your keys.
+            <p className="mt-6 text-lg leading-8 text-muted">
+              You run a one-person travel business. A helper asks to pay a hotel, an airline, or a ride. You
+              keep the spending limits, who can be paid, when it must ask you first, and Freeze.
             </p>
-          </div>
-        </section>
-
-        <section className="border-b border-border" aria-labelledby="cases-heading">
-          <div className="mx-auto w-full max-w-5xl px-5 py-14 sm:py-16">
-            <h2 id="cases-heading" className="sr-only">
-              Use cases
-            </h2>
-            <ol className="grid gap-5 sm:grid-cols-2">
-              {cases.map((c) => (
-                <li key={c.n} className="border border-border bg-surface p-6 text-left sm:p-7">
-                  <p className="text-xs font-medium uppercase tracking-[0.14em] text-accent">{c.n}</p>
-                  <h3 className="mt-3 font-display text-2xl tracking-tight text-fg">{c.title}</h3>
-                  <dl className="mt-5 space-y-4 text-sm leading-6 text-muted">
-                    <div>
-                      <dt className="font-medium text-fg">Who</dt>
-                      <dd className="mt-1">{c.who}</dd>
-                    </div>
-                    <div>
-                      <dt className="font-medium text-fg">Situation</dt>
-                      <dd className="mt-1">{c.situation}</dd>
-                    </div>
-                    <div>
-                      <dt className="font-medium text-fg">How Mandate helps</dt>
-                      <dd className="mt-1">{c.help}</dd>
-                    </div>
-                    <div>
-                      <dt className="font-medium text-fg">Outcome</dt>
-                      <dd className="mt-1">{c.outcome}</dd>
-                    </div>
-                  </dl>
-                </li>
-              ))}
-            </ol>
-            <p className="mt-8 max-w-2xl text-sm text-subtle">
-              Preview demo — payments are checked, not sent on-chain yet. No fake transaction hashes.
-            </p>
-          </div>
-        </section>
-
-        <section className="border-b border-border">
-          <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-4 px-5 py-14 text-center sm:py-16">
-            <p className="text-base text-muted">Ready to try the control panel?</p>
+            <dl className="mt-10 divide-y divide-border border-y border-border text-sm leading-6">
+              <div className="py-4">
+                <dt className="font-medium text-fg">The job</dt>
+                <dd className="mt-1 text-muted">Let the helper ask. Do not let it send the money.</dd>
+              </div>
+              <div className="py-4">
+                <dt className="font-medium text-fg">The rules</dt>
+                <dd className="mt-1 text-muted">
+                  Spending limits in dollars. Who can be paid: hotel.near, airline.near, rides.near. Ask you
+                  above the line you set. Freeze stops the desk in the demo.
+                </dd>
+              </div>
+              <div className="py-4">
+                <dt className="font-medium text-fg">The minute</dt>
+                <dd className="mt-1 text-muted">
+                  Open the desk. Press Run travel agent. Yes for $80. Ask you for $250. No for too much, for a
+                  fake look-alike name, and for too many rides.
+                </dd>
+              </div>
+              <div className="py-4">
+                <dt className="font-medium text-fg">Not this</dt>
+                <dd className="mt-1 text-muted">
+                  This demo checks the rules and does not send money. There is no fake payment record. Freeze
+                  stops the desk here. It does not pause the blockchain.
+                </dd>
+              </div>
+            </dl>
             <Link
               to="/console"
-              className="inline-flex h-11 items-center gap-2 bg-fg px-5 text-sm font-medium text-bg transition-colors duration-150 hover:bg-fg/90"
+              className="mt-8 inline-flex h-11 items-center gap-2 bg-fg px-5 text-sm font-medium text-bg transition-colors duration-150 hover:bg-fg/90"
             >
-              Open the control panel
+              Open the travel desk
               <ArrowRight aria-hidden="true" className="size-4" strokeWidth={1.75} />
             </Link>
           </div>

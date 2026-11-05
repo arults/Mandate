@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 
-import type { GateReceipt, Settlement, Snapshot } from "@/lib/gate-types";
+import type { DemoBeatLeg, DemoReplay, GateReceipt, Settlement, Snapshot } from "@/lib/gate-types";
 import {
   clearPersistedState,
   durabilityMode,
@@ -13,7 +13,12 @@ import {
   type PersistedState,
 } from "@/lib/gate-persist.server";
 import { fetchOneClickQuote, ONECLICK_QUOTE_URL } from "@/lib/oneclick-quote.server";
-import { beatsForScript, type AgentBeat, type AgentScript } from "@/lib/agent-script";
+import {
+  TRAVEL_BURST_MAX_LEGS,
+  beatsForScript,
+  type AgentBeat,
+  type AgentScript,
+} from "@/lib/agent-script";
 import {
   cents,
   evaluatePolicy,
@@ -202,7 +207,7 @@ function state(): State {
     cancelPending(
       current,
       "day_rolled",
-      "The UTC day changed before a human approved this payment. The hold was released. Nothing was signed.",
+      "The day changed before you answered. The ask was dropped. Money was not sent.",
     );
   }
   return current;
@@ -276,7 +281,10 @@ export async function awaitGateReady(): Promise<Snapshot> {
 }
 
 function pushLedger(current: State, receipt: GateReceipt) {
-  current.ledger = [receipt, ...current.ledger.filter((item) => item.id !== receipt.id)].slice(0, 40);
+  current.ledger = [receipt, ...current.ledger.filter((item) => item.id !== receipt.id)].slice(
+    0,
+    40,
+  );
 }
 
 function usage(current: State) {
@@ -314,7 +322,10 @@ function settlementFor(
     token: "nep141:usdc.near",
     amountUnits: usdToUsdcUnits(request.amountUsd),
     recipient: request.to,
-    calls: [`POST ${ONECLICK_QUOTE_URL}`, "POST https://api.outlayer.ai/wallet/v1/intents/withdraw"],
+    calls: [
+      `POST ${ONECLICK_QUOTE_URL}`,
+      "POST https://api.outlayer.ai/wallet/v1/intents/withdraw",
+    ],
     live,
     quote,
   };
@@ -354,19 +365,25 @@ async function liveDryRun(
     const message = typeof record?.message === "string" ? record.message : text;
     let verdict: "ok" | "refused" | "retry";
     if (res.status === 429 || res.status >= 500) verdict = "retry";
-    else if (res.status >= 200 && res.status < 300 && record?.would_succeed === true) verdict = "ok";
-    else if (res.status >= 200 && res.status < 300 && record?.would_succeed !== false) verdict = "retry";
+    else if (res.status >= 200 && res.status < 300 && record?.would_succeed === true)
+      verdict = "ok";
+    else if (res.status >= 200 && res.status < 300 && record?.would_succeed !== false)
+      verdict = "retry";
     else verdict = "refused";
     const note =
       verdict === "ok"
-        ? "OutLayer dry-run would succeed. Nothing was broadcast."
+        ? "Practice check would pass. Money was not sent."
         : verdict === "retry"
-          ? `OutLayer dry-run could not be judged (${res.status}). ${message}`
-          : `OutLayer dry-run refused the payment${reason ? ` (${reason})` : ""}. ${message}`;
+          ? `Practice check could not be judged (${res.status}). ${message}`
+          : `Practice check said no${reason ? ` (${reason})` : ""}. Money was not sent. ${message}`;
     return { httpStatus: res.status, note, verdict };
   } catch (error) {
     const message = error instanceof Error ? error.message : "dry-run failed";
-    return { httpStatus: 0, note: `OutLayer dry-run did not complete. ${message}`, verdict: "retry" };
+    return {
+      httpStatus: 0,
+      note: `Practice check did not finish. ${message}`,
+      verdict: "retry",
+    };
   } finally {
     clearTimeout(timer);
   }
@@ -396,7 +413,7 @@ function receiptBase(
     attestation: {
       kind: "local-policy-gate",
       policyFingerprint: fp,
-      statement: `Policy ${fp} was evaluated outside the model. The request could not set approved, raise a limit, or sign.`,
+      statement: `Your saved rules (${fp}) were checked in this demo, outside the helper. The request could not mark itself approved, raise a limit, or send money.`,
     },
     settlement: null,
   };
@@ -411,7 +428,12 @@ export function publishPolicy(input: unknown): Promise<Snapshot> {
     const current = state();
     const next = parsePolicy(input);
     current.policy = next;
-    if (next.frozen) cancelPending(current, "frozen", "The wallet was frozen. Waiting payments were dropped and nothing was signed.");
+    if (next.frozen)
+      cancelPending(
+        current,
+        "frozen",
+        "The desk was frozen in this demo. Waiting asks were dropped. Money was not sent.",
+      );
     await persist(current);
     return snapshotOf(current);
   });
@@ -465,7 +487,7 @@ async function decide(
 ): Promise<Outcome> {
   const current = state();
   if (!current.policy) {
-    throw new Error("No policy is published. The human has to save one before the agent can ask.");
+    throw new Error("No policy is published. Save the rules before the helper can ask.");
   }
   const seenDay = current.day;
   const decision = evaluatePolicy(current.policy, request, usage(current), { honorApproval });
@@ -479,7 +501,7 @@ async function decide(
         {
           status: "reject",
           rule: "day_rolled",
-          detail: "The UTC day changed while this payment was being checked. Nothing was reserved.",
+          detail: "The day changed while this was being checked. Nothing was set aside. Money was not sent.",
         },
         id,
       );
@@ -496,8 +518,8 @@ async function decide(
           status: "reject",
           rule: unconfirmed ? "settlement_unconfirmed" : "settlement_refused",
           detail: unconfirmed
-            ? "The policy would have allowed this, but the settlement check did not finish. Nothing was reserved. Retry."
-            : `The policy would have allowed this, but the settlement check refused it. Nothing was reserved. ${live.note}`,
+            ? "Your rules would have allowed this, but the practice check did not finish. Nothing was set aside. Try again. Money was not sent."
+            : `Your rules would have allowed this, but the practice check said no. Nothing was set aside. Money was not sent. ${live.note}`,
         },
         id,
       );
@@ -516,10 +538,10 @@ async function decide(
       receipt.attestation = {
         kind: "outlayer-dry-run",
         policyFingerprint: receipt.attestation.policyFingerprint,
-        statement: `${live.note} Policy ${receipt.attestation.policyFingerprint} still ran outside the model. No transaction hash exists because nothing was broadcast.`,
+        statement: `${live.note} Your saved rules (${receipt.attestation.policyFingerprint}) still decided. Money was not sent, so there is no payment record.`,
       };
     } else {
-      receipt.attestation.statement = `Allowed by the local policy gate (${receipt.attestation.policyFingerprint}), not a TEE attestation. ${formatUsd(request.amountUsd)} USDC would settle on ${request.chain} via NEAR Intents 1-Click. Nothing was broadcast.`;
+      receipt.attestation.statement = `Allowed by your saved rules (${receipt.attestation.policyFingerprint}). ${formatUsd(request.amountUsd)} in demo dollars (USDC) fits. A NEAR demo quote may be attached. Money was not sent.`;
     }
     pushLedger(current, receipt);
     return { receipt, remember: true };
@@ -533,7 +555,8 @@ async function decide(
       {
         status: "reject",
         rule: "pending_full",
-        detail: "Too many payments are waiting for a human. This one was not queued and nothing was reserved.",
+        detail:
+          "Too many asks are waiting for you. This one was not queued. Money was not sent.",
       },
       id,
     );
@@ -566,12 +589,12 @@ export function submitPayment(input: unknown): Promise<GateReceipt> {
       const prior = current.idempotency.get(idempotencyKey);
       if (prior) {
         if (prior.hash !== hash) {
-          throw new Error("Conflict: idempotency key was already used for a different payment");
+          throw new Error("Conflict: that same request was already used for a different payment.");
         }
         return prior.receipt;
       }
       if (current.idempotency.size >= MAX_IDEMPOTENCY) {
-        throw new Error("Conflict: the idempotency log is full, so this key was not executed");
+        throw new Error("Conflict: too many saved requests, so this one was not run.");
       }
     }
     const outcome = await decide(request, ignoredFields, true, randomUUID(), idempotencyKey);
@@ -588,7 +611,7 @@ export function resolveApproval(id: string, action: "approve" | "reject"): Promi
     const current = state();
     const index = current.pending.findIndex((item) => item.receipt.id === id);
     const pending = index >= 0 ? current.pending[index] : undefined;
-    if (!pending) throw new Error("That approval is no longer pending.");
+    if (!pending) throw new Error("That ask is no longer waiting for you.");
     current.pending.splice(index, 1);
     release(current, pending);
     if (action === "reject") {
@@ -598,7 +621,7 @@ export function resolveApproval(id: string, action: "approve" | "reject"): Promi
         at: clock().toISOString(),
         status: "cancelled",
         rule: "human_reject",
-        detail: "A human rejected this payment. Nothing was signed.",
+        detail: "You said no. Money was not sent.",
         settlement: null,
         remainingDailyUsd: fromCents(remainingCents(current)),
         spentUsd: fromCents(current.spentCents),
@@ -611,11 +634,20 @@ export function resolveApproval(id: string, action: "approve" | "reject"): Promi
       return receipt;
     }
     dropLedgerRow(current, pending.receipt.id);
-    const outcome = await decide(pending.request, pending.receipt.ignoredFields, false, randomUUID(), null);
+    const outcome = await decide(
+      pending.request,
+      pending.receipt.ignoredFields,
+      false,
+      randomUUID(),
+      null,
+    );
     if (outcome.receipt.rule === "settlement_unconfirmed") {
       dropLedgerRow(current, outcome.receipt.id);
       current.spentCents += pending.reservedCents;
-      current.pending = [pending, ...current.pending.filter((item) => item.receipt.id !== pending.receipt.id)];
+      current.pending = [
+        pending,
+        ...current.pending.filter((item) => item.receipt.id !== pending.receipt.id),
+      ];
       pushLedger(current, pending.receipt);
       await persist(current);
       return outcome.receipt;
@@ -628,11 +660,42 @@ export function resolveApproval(id: string, action: "approve" | "reject"): Promi
 
 export type DemoAgentResult = {
   beat: AgentBeat;
+  /** Decisive receipt. For a burst, this is the leg the day (or another rule) stopped. */
   receipt: PublicGateReceipt;
+  legs: DemoBeatLeg[];
+  /** Present when this ask was submitted twice with the same payment key. */
+  replay: DemoReplay | null;
 };
 
+function toLeg(full: GateReceipt): DemoBeatLeg {
+  return {
+    id: full.id,
+    amountUsd: full.request.amountUsd,
+    to: full.request.to,
+    status: full.status,
+    rule: full.rule,
+    detail: full.detail,
+  };
+}
+
 /**
- * Prepare + four agent asks in ONE process.
+ * A burst is several payments of the same ride. Each leg gets its own
+ * idempotency key. Stop at the first block so a full day does not keep asking.
+ */
+async function submitBurst(beat: AgentBeat): Promise<GateReceipt[]> {
+  const legs: GateReceipt[] = [];
+  const rawKey = beat.body.idempotencyKey;
+  const baseKey = typeof rawKey === "string" && rawKey.trim() ? rawKey.trim() : "burst";
+  for (let i = 1; i <= TRAVEL_BURST_MAX_LEGS; i++) {
+    const full = await submitPayment({ ...beat.body, idempotencyKey: `${baseKey}-${i}` });
+    legs.push(full);
+    if (full.status === "reject") return legs;
+  }
+  return legs;
+}
+
+/**
+ * Prepare + the scripted asks in ONE process.
  * Console uses this so Vercel serverless does not lose in-memory PGLite policy
  * between prepareDemoGate and a separate /api/v1/pay isolate.
  * /api/v1/pay remains the agent contract for curl / external agents.
@@ -641,14 +704,23 @@ export async function runDemoAgentFlow(
   policyInput: unknown,
   runId: string,
   script: AgentScript = "demo",
+  onlyBeat?: AgentBeat["id"],
 ): Promise<{ gate: Snapshot; receipts: PublicGateReceipt[]; results: DemoAgentResult[] }> {
   await prepareDemo(policyInput, script === "travel" ? TRAVEL_DEMO_BALANCE_USD : 200);
-  const beats = beatsForScript(script, runId);
+  const beats = beatsForScript(script, runId).filter((beat) => !onlyBeat || beat.id === onlyBeat);
+  if (beats.length === 0) throw new Error("That ask is not part of this trip.");
   const results: DemoAgentResult[] = [];
   for (const beat of beats) {
-    const full = await submitPayment(beat.body);
-    const receipt = projectReceipt(full, snapshot().policy, "agent");
-    results.push({ beat, receipt });
+    const fullLegs =
+      beat.id === "burst" ? await submitBurst(beat) : [await submitPayment(beat.body)];
+    const decisive = fullLegs[fullLegs.length - 1]!;
+    let replay: DemoReplay | null = null;
+    if (script === "travel" && beat.id === "allow") {
+      const again = await submitPayment(beat.body);
+      if (again.id === decisive.id) replay = { sameReceipt: true, receiptId: again.id };
+    }
+    const receipt = projectReceipt(decisive, snapshot().policy, "agent");
+    results.push({ beat, receipt, legs: fullLegs.map(toLeg), replay });
   }
   return {
     gate: snapshot(),
@@ -656,4 +728,3 @@ export async function runDemoAgentFlow(
     results,
   };
 }
-

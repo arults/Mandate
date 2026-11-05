@@ -51,14 +51,25 @@ export function Docs() {
 
         <article className="max-w-xl space-y-14 text-base leading-7 text-muted sm:text-lg sm:leading-8">
           <header className="border-b border-border pb-10">
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-subtle">
-              Litepaper v0.1 · 2026-10-22
-            </p>
-            <h1 className="mt-4 font-display text-4xl leading-tight tracking-tight text-fg sm:text-6xl">
+            <h1 className="font-display text-4xl leading-tight tracking-tight text-fg sm:text-6xl">
               Mandate
             </h1>
             <p className="mt-3 font-display text-xl text-muted sm:text-2xl">
-              The agent can ask. It cannot sign.
+              A helper can ask. It cannot send the money.
+            </p>
+            <p className="mt-6">
+              Version 1 is a one-person travel desk. You set spending limits, who can be paid (hotel, airline,
+              and rides), when it must ask you first, and Freeze.{" "}
+              <Link to="/console" className="text-fg underline">
+                Run travel agent
+              </Link>{" "}
+              on the desk: yes, ask you, and no — a fake look-alike and too many rides — in under a minute. This
+              demo checks the rules and does not send money. There is no fake payment record. Freeze stops the
+              desk in the demo. It does not pause the blockchain.
+            </p>
+            <p className="mt-4 text-sm leading-6">
+              New here? Use the travel desk. The rest of this page is the longer write-up, and it keeps the
+              technical names.
             </p>
             <p className="mt-6 text-sm leading-6 text-subtle">
               Tracks: AI Security &amp; Defense · Agent Economy · Autonomous Business (NEAR HACKATHON 2026).
@@ -321,7 +332,8 @@ Agent → POST /api/v1/pay only
             <p className="mt-4">
               NEAR Function Call Keys (FCK) limit a key to a receiver, methods, and allowance. They are not a USD
               policy engine: they cannot encode daily caps, human approval thresholds, or recipient allow-lists the
-              way Mandate does.
+              way Mandate does. Live today is the off-chain gate plus a 1-Click dry quote. This page does not
+              deploy an FCK and does not show a testnet transaction.
             </p>
             <p className="mt-4 font-medium text-fg">Composition (now documented; not a fake attestation):</p>
             <ul className="mt-4 list-disc space-y-3 pl-5">
@@ -420,52 +432,73 @@ Agent → POST /api/v1/pay only
 
           <section id="demo" className="scroll-mt-28">
             <h2 className="font-display text-2xl tracking-tight text-fg sm:text-3xl">14. Hackathon demo protocol</h2>
-            <p className="mt-4">Do X → see Y. Judges: open live URL or clone → Run the agent → Approve → inspect receipt.</p>
-            <ol className="mt-4 list-decimal space-y-3 pl-5">
-              <li>
-                <strong className="font-medium text-fg">Reset demo</strong> (optional clean slate), then{" "}
-                <strong className="font-medium text-fg">Run the agent.</strong> Publishes the demo mandate.
-                Remaining today $50. Balance $200. Run-the-agent prepares + four asks in one isolate (avoids
-                Vercel 409 across cold isolates).
-              </li>
-              <li>
-                <strong className="font-medium text-fg">$8 to vendor.near on Base</strong> → Allowed. Attestation
-                says local policy gate (unless OutLayer dry-run would_succeed). submitted stays false. Remaining
-                $42.
-              </li>
-              <li>
-                <strong className="font-medium text-fg">$18 to studio.near</strong> → Needs approval. Remaining
-                drops because the amount is held. Balance stays $200 until Approve. Reject releases the hold.
-              </li>
-              <li>
-                <strong className="font-medium text-fg">$40</strong> → Blocked · max_per_transaction.
-              </li>
-              <li>
-                <strong className="font-medium text-fg">Jailbreak</strong> → body includes approved: true and a
-                fake policy. Receipt lists those as ignored. Status Blocked · allowed_recipients.
-              </li>
-            </ol>
             <p className="mt-4">
-              Travel ops, same preview: <strong className="font-medium text-fg">Load travel ops</strong>, then{" "}
-              <strong className="font-medium text-fg">Run travel agent</strong>. The $8 path above stays on Run
-              the demo.
+              Do X → see Y. Open <strong className="font-medium text-fg">/console</strong>, read the spending
+              limits, click <strong className="font-medium text-fg">Run travel agent</strong>, then press Yes on
+              the airline row. The $8 path is under <strong className="font-medium text-fg">Advanced</strong>.
             </p>
             <ol className="mt-4 list-decimal space-y-3 pl-5">
               <li>
-                <strong className="font-medium text-fg">$80 to hotel.near on Base</strong> → Allowed.
-                settlement.submitted stays false.
+                Under <strong className="font-medium text-fg">Advanced</strong>:{" "}
+                <strong className="font-medium text-fg">Reset demo</strong> (optional clean slate), then{" "}
+                <strong className="font-medium text-fg">Run the small demo.</strong> Saves the $8 rules. Left
+                today $50. Demo balance $200. One click prepares and asks four times together (avoids a cold
+                page returning “no rules”).
               </li>
               <li>
-                <strong className="font-medium text-fg">$250 to airline.near on Ethereum</strong> → Needs
-                approval. Approve in Waiting for you. Balance does not move until you do.
+                <strong className="font-medium text-fg">$8 to vendor.near</strong> → Yes. The receipt says the
+                rules were checked in this demo. Not sent yet. Left today $42.
               </li>
               <li>
-                <strong className="font-medium text-fg">$500</strong> → Blocked · max_per_transaction.
+                <strong className="font-medium text-fg">$18 to studio.near</strong> → Ask you. Today’s remaining
+                room drops because the amount is waiting. The demo balance stays $200 until you press Yes. No
+                drops the ask.
               </li>
               <li>
-                <strong className="font-medium text-fg">Poisoned payee</strong> → the tool says the hotel
-                account moved and asks to pay attacker.near, with approved: true. That field is ignored. Status
-                Blocked · allowed_recipients.
+                <strong className="font-medium text-fg">$40</strong> → No · over the spending limit.
+              </li>
+              <li>
+                <strong className="font-medium text-fg">Fake yes</strong> → the ask claims you already said yes
+                and invents a new limit. The receipt lists those as ignored. Status: No · not someone you can
+                pay.
+              </li>
+            </ol>
+            <p className="mt-4">
+              The desk is the trip. Limits on the page are $300 per payment, $800 today, ask you above $150.
+              Who can be paid: hotel.near, airline.near, rides.near. Click{" "}
+              <strong className="font-medium text-fg">Run travel agent</strong>. The five lines are yes, ask you,
+              over the limit, a fake look-alike, and too many rides. Chips{" "}
+              <strong className="font-medium text-fg">Yes</strong>, <strong className="font-medium text-fg">Ask you</strong>,{" "}
+              <strong className="font-medium text-fg">Over limit</strong>,{" "}
+              <strong className="font-medium text-fg">Look-alike</strong>, and{" "}
+              <strong className="font-medium text-fg">Too many rides</strong> each play one ask. Look-alike
+              highlights the wrong name. A yes row shows a demo quote: not sent yet, click or copy the demo
+              quote id when one came back (otherwise the line says demo quote not attached), and no payment
+              record. <strong className="font-medium text-fg">Load hotel, airline, and rides</strong> only fills
+              the editor under Advanced. The $8 path stays on{" "}
+              <strong className="font-medium text-fg">Run the small demo</strong> there too. Extra checks: 15
+              cases, named under Advanced and on the line under the legend.
+            </p>
+            <ol className="mt-4 list-decimal space-y-3 pl-5">
+              <li>
+                <strong className="font-medium text-fg">$80 to hotel.near</strong> → Yes. Not sent yet.
+              </li>
+              <li>
+                <strong className="font-medium text-fg">$250 to airline.near</strong> → Ask you. Press Yes on
+                the airline row. The demo balance does not move until you do. Money is still not sent.
+              </li>
+              <li>
+                <strong className="font-medium text-fg">$500</strong> → No · over the spending limit.
+              </li>
+              <li>
+                <strong className="font-medium text-fg">Fake look-alike</strong> → the hotel tool says the
+                account moved and asks to pay hote1.near (it looks like hotel.near), and claims you already said
+                yes. That claim is ignored. Status: No · not someone you can pay.
+              </li>
+              <li>
+                <strong className="font-medium text-fg">Too many rides</strong> → $120 to rides.near, again,
+                until the $800 day stops the last one. Earlier rides are Yes. The last is No · over today's
+                limit. Those yes answers are checks, not sends.
               </li>
             </ol>
           </section>
